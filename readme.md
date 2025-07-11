@@ -18,6 +18,8 @@ The Boring Agents is a Python-based AI agent system that automates content gener
 - 📝 Detailed text content with tips and tricks
 - 💡 Best practices and common pitfalls
 - 🛠️ Practical examples and code snippets
+- 📖 **Full course generation** in JSON schema format matching Shiksha requirements
+- 🗂️ **MDX chapter content** with tutorials, social media templates, and structured learning
 
 ### Interview Preparation
 - ❓ Technical question sheets with detailed answers
@@ -66,6 +68,12 @@ python main.py content video-suggestions --topic "Django" --module "Authenticati
 
 # Get tips and tricks
 python main.py content tips-and-tricks --topic "React" --level advanced
+
+# Generate complete MDX chapter content
+python main.py content chapter-content --chapter-title "GitHub Basics" --course-topic "Backend Development" --save
+
+# Generate complete course in JSON schema format
+python main.py content complete-course --name "Zero to One Backend Dev" --description "Complete backend course" --roadmap "Backend" --save
 ```
 
 #### Create Interview Prep Materials
@@ -150,8 +158,23 @@ course = content_agent.create_course_outline("Machine Learning", "beginner")
 questions = interview_agent.create_question_sheet("Python", "intermediate", 20)
 projects = project_agent.generate_project_ideas("Vue.js", "medium", 3, "fintech")
 
+# Generate complete courses in JSON schema format
+complete_course = content_agent.create_complete_course(
+    course_name="Full Stack Development",
+    description="Complete web development course",
+    roadmap="Full Stack",
+    level="intermediate"
+)
+
+# Generate individual chapter content
+chapter = content_agent.generate_chapter_content(
+    chapter_title="React Fundamentals", 
+    course_topic="Frontend Development"
+)
+
 # Save results
 content_agent.save_content(course, "ml_course_outline")
+content_agent.save_content(complete_course, "fullstack_course")
 interview_agent.save_content(questions, "python_interview_questions")
 project_agent.save_content(projects, "vuejs_fintech_projects")
 ```
