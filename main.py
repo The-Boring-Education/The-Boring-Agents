@@ -9,9 +9,9 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
 
-from the_boring_agents.core.config import config
-from the_boring_agents.agents import ContentAgent, InterviewAgent, ProjectAgent
-from the_boring_agents.utils import setup_logging, generate_filename
+from src.core.config import config
+from src.agents import ContentAgent, InterviewAgent, ProjectAgent, ShikshaOrchestrator
+from src.utils import setup_logging, generate_filename
 
 console = Console()
 
@@ -178,6 +178,59 @@ def complete_prep(technology, level, save):
 def projects():
     """Generate project ideas and implementations."""
     pass
+
+
+@cli.group()
+def shiksha():
+    """Generate complete Shiksha courses."""
+    pass
+
+
+@shiksha.command()
+@click.option('--course-name', required=True, help='Name of the course')
+@click.option('--description', required=True, help='Course description')
+@click.option('--difficulty', default='Beginner', help='Difficulty level (Beginner, Intermediate, Advanced)')
+@click.option('--roadmap', default='Backend', help='Roadmap category (Backend, Frontend, Full Stack, etc.)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def create_course(course_name, description, difficulty, roadmap, save):
+    """Create a complete Shiksha course with all components."""
+    console.print(f"[green]Creating complete Shiksha course: {course_name}...[/green]")
+    
+    try:
+        orchestrator = ShikshaOrchestrator()
+        course_data = orchestrator.create_complete_course(
+            course_name=course_name,
+            description=description,
+            difficulty_level=difficulty,
+            roadmap=roadmap
+        )
+        
+        # Display course summary
+        data = course_data.get("data", {})
+        chapters = data.get("chapters", [])
+        
+        table = Table(title=f"Shiksha Course: {course_name}")
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+        
+        table.add_row("Course Name", data.get("name", "N/A"))
+        table.add_row("Slug", data.get("slug", "N/A"))
+        table.add_row("Difficulty", data.get("difficultyLevel", "N/A"))
+        table.add_row("Roadmap", data.get("roadmap", "N/A"))
+        table.add_row("Chapters", str(len(chapters)))
+        table.add_row("Live Date", data.get("liveOn", "N/A"))
+        
+        console.print(table)
+        
+        if save:
+            filepath = orchestrator.save_course(course_data)
+            console.print(f"[blue]Course saved to: {filepath}[/blue]")
+        
+        console.print(f"[yellow]Course creation completed successfully![/yellow]")
+        
+    except Exception as e:
+        console.print(f"[red]Error creating course: {str(e)}[/red]")
+        raise click.Abort()
 
 
 @projects.command()

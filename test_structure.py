@@ -15,13 +15,13 @@ def test_imports():
     print("Testing imports...")
     
     try:
-        from the_boring_agents import Config, BaseAgent
+        from src import Config, BaseAgent
         print("✓ Core imports successful")
         
-        from the_boring_agents.agents import ContentAgent, InterviewAgent, ProjectAgent
+        from src.agents import ContentAgent, InterviewAgent, ProjectAgent
         print("✓ Agent imports successful")
         
-        from the_boring_agents.utils import setup_logging, generate_filename
+        from src.utils import setup_logging, generate_filename
         print("✓ Utility imports successful")
         
         return True
@@ -34,7 +34,7 @@ def test_configuration():
     print("\nTesting configuration...")
     
     try:
-        from the_boring_agents.core.config import Config
+        from src.core.config import Config
         
         # Test with dummy API key
         os.environ['OPENAI_API_KEY'] = 'sk-dummy-key-for-testing'
@@ -59,7 +59,7 @@ def test_agent_structure():
         # Set dummy API key
         os.environ['OPENAI_API_KEY'] = 'sk-dummy-key-for-testing'
         
-        from the_boring_agents.agents import ContentAgent, InterviewAgent, ProjectAgent
+        from src.agents import ContentAgent, InterviewAgent, ProjectAgent
         
         # Test that we can get prompt templates (doesn't require API calls)
         content_agent = ContentAgent()
@@ -85,7 +85,7 @@ def test_utility_functions():
     print("\nTesting utility functions...")
     
     try:
-        from the_boring_agents.utils import (
+        from src.utils import (
             generate_filename, 
             clean_text, 
             extract_keywords,
