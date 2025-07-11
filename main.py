@@ -4,13 +4,19 @@ Main entry point for The Boring Agents CLI application.
 
 import click
 import json
+import os
+from datetime import datetime
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
 
 from src.core.config import config
-from src.agents import ContentAgent, InterviewAgent, ProjectAgent, ShikshaOrchestrator, EnhancedShikshaOrchestrator
+from src.agents import (
+    ContentAgent, InterviewAgent, ProjectAgent, 
+    ShikshaOrchestrator, EnhancedShikshaOrchestrator,
+    InterviewSheetOrchestrator
+)
 from src.utils import setup_logging, generate_filename
 
 console = Console()
@@ -172,6 +178,162 @@ def complete_prep(technology, level, save):
         filename = generate_filename(f"complete_prep_{technology.replace(' ', '_')}")
         filepath = agent.save_content(result, filename)
         console.print(f"[blue]Saved to: {filepath}[/blue]")
+
+
+@interview.command()
+@click.option('--sheet-id', required=True, help='ID of the interview sheet to revamp')
+@click.option('--save', is_flag=True, help='Save output to file')
+def revamp_sheet(sheet_id, save):
+    """Revamp an existing interview sheet with world-class quality."""
+    console.print(f"[green]🚀 Revamping interview sheet: {sheet_id}...[/green]")
+    
+    try:
+        orchestrator = InterviewSheetOrchestrator()
+        result = orchestrator.revamp_existing_sheet(sheet_id)
+        
+        # Display results
+        stats = result.get("statistics", {})
+        table = Table(title=f"Revamping Results: {result.get('sheet_name', 'Unknown')}")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Count", style="green")
+        
+        table.add_row("Enhanced Questions", str(stats.get("enhanced", 0)))
+        table.add_row("New Questions Added", str(stats.get("added", 0)))
+        table.add_row("Failed Updates", str(stats.get("failed", 0)))
+        
+        console.print(table)
+        
+        # Show research insights
+        insights = result.get("research_insights", {})
+        if insights:
+            console.print(f"\n📊 [bold]Key Research Insights:[/bold]")
+            for rec in insights.get("key_recommendations", [])[:3]:
+                console.print(f"   • {rec}")
+        
+        if save:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"revamped_sheet_{sheet_id}_{timestamp}"
+            filepath = f"./output/{filename}.json"
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
+            
+            console.print(f"[blue]Results saved to: {filepath}[/blue]")
+        
+        console.print(f"\n🎉 Sheet revamping completed successfully!")
+        
+    except Exception as e:
+        console.print(f"[red]Error revamping sheet: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--sheet-name', required=True, help='Name of the new interview sheet')
+@click.option('--description', required=True, help='Description of the sheet topic')
+@click.option('--target-questions', default=50, help='Number of questions to generate')
+@click.option('--save', is_flag=True, help='Save output to file')
+def create_world_class_sheet(sheet_name, description, target_questions, save):
+    """Create a new world-class interview sheet from scratch."""
+    console.print(f"[green]🚀 Creating world-class interview sheet: {sheet_name}...[/green]")
+    
+    try:
+        orchestrator = InterviewSheetOrchestrator()
+        result = orchestrator.create_new_sheet(sheet_name, description, target_questions)
+        
+        # Display results
+        stats = result.get("statistics", {})
+        sheet_data = result.get("sheet_data", {})
+        
+        table = Table(title=f"New Sheet Created: {sheet_name}")
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+        
+        table.add_row("Total Questions", str(sheet_data.get("total_questions", 0)))
+        table.add_row("Average Quality Score", f"{stats.get('average_quality_score', 0):.1f}/10")
+        table.add_row("Estimated Prep Time", sheet_data.get("estimated_prep_time", "N/A"))
+        
+        console.print(table)
+        
+        # Show difficulty distribution
+        difficulty_dist = sheet_data.get("difficulty_distribution", {})
+        if difficulty_dist:
+            console.print(f"\n📊 [bold]Difficulty Distribution:[/bold]")
+            for difficulty, count in difficulty_dist.items():
+                console.print(f"   {difficulty}: {count} questions")
+        
+        # Show metadata
+        metadata = sheet_data.get("metadata", {})
+        if metadata:
+            console.print(f"\n✨ [bold]Quality Features:[/bold]")
+            console.print(f"   🇮🇳 Indian Context: {metadata.get('indian_context', False)}")
+            console.print(f"   😄 Humor Integrated: {metadata.get('humor_integrated', False)}")
+            console.print(f"   ✅ Quality Assured: {metadata.get('quality_assured', False)}")
+        
+        if save:
+            filepath = result.get("filepath", "")
+            console.print(f"[blue]Sheet saved to: {filepath}[/blue]")
+        
+        console.print(f"\n🎉 World-class interview sheet created successfully!")
+        console.print(f"[yellow]This sheet is ready for ₹49 premium pricing![/yellow]")
+        
+    except Exception as e:
+        console.print(f"[red]Error creating sheet: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--save', is_flag=True, help='Save batch results to file')
+def revamp_all_sheets(save):
+    """Revamp ALL existing interview sheets in the database."""
+    console.print(f"[green]🚀 Starting batch revamping of all interview sheets...[/green]")
+    console.print(f"[yellow]⚠️  This will process ALL sheets in the database. Continue? [Y/n][/yellow]")
+    
+    import sys
+    if not click.confirm(""):
+        console.print("Operation cancelled.")
+        return
+    
+    try:
+        orchestrator = InterviewSheetOrchestrator()
+        results = orchestrator.batch_revamp_all_sheets()
+        
+        # Display batch results
+        table = Table(title="Batch Revamping Results")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Count", style="green")
+        
+        table.add_row("Total Sheets", str(results.get("total_sheets", 0)))
+        table.add_row("Successfully Revamped", str(results.get("successful", 0)))
+        table.add_row("Failed", str(results.get("failed", 0)))
+        
+        console.print(table)
+        
+        # Show individual results
+        batch_results = results.get("results", [])
+        if batch_results:
+            console.print(f"\n📋 [bold]Individual Sheet Results:[/bold]")
+            for result in batch_results[:10]:  # Show first 10
+                status_emoji = "✅" if result["status"] == "success" else "❌"
+                console.print(f"   {status_emoji} {result['sheet_name']}")
+            
+            if len(batch_results) > 10:
+                console.print(f"   ... and {len(batch_results) - 10} more sheets")
+        
+        if save:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"batch_revamp_results_{timestamp}"
+            filepath = f"./output/{filename}.json"
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(results, f, indent=2, ensure_ascii=False)
+            
+            console.print(f"[blue]Batch results saved to: {filepath}[/blue]")
+        
+        console.print(f"\n🎉 Batch revamping completed!")
+        
+    except Exception as e:
+        console.print(f"[red]Error in batch revamping: {str(e)}[/red]")
+        raise click.Abort()
 
 
 @cli.group()
