@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta
 import uuid
 
-from ..core.base_agent import BaseAgent
+from ...core.base_agent import BaseAgent
 from .course_planner_agent import CoursePlannerAgent
 from .content_creator_agent import ContentCreatorAgent
 from .quality_assurance_agent import QualityAssuranceAgent

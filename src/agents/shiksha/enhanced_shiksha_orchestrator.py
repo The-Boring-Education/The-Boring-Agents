@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta
 import uuid
 
-from ..core.base_agent import BaseAgent
+from ...core.base_agent import BaseAgent
 from .research_agent import ResearchAgent
 from .instructor_agent import InstructorAgent
 from .exercise_creator_agent import ExerciseCreatorAgent

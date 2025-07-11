@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 import json
 import re
 
-from ..core.base_agent import BaseAgent
+from ...core.base_agent import BaseAgent
 
 
 class CoursePlannerAgent(BaseAgent):

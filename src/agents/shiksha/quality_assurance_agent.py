@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 import json
 import re
 
-from ..core.base_agent import BaseAgent
+from ...core.base_agent import BaseAgent
 
 
 class QualityAssuranceAgent(BaseAgent):
@@ -127,31 +127,31 @@ class QualityAssuranceAgent(BaseAgent):
         final_validation_template = PromptTemplate(
             input_variables=["course_json", "course_name"],
             template="""
-            Perform final validation of the complete course JSON for "{course_name}":
+            Perform final validation of the course summary for "{course_name}":
             
             {course_json}
             
             Validate:
             
-            1. **JSON Structure**
-               - Correct schema format
-               - All required fields present
-               - Valid data types
+            1. **Structure Completeness**
+               - All required fields are present
+               - Course has proper metadata
+               - Chapters are properly structured
             
             2. **Content Quality**
-               - All chapters have content
-               - Proper MDX formatting
-               - Complete metadata
+               - Chapters have substantial content
+               - Meta content is present
+               - Proper formatting indicators
             
             3. **Technical Requirements**
-               - Valid IDs and timestamps
-               - Proper URLs and slugs
-               - Correct field names
+               - Valid slug and difficulty level
+               - Appropriate roadmap category
+               - Reasonable content lengths
             
             4. **Shiksha Compatibility**
-               - Follows platform requirements
-               - Proper chapter structure
-               - Valid content format
+               - Follows expected schema
+               - Has required fields
+               - Proper data structure
             
             Return validation results and any issues found.
             """
@@ -244,16 +244,46 @@ class QualityAssuranceAgent(BaseAgent):
         Returns:
             Validation results
         """
-        # Convert to JSON string for review
-        course_json_str = json.dumps(course_json, indent=2)
+        # Instead of passing the entire JSON, create a summary for validation
+        course_summary = self._create_course_summary_for_validation(course_json)
         
         result = self.generate_content(
             "final_validation",
-            course_json=course_json_str,
+            course_json=course_summary,
             course_name=course_name
         )
         
         return self._parse_validation_results(result["generated_content"])
+    
+    def _create_course_summary_for_validation(self, course_json: Dict[str, Any]) -> str:
+        """Create a concise summary of the course for validation purposes."""
+        data = course_json.get("data", {})
+        
+        summary = []
+        summary.append(f"Course Name: {data.get('name', 'N/A')}")
+        summary.append(f"Slug: {data.get('slug', 'N/A')}")
+        summary.append(f"Difficulty: {data.get('difficultyLevel', 'N/A')}")
+        summary.append(f"Roadmap: {data.get('roadmap', 'N/A')}")
+        summary.append(f"Meta Content Length: {len(data.get('meta', ''))} characters")
+        summary.append(f"Total Chapters: {len(data.get('chapters', []))}")
+        
+        # Add chapter summaries
+        chapters = data.get("chapters", [])
+        for i, chapter in enumerate(chapters[:5], 1):  # Only first 5 chapters
+            chapter_name = chapter.get('name', f'Chapter {i}')
+            content_length = len(chapter.get('content', ''))
+            summary.append(f"Chapter {i}: {chapter_name} ({content_length} chars)")
+        
+        if len(chapters) > 5:
+            summary.append(f"... and {len(chapters) - 5} more chapters")
+        
+        # Add structure validation points
+        summary.append(f"Has Status: {'status' in course_json}")
+        summary.append(f"Has Data: {'data' in course_json}")
+        summary.append(f"Has Chapters: {'chapters' in data}")
+        summary.append(f"Has Meta: {'meta' in data}")
+        
+        return "\n".join(summary)
     
     def generate_content(self, content_type: str, **kwargs) -> Dict[str, Any]:
         """Generate content based on the content type.

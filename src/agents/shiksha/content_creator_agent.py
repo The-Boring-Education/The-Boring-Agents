@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 from langchain.prompts import PromptTemplate
 import re
 
-from ..core.base_agent import BaseAgent
+from ...core.base_agent import BaseAgent
 
 
 class ContentCreatorAgent(BaseAgent):

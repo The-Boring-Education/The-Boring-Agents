@@ -5,7 +5,7 @@ import requests
 import json
 from langchain.prompts import PromptTemplate
 
-from ..core.base_agent import BaseAgent
+from ...core.base_agent import BaseAgent
 
 
 class ResearchAgent(BaseAgent):

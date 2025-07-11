@@ -108,6 +108,17 @@ class BaseAgent(ABC):
             Generated content
         """
         try:
+            # Check if prompt exceeds context length
+            estimated_tokens = len(prompt.split()) * 1.3  # Rough estimation
+            if estimated_tokens > config.max_context_length:
+                self.logger.warning(f"Prompt may exceed context length: ~{estimated_tokens:.0f} tokens")
+                # Truncate prompt if necessary
+                max_words = int(config.max_context_length / 1.3)
+                words = prompt.split()
+                if len(words) > max_words:
+                    self.logger.warning(f"Truncating prompt from {len(words)} to {max_words} words")
+                    prompt = " ".join(words[:max_words])
+            
             response = self.llm.invoke(prompt)
             return response.content.strip()
         except Exception as e:

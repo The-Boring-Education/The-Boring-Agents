@@ -24,6 +24,7 @@ class Config(BaseSettings):
     default_model: str = Field(default="gpt-3.5-turbo", env="DEFAULT_MODEL")
     max_tokens: int = Field(default=2000, env="MAX_TOKENS")
     temperature: float = Field(default=0.7, env="TEMPERATURE")
+    max_context_length: int = Field(default=16000, env="MAX_CONTEXT_LENGTH")
     
     class Config:
         env_file = ".env"
