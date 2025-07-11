@@ -120,9 +120,23 @@ the_boring_agents/
 ├── __init__.py                 # Package initialization
 ├── agents/                     # AI agent implementations
 │   ├── __init__.py
-│   ├── content_agent.py        # Shiksha content generation
-│   ├── interview_agent.py      # Interview prep materials
-│   └── project_agent.py        # Project ideas & guides
+│   ├── content_agent.py        # General content generation
+│   ├── shiksha/               # Shiksha course agents
+│   │   ├── __init__.py
+│   │   ├── enhanced_shiksha_orchestrator.py
+│   │   ├── shiksha_orchestrator.py
+│   │   ├── course_planner_agent.py
+│   │   ├── content_creator_agent.py
+│   │   ├── quality_assurance_agent.py
+│   │   ├── research_agent.py
+│   │   ├── instructor_agent.py
+│   │   └── exercise_creator_agent.py
+│   ├── interview/              # Interview preparation agents
+│   │   ├── __init__.py
+│   │   └── interview_agent.py
+│   └── project/                # Project generation agents
+│       ├── __init__.py
+│       └── project_agent.py
 ├── core/                       # Core functionality
 │   ├── __init__.py
 │   ├── base_agent.py          # Base agent class
