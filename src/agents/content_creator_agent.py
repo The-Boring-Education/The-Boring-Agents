@@ -285,7 +285,7 @@ class ContentCreatorAgent(BaseAgent):
         """
         # Find the Tutorial section and replace it with video content
         tutorial_pattern = r'(## Tutorial\n\n).*?(?=\n##|\n###|\Z)'
-        replacement = r'\1' + videos_content
+        replacement = '## Tutorial\n\n' + videos_content
         
         enhanced_content = re.sub(tutorial_pattern, replacement, content, flags=re.DOTALL)
         return enhanced_content
@@ -302,7 +302,7 @@ class ContentCreatorAgent(BaseAgent):
         """
         # Find the Share It On Social Media section and replace it
         social_pattern = r'(## Share It On Social Media\n\n).*?(?=\n##|\n###|\Z)'
-        replacement = r'\1' + social_media_content
+        replacement = '## Share It On Social Media\n\n' + social_media_content
         
         enhanced_content = re.sub(social_pattern, replacement, content, flags=re.DOTALL)
         return enhanced_content
@@ -319,7 +319,7 @@ class ContentCreatorAgent(BaseAgent):
         """
         # Find the Practice Problems section and replace it
         practice_pattern = r'(## Practice Problems\n\n).*?(?=\n##|\n###|\Z)'
-        replacement = r'\1' + practice_content
+        replacement = '## Practice Problems\n\n' + practice_content
         
         enhanced_content = re.sub(practice_pattern, replacement, content, flags=re.DOTALL)
         return enhanced_content

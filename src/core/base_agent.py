@@ -108,8 +108,8 @@ class BaseAgent(ABC):
             Generated content
         """
         try:
-            response = self.llm.predict(prompt)
-            return response.strip()
+            response = self.llm.invoke(prompt)
+            return response.content.strip()
         except Exception as e:
             self.logger.error(f"Error generating content: {str(e)}")
             raise
