@@ -84,11 +84,102 @@ class ContentAgent(BaseAgent):
             """
         )
         
+        chapter_content_template = PromptTemplate(
+            input_variables=["chapter_title", "course_topic", "level"],
+            template="""
+            Create comprehensive MDX content for a chapter titled "{chapter_title}" in a {level} level course on {course_topic}.
+            
+            The content should be structured exactly like this format (include all sections):
+            
+            # {chapter_title}
+            
+            ### Why Do You Need [This Topic]?
+            [2-3 sentences explaining the importance and relevance]
+            
+            ### How Important Is It?
+            [1-2 sentences about industry relevance and career impact]
+            
+            ### How Long Will It Take to Learn?
+            [Specific timeframe with recommended daily practice]
+            
+            ## Tutorial
+            
+            💡
+            [Important note or tip about learning this topic]
+            
+            [[Hindi] [Descriptive Video Title]](https://www.youtube.com/watch?v=SAMPLE_ID)
+            
+            [https://youtu.be/SAMPLE_ID?si=SAMPLE_TRACKING](https://youtu.be/SAMPLE_ID?si=SAMPLE_TRACKING)
+            
+            [Brief description of what this video teaches]
+            
+            [Additional YouTube video links with descriptions - 2-3 videos total]
+            
+            💡
+            [Another important learning tip or practical advice]
+            
+            ### Projects to Build
+            
+            1. [Specific project description with actionable steps]
+            2. [Optional second project]
+            
+            ## Share It On Social Media
+            
+            Now is your Time to start with Learn in Public Journey. It's important to show others what you're doing currently. It'll help you build a Network and eventually get you an internship or job.
+            
+            The content is given below You can copy and modify as you want and share. Don't forget to add Your Laptop Screen and also Tag The Boring Education.
+            
+            ### LinkedIn
+            
+            ```
+            [Professional LinkedIn post template with specific achievements, hashtags including #Shiksha #TheBoringEducation]
+            ```
+            
+            ### Twitter
+            
+            ```
+            [Concise Twitter post template with achievements and hashtags including #Shiksha #TheBoringEducation]
+            ```
+            
+            Make the content practical, engaging, and focused on real-world applications. Use conversational tone and include specific examples.
+            """
+        )
+        
+        complete_course_template = PromptTemplate(
+            input_variables=["course_name", "level", "description", "roadmap"],
+            template="""
+            Generate a comprehensive course curriculum for "{course_name}" - a {level} level course.
+            
+            Course Description: {description}
+            Roadmap: {roadmap}
+            
+            Provide a JSON response with this exact structure:
+            {{
+              "name": "{course_name}",
+              "description": "{description}",
+              "roadmap": "{roadmap}", 
+              "difficultyLevel": "{level}",
+              "chapters": [
+                {{
+                  "name": "Chapter Title",
+                  "content": "Brief description of what this chapter will contain"
+                }}
+              ]
+            }}
+            
+            Include 8-12 chapters that cover the complete learning journey from basics to advanced topics.
+            Each chapter should represent 1-2 hours of learning content.
+            Focus on practical, project-based learning with real-world applications.
+            """
+        )
+        
         return {
             "course_outline": course_outline_template,
             "video_suggestions": video_suggestions_template,
             "text_content": text_content_template,
-            "tricks_and_tips": tricks_and_tips_template
+            "tricks_and_tips": tricks_and_tips_template,
+            "chapter_content": chapter_content_template,
+            "complete_course": complete_course_template
         }
     
     def generate_content(self, content_type: str, **kwargs) -> Dict[str, Any]:
@@ -195,6 +286,171 @@ class ContentAgent(BaseAgent):
             topic=topic,
             experience_level=experience_level
         )
+    
+    def generate_chapter_content(self, chapter_title: str, course_topic: str, 
+                               level: str = "intermediate") -> Dict[str, Any]:
+        """Generate complete MDX content for a single chapter.
+        
+        Args:
+            chapter_title: Title of the chapter
+            course_topic: The overall course topic
+            level: Difficulty level
+            
+        Returns:
+            Complete MDX chapter content
+        """
+        return self.generate_content(
+            "chapter_content",
+            chapter_title=chapter_title,
+            course_topic=course_topic,
+            level=level
+        )
+    
+    def create_complete_course(self, course_name: str, description: str, 
+                             roadmap: str, level: str = "intermediate",
+                             chapters: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Create a complete course in the JSON schema format.
+        
+        Args:
+            course_name: Name of the course
+            description: Course description
+            roadmap: Course roadmap/category
+            level: Difficulty level
+            chapters: Optional list of chapter titles. If not provided, will be generated
+            
+        Returns:
+            Complete course in JSON schema format
+        """
+        import uuid
+        from datetime import datetime, timezone
+        import re
+        
+        # Generate chapter list if not provided
+        if chapters is None:
+            curriculum_response = self.generate_content(
+                "complete_course",
+                course_name=course_name,
+                level=level,
+                description=description,
+                roadmap=roadmap
+            )
+            
+            # Try to extract JSON from the response
+            try:
+                import json
+                # Find JSON in the response
+                content = curriculum_response['generated_content']
+                json_start = content.find('{')
+                json_end = content.rfind('}') + 1
+                if json_start != -1 and json_end != -1:
+                    json_content = content[json_start:json_end]
+                    curriculum_data = json.loads(json_content)
+                    chapters = [chapter['name'] for chapter in curriculum_data.get('chapters', [])]
+                else:
+                    # Fallback to default chapters if JSON parsing fails
+                    chapters = self._get_default_chapters(course_name, roadmap)
+            except (json.JSONDecodeError, KeyError):
+                # Fallback to default chapters
+                chapters = self._get_default_chapters(course_name, roadmap)
+        
+        # Generate slug from course name
+        slug = re.sub(r'[^a-zA-Z0-9\s-]', '', course_name.lower())
+        slug = re.sub(r'\s+', '-', slug).strip('-')
+        
+        # Generate cover image URL (placeholder)
+        cover_image_url = f"https://ik.imagekit.io/tbe/webapp/shiksha-{slug}-cover.svg"
+        
+        # Create course structure
+        course_data = {
+            "status": True,
+            "data": {
+                "_id": str(uuid.uuid4()).replace('-', '')[:24],
+                "name": course_name,
+                "slug": slug,
+                "coverImageURL": cover_image_url,
+                "description": description,
+                "liveOn": datetime.now(timezone.utc).isoformat(),
+                "roadmap": roadmap,
+                "difficultyLevel": level.title(),
+                "chapters": []
+            }
+        }
+        
+        # Generate content for each chapter
+        for chapter_title in chapters:
+            chapter_content_response = self.generate_chapter_content(
+                chapter_title, course_name, level
+            )
+            
+            chapter_data = {
+                "name": chapter_title,
+                "content": chapter_content_response['generated_content'],
+                "_id": str(uuid.uuid4()).replace('-', '')[:24],
+                "createdAt": datetime.now(timezone.utc).isoformat(),
+                "updatedAt": datetime.now(timezone.utc).isoformat()
+            }
+            
+            course_data["data"]["chapters"].append(chapter_data)
+        
+        # Add metadata about the generation
+        course_data["metadata"] = {
+            "generated_by": "The Boring Agents",
+            "model": self.model_name,
+            "generation_timestamp": datetime.now(timezone.utc).isoformat(),
+            "total_chapters": len(chapters)
+        }
+        
+        return course_data
+    
+    def _get_default_chapters(self, course_name: str, roadmap: str) -> List[str]:
+        """Get default chapter titles based on course name and roadmap.
+        
+        Args:
+            course_name: Name of the course
+            roadmap: Course roadmap/category
+            
+        Returns:
+            List of default chapter titles
+        """
+        # Default chapters based on roadmap
+        if "backend" in roadmap.lower() or "backend" in course_name.lower():
+            return [
+                "GitHub - Version Control and Collaboration",
+                "Before You Start This Course", 
+                "Node.js Fundamentals",
+                "Project 1: Build Your First Server with HTTP",
+                "Express.js Basics",
+                "Project 2: Build Your First API with Express.js",
+                "Basics of Databases",
+                "Project 3: Build API with Express & SQL",
+                "Project 4: Build API with Express.js & MongoDB",
+                "REST API Design",
+                "Middleware in Express.js",
+                "Authentication Basics"
+            ]
+        elif "frontend" in roadmap.lower() or "frontend" in course_name.lower():
+            return [
+                "HTML Fundamentals",
+                "CSS Styling and Layout",
+                "JavaScript Basics",
+                "DOM Manipulation",
+                "React.js Introduction",
+                "State Management",
+                "API Integration",
+                "Project: Build a Complete App"
+            ]
+        else:
+            # Generic tech course chapters
+            return [
+                "Getting Started",
+                "Fundamentals",
+                "Core Concepts",
+                "Practical Implementation",
+                "Advanced Topics",
+                "Best Practices",
+                "Real-world Projects",
+                "Final Project"
+            ]
     
     def _get_timestamp(self) -> str:
         """Get current timestamp as string."""

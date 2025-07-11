@@ -62,6 +62,8 @@ def show_agent_capabilities():
     content_table.add_row("Video Suggestions", "Curated video content recommendations")
     content_table.add_row("Text Content", "Detailed lessons with tips & tricks")
     content_table.add_row("Best Practices", "Code examples and common pitfalls")
+    content_table.add_row("Chapter Content", "Complete MDX content with tutorials & social media templates")
+    content_table.add_row("Complete Courses", "Full JSON schema courses matching Shiksha format")
     
     console.print(content_table)
     
@@ -98,6 +100,8 @@ def show_cli_examples():
 python main.py content course-outline --topic "React Development" --level intermediate
 python main.py content video-suggestions --topic "Node.js" --module "Authentication"
 python main.py content tips-and-tricks --topic "Python" --level advanced
+python main.py content chapter-content --chapter-title "GitHub Basics" --course-topic "Backend Development"
+python main.py content complete-course --name "Full Stack Web Development" --description "Complete web dev course" --roadmap "Full Stack"
 
 # Interview Preparation
 python main.py interview question-sheet --technology "JavaScript" --count 30

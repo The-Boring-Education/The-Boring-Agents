@@ -9,9 +9,9 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
 
-from the_boring_agents.core.config import config
-from the_boring_agents.agents import ContentAgent, InterviewAgent, ProjectAgent
-from the_boring_agents.utils import setup_logging, generate_filename
+from src.core.config import config
+from src.agents import ContentAgent, InterviewAgent, ProjectAgent
+from src.utils import setup_logging, generate_filename
 
 console = Console()
 
@@ -98,6 +98,77 @@ def tips_and_tricks(topic, level, save):
         filename = generate_filename(f"tips_{topic.replace(' ', '_')}")
         filepath = agent.save_content(result, filename)
         console.print(f"[blue]Saved to: {filepath}[/blue]")
+
+
+@content.command()
+@click.option('--chapter-title', required=True, help='Title of the chapter')
+@click.option('--course-topic', required=True, help='Overall course topic')
+@click.option('--level', default='intermediate', help='Difficulty level')
+@click.option('--save', is_flag=True, help='Save output to file')
+def chapter_content(chapter_title, course_topic, level, save):
+    """Generate complete MDX content for a single chapter."""
+    console.print(f"[green]Generating chapter content for '{chapter_title}'...[/green]")
+    
+    agent = ContentAgent()
+    result = agent.generate_chapter_content(chapter_title, course_topic, level)
+    
+    console.print(Panel(result['generated_content'], title=f"Chapter: {chapter_title}"))
+    
+    if save:
+        filename = generate_filename(f"chapter_{chapter_title.replace(' ', '_')}")
+        filepath = agent.save_content(result, filename)
+        console.print(f"[blue]Saved to: {filepath}[/blue]")
+
+
+@content.command()
+@click.option('--name', required=True, help='Course name')
+@click.option('--description', required=True, help='Course description')
+@click.option('--roadmap', required=True, help='Course roadmap/category (e.g., Backend, Frontend)')
+@click.option('--level', default='intermediate', help='Difficulty level')
+@click.option('--chapters', help='Comma-separated list of chapter titles (optional)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def complete_course(name, description, roadmap, level, chapters, save):
+    """Generate a complete course in JSON schema format."""
+    console.print(f"[green]Generating complete course: {name}...[/green]")
+    
+    # Parse chapters if provided
+    chapter_list = None
+    if chapters:
+        chapter_list = [ch.strip() for ch in chapters.split(',')]
+    
+    agent = ContentAgent()
+    result = agent.create_complete_course(
+        course_name=name,
+        description=description,
+        roadmap=roadmap,
+        level=level,
+        chapters=chapter_list
+    )
+    
+    # Display course summary
+    course_data = result['data']
+    table = Table(title=f"Generated Course: {name}")
+    table.add_column("Property", style="cyan")
+    table.add_column("Value", style="green")
+    
+    table.add_row("Name", course_data['name'])
+    table.add_row("Slug", course_data['slug'])
+    table.add_row("Description", course_data['description'][:100] + "..." if len(course_data['description']) > 100 else course_data['description'])
+    table.add_row("Roadmap", course_data['roadmap'])
+    table.add_row("Difficulty", course_data['difficultyLevel'])
+    table.add_row("Total Chapters", str(len(course_data['chapters'])))
+    
+    console.print(table)
+    
+    # Show chapter list
+    console.print("\n[yellow]Chapters:[/yellow]")
+    for i, chapter in enumerate(course_data['chapters'], 1):
+        console.print(f"  {i}. {chapter['name']}")
+    
+    if save:
+        filename = generate_filename(f"course_{name.replace(' ', '_')}")
+        filepath = agent.save_content(result, filename)
+        console.print(f"\n[blue]Complete course saved to: {filepath}[/blue]")
 
 
 @cli.group()
