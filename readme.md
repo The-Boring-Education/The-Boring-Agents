@@ -7,64 +7,102 @@ AI-powered content generation system for The Boring Education, designed to accel
 The Boring Agents is a Python-based AI agent system that automates content generation for:
 
 1. **Shiksha** - Tech courses with curated video content, text materials, tips and tricks
-2. **Interview Prep** - Comprehensive question sheets in various formats for different technologies  
+2. **Interview Prep** - Comprehensive question sheets in various formats for different technologies
 3. **Projects** - Real-life project ideas with detailed implementation guides
 
 ## Features
 
 ### Content Generation (Shiksha)
-- 📚 Complete course outlines with learning objectives
-- 🎥 Video content suggestions and curation
-- 📝 Detailed text content with tips and tricks
-- 💡 Best practices and common pitfalls
-- 🛠️ Practical examples and code snippets
-- 🎓 **NEW: Complete SHIKSHA course generation with MDX format**
-- 📱 **NEW: Social media sharing templates (LinkedIn/Twitter)**
-- 🏗️ **NEW: Individual chapter content generation**
+
+-   📚 Complete course outlines with learning objectives
+-   🎥 Video content suggestions and curation
+-   📝 Detailed text content with tips and tricks
+-   💡 Best practices and common pitfalls
+-   🛠️ Practical examples and code snippets
+-   🎓 **NEW: Complete SHIKSHA course generation with MDX format**
+-   📱 **NEW: Social media sharing templates (LinkedIn/Twitter)**
+-   🏗️ **NEW: Individual chapter content generation**
 
 ### Interview Preparation
-- ❓ Technical question sheets with detailed answers
-- 💻 Coding challenges with multiple solutions
-- 🗣️ Behavioral interview questions with STAR method guidance  
-- 🏗️ System design questions with architecture examples
-- 📋 Complete interview prep packages
+
+-   ❓ Technical question sheets with detailed answers
+-   💻 Coding challenges with multiple solutions
+-   🗣️ Behavioral interview questions with STAR method guidance
+-   🏗️ System design questions with architecture examples
+-   📋 Complete interview prep packages
 
 ### Project Ideas & Implementation
-- 💡 Real-world project ideas across different domains
-- 🏗️ Detailed technical architecture designs
-- 📋 Step-by-step implementation guides
-- 🗓️ Project roadmaps and timelines
-- 💼 Portfolio optimization recommendations
+
+-   💡 Real-world project ideas across different domains
+-   🏗️ Detailed technical architecture designs
+-   📋 Step-by-step implementation guides
+-   🗓️ Project roadmaps and timelines
+-   💼 Portfolio optimization recommendations
 
 ## Quick Start
 
 ### Installation
 
-1. Clone the repository:
+#### Option 1: Automated Setup (Recommended)
+
 ```bash
+# Clone the repository
 git clone https://github.com/The-Boring-Education/The-Boring-Agents.git
 cd The-Boring-Agents
+
+# Run the automated setup script
+./setup.sh
 ```
 
-2. Install dependencies:
+#### Option 2: Manual Setup with Virtual Environment
+
 ```bash
+# Clone the repository
+git clone https://github.com/The-Boring-Education/The-Boring-Agents.git
+cd The-Boring-Agents
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env  # or create .env manually
+# Edit .env and add your API keys
 ```
 
-3. Set up environment variables:
+#### Virtual Environment Management
+
 ```bash
-cp .env.example .env
-# Edit .env and add your API keys
+# Create virtual environment
+./venv.sh create
+
+# Activate virtual environment
+./venv.sh activate
+# or manually: source venv/bin/activate
+
+# Check status
+./venv.sh status
+
+# Install/update dependencies
+./venv.sh install
+./venv.sh update
+
+# Clean up
+./venv.sh clean
 ```
 
 ### Basic Usage
 
 #### Generate Course Content
+
 ```bash
 # Create course outline
 python main.py content course-outline --topic "Python Web Development" --level intermediate
 
-# Generate video suggestions  
+# Generate video suggestions
 python main.py content video-suggestions --topic "Django" --module "Authentication & Authorization"
 
 # Get tips and tricks
@@ -81,6 +119,7 @@ python main.py content social-media --topic "React" --achievement "Built first R
 ```
 
 #### Create Interview Prep Materials
+
 ```bash
 # Generate question sheet
 python main.py interview question-sheet --technology "JavaScript" --count 30
@@ -93,6 +132,7 @@ python main.py interview complete-prep --technology "Node.js"
 ```
 
 #### Generate Project Ideas
+
 ```bash
 # Get project ideas
 python main.py projects ideas --technology "React" --domain "e-commerce"
@@ -137,7 +177,7 @@ The system uses environment variables for configuration. Key settings:
 OPENAI_API_KEY=your_openai_api_key_here
 ANTHROPIC_API_KEY=your_anthropic_api_key_here  # Optional
 
-# Application Settings  
+# Application Settings
 LOG_LEVEL=INFO
 OUTPUT_DIR=./output
 DEFAULT_MODEL=gpt-3.5-turbo
@@ -184,7 +224,7 @@ class CustomAgent(BaseAgent):
                 template="Custom prompt with {param1} and {param2}"
             )
         }
-    
+
     def generate_content(self, **kwargs):
         # Custom generation logic
         pass
@@ -201,28 +241,30 @@ class CustomAgent(BaseAgent):
 ## Architecture Decisions
 
 ### Framework Choice: Langchain
-- **Mature ecosystem** with extensive LLM integrations
-- **Modular design** supporting multiple providers (OpenAI, Anthropic, etc.)
-- **Rich prompt templating** system for consistent content generation
-- **Built-in parsing** and output formatting capabilities
-- **Active community** and regular updates
+
+-   **Mature ecosystem** with extensive LLM integrations
+-   **Modular design** supporting multiple providers (OpenAI, Anthropic, etc.)
+-   **Rich prompt templating** system for consistent content generation
+-   **Built-in parsing** and output formatting capabilities
+-   **Active community** and regular updates
 
 ### Design Principles
-- **Modular architecture** - Each product type has its own specialized agent
-- **Extensible base classes** - Easy to add new agent types
-- **Configuration-driven** - Environment-based settings for flexibility
-- **CLI-first approach** - Simple command-line interface for quick usage
-- **Structured output** - Consistent JSON format for easy integration
+
+-   **Modular architecture** - Each product type has its own specialized agent
+-   **Extensible base classes** - Easy to add new agent types
+-   **Configuration-driven** - Environment-based settings for flexibility
+-   **CLI-first approach** - Simple command-line interface for quick usage
+-   **Structured output** - Consistent JSON format for easy integration
 
 ## Roadmap
 
-- [ ] **Multi-language support** for international content
-- [ ] **Content templates** and customization options  
-- [ ] **Batch processing** for large-scale content generation
-- [ ] **Web dashboard** for non-technical users
-- [ ] **Integration APIs** for external systems
-- [ ] **Content quality metrics** and validation
-- [ ] **Collaborative features** for team content creation
+-   [ ] **Multi-language support** for international content
+-   [ ] **Content templates** and customization options
+-   [ ] **Batch processing** for large-scale content generation
+-   [ ] **Web dashboard** for non-technical users
+-   [ ] **Integration APIs** for external systems
+-   [ ] **Content quality metrics** and validation
+-   [ ] **Collaborative features** for team content creation
 
 ## License
 
@@ -231,9 +273,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For questions and support:
-- 📧 Email: support@theboring.education
-- 💬 Discord: [The Boring Education Community](https://discord.gg/boring-education)
-- 📖 Documentation: [docs.theboring.education](https://docs.theboring.education)
+
+-   📧 Email: support@theboring.education
+-   💬 Discord: [The Boring Education Community](https://discord.gg/boring-education)
+-   📖 Documentation: [docs.theboring.education](https://docs.theboring.education)
 
 ---
 
