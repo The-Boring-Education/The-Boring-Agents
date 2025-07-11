@@ -2,6 +2,8 @@
 Main entry point for The Boring Agents CLI application.
 """
 
+import sys
+import os
 import click
 import json
 from rich.console import Console
@@ -9,9 +11,12 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
 
-from the_boring_agents.core.config import config
-from the_boring_agents.agents import ContentAgent, InterviewAgent, ProjectAgent
-from the_boring_agents.utils import setup_logging, generate_filename
+# Add src directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+from src.core.config import config
+from src.agents import ContentAgent, InterviewAgent, ProjectAgent
+from src.utils.helpers import setup_logging, generate_filename
 
 console = Console()
 
