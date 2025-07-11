@@ -105,6 +105,95 @@ def tips_and_tricks(topic, level, save):
         console.print(f"[blue]Saved to: {filepath}[/blue]")
 
 
+@content.command()
+@click.option('--topic', required=True, help='Course topic (e.g., "Node.js Backend Development")')
+@click.option('--level', default='intermediate', type=click.Choice(['beginner', 'intermediate', 'advanced']), help='Difficulty level')
+@click.option('--roadmap', default='Backend', help='Learning roadmap category')
+@click.option('--description', help='Course description (auto-generated if not provided)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def shiksha_course(topic, level, roadmap, description, save):
+    """Generate a complete SHIKSHA course with chapters and content."""
+    console.print(f"[green]Generating complete SHIKSHA course for {topic}...[/green]")
+    
+    agent = ContentAgent()
+    result = agent.create_shiksha_course(topic, level, roadmap, description)
+    
+    # Display course summary
+    course_data = result['generated_content']['data']
+    
+    table = Table(title=f"SHIKSHA Course: {course_data['name']}")
+    table.add_column("Property", style="cyan")
+    table.add_column("Value", style="green")
+    
+    table.add_row("Course Name", course_data['name'])
+    table.add_row("Slug", course_data['slug'])
+    table.add_row("Difficulty", course_data['difficultyLevel'])
+    table.add_row("Roadmap", course_data['roadmap'])
+    table.add_row("Chapters", str(len(course_data['chapters'])))
+    table.add_row("Live Date", course_data['liveOn'][:10])
+    
+    console.print(table)
+    console.print(f"\n[yellow]Description:[/yellow] {course_data['description']}")
+    
+    # Show chapter list
+    chapters_table = Table(title="Course Chapters")
+    chapters_table.add_column("#", style="cyan", width=3)
+    chapters_table.add_column("Chapter Name", style="green")
+    
+    for i, chapter in enumerate(course_data['chapters'], 1):
+        chapters_table.add_row(str(i), chapter['name'])
+    
+    console.print(chapters_table)
+    
+    if save:
+        filename = generate_filename(f"shiksha_course_{topic.replace(' ', '_')}")
+        filepath = agent.save_content(result, filename)
+        console.print(f"[blue]Saved to: {filepath}[/blue]")
+
+
+@content.command()
+@click.option('--chapter-name', required=True, help='Name of the chapter')
+@click.option('--course-topic', required=True, help='Overall course topic')
+@click.option('--description', required=True, help='Brief description of chapter content')
+@click.option('--level', default='intermediate', help='Difficulty level')
+@click.option('--save', is_flag=True, help='Save output to file')
+def shiksha_chapter(chapter_name, course_topic, description, level, save):
+    """Generate detailed content for a SHIKSHA course chapter."""
+    console.print(f"[green]Generating chapter content for '{chapter_name}'...[/green]")
+    
+    agent = ContentAgent()
+    result = agent.create_shiksha_chapter(chapter_name, course_topic, description, level)
+    
+    console.print(Panel(result['generated_content'], title=f"Chapter: {chapter_name}"))
+    
+    if save:
+        filename = generate_filename(f"chapter_{chapter_name.replace(' ', '_')}")
+        filepath = agent.save_content(result, filename)
+        console.print(f"[blue]Saved to: {filepath}[/blue]")
+
+
+@content.command()
+@click.option('--topic', required=True, help='Topic/technology learned')
+@click.option('--achievement', required=True, help='What was accomplished')
+@click.option('--learning-points', required=True, help='Key learning points (comma-separated)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def social_media(topic, achievement, learning_points, save):
+    """Generate social media sharing templates."""
+    console.print(f"[green]Generating social media templates for {topic}...[/green]")
+    
+    learning_list = [point.strip() for point in learning_points.split(',')]
+    
+    agent = ContentAgent()
+    result = agent.generate_social_media_templates(topic, achievement, learning_list)
+    
+    console.print(Panel(result['generated_content'], title=f"Social Media Templates: {topic}"))
+    
+    if save:
+        filename = generate_filename(f"social_media_{topic.replace(' ', '_')}")
+        filepath = agent.save_content(result, filename)
+        console.print(f"[blue]Saved to: {filepath}[/blue]")
+
+
 @cli.group()
 def interview():
     """Generate interview preparation content."""

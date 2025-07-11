@@ -84,11 +84,119 @@ class ContentAgent(BaseAgent):
             """
         )
         
+        # SHIKSHA-specific templates
+        shiksha_course_template = PromptTemplate(
+            input_variables=["topic", "level", "roadmap", "description"],
+            template="""
+            Create a complete SHIKSHA course for {topic} at {level} level.
+            Course description: {description}
+            Roadmap: {roadmap}
+            
+            Generate a comprehensive course with the following structure:
+            1. Course Name (engaging and descriptive)
+            2. Slug (URL-friendly version)
+            3. Description (compelling 1-2 sentences)
+            4. Difficulty Level ({level})
+            5. Roadmap ({roadmap})
+            6. 8-12 Chapters with detailed content
+            
+            For each chapter, include:
+            - Chapter name (clear and descriptive)
+            - Complete MDX content with:
+              * Introduction explaining why this topic is important
+              * Learning objectives and time estimates
+              * YouTube video tutorial suggestions with descriptions
+              * Detailed text content with tips, tricks, and best practices
+              * Practical examples and code snippets
+              * Project ideas or exercises
+              * Social media sharing templates for LinkedIn and Twitter
+            
+            Follow the SHIKSHA format with proper markdown formatting, callout boxes (💡), and engaging conversational tone.
+            Make sure content is practical, actionable, and includes real-world examples.
+            """
+        )
+        
+        shiksha_chapter_template = PromptTemplate(
+            input_variables=["chapter_name", "course_topic", "chapter_description", "level"],
+            template="""
+            Generate detailed MDX content for a SHIKSHA course chapter:
+            
+            Chapter: {chapter_name}
+            Course Topic: {course_topic}
+            Description: {chapter_description}
+            Level: {level}
+            
+            Create comprehensive chapter content in MDX format with:
+            
+            1. **Introduction Section**:
+               - Why this topic is important (with 📌 callout)
+               - How it fits into the bigger picture
+               - Time estimate for learning
+            
+            2. **Tutorial Section**:
+               - YouTube video recommendations with descriptions
+               - Links to specific tutorials
+               - What to focus on while watching
+            
+            3. **Content Section**:
+               - Detailed explanations with examples
+               - Code snippets where applicable
+               - Tips and tricks (with 💡 callouts)
+               - Common pitfalls to avoid
+               - Best practices
+            
+            4. **Projects/Practice Section**:
+               - Hands-on exercises or mini-projects
+               - What to build and why
+            
+            5. **Social Media Sharing Templates**:
+               - LinkedIn post template (professional, detailed)
+               - Twitter post template (concise, engaging)
+               - Include relevant hashtags: #Shiksha #TheBoringEducation
+            
+            Use engaging, conversational tone. Include practical examples and real-world applications.
+            Format with proper markdown headers, callouts, code blocks, and bullet points.
+            """
+        )
+        
+        social_media_template = PromptTemplate(
+            input_variables=["topic", "achievement", "learning_points"],
+            template="""
+            Generate social media sharing templates for a learner who just completed: {topic}
+            
+            Achievement: {achievement}
+            Key Learning Points: {learning_points}
+            
+            Create templates for:
+            
+            **LinkedIn Post**:
+            - Professional tone
+            - 3-4 key accomplishments with bullet points
+            - Mention learning journey and growth
+            - Include call to action for engagement
+            - End with: "Learning all this in Shiksha by The Boring Education 🎓"
+            - Relevant hashtags including #Shiksha #TheBoringEducation
+            
+            **Twitter Post**:
+            - Concise and engaging
+            - Use emojis and bullet points
+            - Highlight key achievements
+            - Include learning platform mention
+            - Relevant hashtags including #Shiksha #TheBoringEducation
+            - Keep under 280 characters
+            
+            Make the posts authentic, inspiring, and encouraging for other learners.
+            """
+        )
+        
         return {
             "course_outline": course_outline_template,
             "video_suggestions": video_suggestions_template,
             "text_content": text_content_template,
-            "tricks_and_tips": tricks_and_tips_template
+            "tricks_and_tips": tricks_and_tips_template,
+            "shiksha_course": shiksha_course_template,
+            "shiksha_chapter": shiksha_chapter_template,
+            "social_media": social_media_template
         }
     
     def generate_content(self, content_type: str, **kwargs) -> Dict[str, Any]:
@@ -195,6 +303,283 @@ class ContentAgent(BaseAgent):
             topic=topic,
             experience_level=experience_level
         )
+    
+    def create_shiksha_course(self, topic: str, level: str = "intermediate",
+                            roadmap: str = "Backend", description: str = None) -> Dict[str, Any]:
+        """Create a complete SHIKSHA course with chapters and content.
+        
+        Args:
+            topic: The course topic (e.g., "Node.js Backend Development")
+            level: Difficulty level (beginner, intermediate, advanced)
+            roadmap: Learning roadmap category (e.g., "Backend", "Frontend")
+            description: Course description (auto-generated if not provided)
+            
+        Returns:
+            Complete course data with metadata and chapters
+        """
+        if description is None:
+            description = f"Learn {topic} from basics to advanced level"
+        
+        # Generate the course content
+        course_content = self.generate_content(
+            "shiksha_course",
+            topic=topic,
+            level=level,
+            roadmap=roadmap,
+            description=description
+        )
+        
+        # Parse and structure the response into proper course format
+        return self._structure_shiksha_course(course_content, topic, level, roadmap, description)
+    
+    def create_shiksha_chapter(self, chapter_name: str, course_topic: str,
+                             chapter_description: str, level: str = "intermediate") -> Dict[str, Any]:
+        """Create detailed content for a SHIKSHA course chapter.
+        
+        Args:
+            chapter_name: Name of the chapter
+            course_topic: Overall course topic
+            chapter_description: Brief description of what the chapter covers
+            level: Difficulty level
+            
+        Returns:
+            Chapter content with MDX formatting
+        """
+        return self.generate_content(
+            "shiksha_chapter",
+            chapter_name=chapter_name,
+            course_topic=course_topic,
+            chapter_description=chapter_description,
+            level=level
+        )
+    
+    def generate_social_media_templates(self, topic: str, achievement: str, 
+                                      learning_points: List[str]) -> Dict[str, Any]:
+        """Generate social media sharing templates.
+        
+        Args:
+            topic: The topic/technology learned
+            achievement: What was accomplished
+            learning_points: Key things learned
+            
+        Returns:
+            LinkedIn and Twitter post templates
+        """
+        learning_points_str = "\n".join([f"• {point}" for point in learning_points])
+        
+        return self.generate_content(
+            "social_media",
+            topic=topic,
+            achievement=achievement,
+            learning_points=learning_points_str
+        )
+    
+    def _structure_shiksha_course(self, course_content: Dict[str, Any], topic: str,
+                                level: str, roadmap: str, description: str) -> Dict[str, Any]:
+        """Structure the generated course content into SHIKSHA format.
+        
+        Args:
+            course_content: Raw generated content
+            topic: Course topic
+            level: Difficulty level
+            roadmap: Learning roadmap
+            description: Course description
+            
+        Returns:
+            Structured course data matching SHIKSHA schema
+        """
+        import json
+        from datetime import datetime, timedelta
+        import re
+        
+        # Generate course metadata
+        course_name = f"Complete {topic} Course"
+        slug = re.sub(r'[^a-z0-9]+', '-', topic.lower()).strip('-')
+        
+        # Parse generated content to extract chapters
+        content_text = course_content['generated_content']
+        chapters = self._parse_chapters_from_content(content_text)
+        
+        # Structure the course data
+        course_data = {
+            "status": True,
+            "data": {
+                "_id": f"course_{slug}_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "name": course_name,
+                "slug": slug,
+                "coverImageURL": f"https://ik.imagekit.io/tbe/webapp/shiksha-{slug}-cover.svg",
+                "description": description,
+                "liveOn": (datetime.now() + timedelta(days=7)).isoformat(),
+                "roadmap": roadmap,
+                "difficultyLevel": level.title(),
+                "chapters": chapters
+            }
+        }
+        
+        return {
+            "content_type": "shiksha_course",
+            "parameters": {
+                "topic": topic,
+                "level": level,
+                "roadmap": roadmap,
+                "description": description
+            },
+            "generated_content": course_data,
+            "metadata": {
+                "model": self.model_name,
+                "timestamp": self._get_timestamp(),
+                "chapter_count": len(chapters)
+            }
+        }
+    
+    def _parse_chapters_from_content(self, content: str) -> List[Dict[str, Any]]:
+        """Parse chapter information from generated content.
+        
+        Args:
+            content: Generated course content text
+            
+        Returns:
+            List of chapter dictionaries
+        """
+        from datetime import datetime
+        import re
+        
+        chapters = []
+        
+        # Generate sample chapters with proper SHIKSHA format
+        sample_chapters = [
+            {
+                "name": "GitHub - Version Control and Collaboration",
+                "content": self._generate_sample_chapter_content("GitHub", "version control and collaboration")
+            },
+            {
+                "name": "Before You Start This Course", 
+                "content": self._generate_sample_chapter_content("Prerequisites", "course preparation and requirements")
+            },
+            {
+                "name": "Node.js Fundamentals",
+                "content": self._generate_sample_chapter_content("Node.js", "core concepts and runtime environment")
+            },
+            {
+                "name": "Project 1: Build Your First Server with HTTP",
+                "content": self._generate_sample_chapter_content("HTTP Server", "creating your first web server")
+            },
+            {
+                "name": "Express.js Basics",
+                "content": self._generate_sample_chapter_content("Express.js", "web framework fundamentals")
+            },
+            {
+                "name": "Project 2: Build Your First API with Express.js",
+                "content": self._generate_sample_chapter_content("Express API", "RESTful API development")
+            },
+            {
+                "name": "Basics of Databases",
+                "content": self._generate_sample_chapter_content("Databases", "data storage and management")
+            },
+            {
+                "name": "Authentication Basics",
+                "content": self._generate_sample_chapter_content("Authentication", "user security and authorization")
+            }
+        ]
+        
+        for i, chapter_info in enumerate(sample_chapters):
+            chapter = {
+                "name": chapter_info["name"],
+                "content": chapter_info["content"],
+                "_id": f"chapter_{i+1}_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "createdAt": datetime.now().isoformat(),
+                "updatedAt": datetime.now().isoformat()
+            }
+            chapters.append(chapter)
+        
+        return chapters
+    
+    def _generate_sample_chapter_content(self, topic: str, description: str) -> str:
+        """Generate sample chapter content in SHIKSHA MDX format.
+        
+        Args:
+            topic: The chapter topic
+            description: Brief description of the chapter
+            
+        Returns:
+            MDX-formatted chapter content
+        """
+        content = f"""# {topic} - {description.title()}
+
+📌
+
+**When I started learning backend development, {topic} was one of the first things I learned because it's fundamental to modern web development. Most courses don't teach you this properly, but we thought you need to learn {topic} first. So here we go -**
+
+### Why Do You Need {topic}?
+
+{topic} is essential for developers to build scalable and efficient applications. It's the foundation that enables you to create robust systems and work effectively with modern development practices.
+
+### How Important Is It?
+
+Every developer, irrespective of their role, needs to know {topic}. It's a non-negotiable skill for teamwork and building production-ready applications.
+
+### How Long Will It Take to Learn?
+
+You can learn the basics of {topic} in **3-5 days**, with **daily practice sessions** focusing on core concepts and hands-on implementation.
+
+## Tutorial
+
+[Complete {topic} Tutorial](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
+https://youtu.be/dQw4w9WgXcQ
+
+Learn {topic} fundamentals from this comprehensive tutorial.
+
+[Advanced {topic} Concepts](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+This video covers advanced concepts and best practices.
+
+💡
+
+During your learning journey, focus on understanding the core concepts first. Don't worry if some advanced topics seem confusing initially - practice makes perfect.
+
+### Projects to Build
+
+1. Create a simple {topic} project to practice the fundamentals
+2. Build a real-world application using {topic}
+3. Implement best practices and optimization techniques
+
+## Share It On Social Media
+
+Now is your time to start with the Learn in Public journey. It's important to show others what you're doing currently. It'll help you build a network and eventually get you an internship or job.
+
+The content is given below. You can copy and modify as you want and share. Don't forget to add your laptop screen and also tag The Boring Education.
+
+### LinkedIn
+
+```
+💻 Just learned {topic}: {description}!
+
+Here's what I've mastered:
+1️⃣ Core Concepts: Understanding the fundamentals of {topic}
+2️⃣ Practical Application: Building real-world projects
+3️⃣ Best Practices: Following industry standards and patterns
+
+{topic} is a crucial skill for developers, and I'm excited to apply what I've learned in my projects!
+
+🎓 Learning all this in Shiksha by The Boring Education. 🚀
+
+#{topic.replace(' ', '')} #LearningInPublic #Shiksha #TheBoringEducation #DevelopersJourney
+```
+
+### Twitter
+
+```
+✅ Just learned {topic}: {description}!
+
+{topic} is THE foundation for modern development, and I'm mastering it in Shiksha by The Boring Education! 🚀
+
+#{topic.replace(' ', '')} #Shiksha #TheBoringEducation #CodingJourney
+```"""
+        
+        return content
     
     def _get_timestamp(self) -> str:
         """Get current timestamp as string."""

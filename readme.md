@@ -18,6 +18,9 @@ The Boring Agents is a Python-based AI agent system that automates content gener
 - 📝 Detailed text content with tips and tricks
 - 💡 Best practices and common pitfalls
 - 🛠️ Practical examples and code snippets
+- 🎓 **NEW: Complete SHIKSHA course generation with MDX format**
+- 📱 **NEW: Social media sharing templates (LinkedIn/Twitter)**
+- 🏗️ **NEW: Individual chapter content generation**
 
 ### Interview Preparation
 - ❓ Technical question sheets with detailed answers
@@ -66,6 +69,15 @@ python main.py content video-suggestions --topic "Django" --module "Authenticati
 
 # Get tips and tricks
 python main.py content tips-and-tricks --topic "React" --level advanced
+
+# NEW: Generate complete SHIKSHA course
+python main.py content shiksha-course --topic "Node.js Backend Development" --level beginner --roadmap Backend --save
+
+# NEW: Generate individual chapter content
+python main.py content shiksha-chapter --chapter-name "React Hooks" --course-topic "React Development" --description "Learn React Hooks" --save
+
+# NEW: Generate social media templates
+python main.py content social-media --topic "React" --achievement "Built first React app" --learning-points "Components,Hooks,State" --save
 ```
 
 #### Create Interview Prep Materials
