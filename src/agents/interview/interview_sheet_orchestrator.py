@@ -1,44 +1,45 @@
-"""Interview Sheet Orchestrator - Main coordinator for revamping and creating interview sheets."""
+"""Interview Sheet Orchestrator for managing the complete interview sheet revamping and creation process."""
 
 from typing import Dict, Any, List, Optional
+from datetime import datetime
 import json
 import os
-import requests
-from datetime import datetime
 
 from ...core.base_agent import BaseAgent
-from .interview_research_agent import InterviewResearchAgent
-from .question_generator_agent import QuestionGeneratorAgent
-from .answer_enhancement_agent import AnswerEnhancementAgent
-from .quality_review_agent import QualityReviewAgent
-from .frequency_analysis_agent import FrequencyAnalysisAgent
 from .database_integration_agent import DatabaseIntegrationAgent
+from .answer_enhancement_agent import AnswerEnhancementAgent
+from .frequency_analysis_agent import FrequencyAnalysisAgent
+from .question_generator_agent import QuestionGeneratorAgent
+from .interview_research_agent import InterviewResearchAgent
+from .quality_review_agent import QualityReviewAgent
+from .mdx_styling_agent import MDXStylingAgent
 
 
 class InterviewSheetOrchestrator(BaseAgent):
-    """Main orchestrator for creating world-class interview sheets with Indian context and humor."""
+    """Main orchestrator for managing interview sheet revamping and creation."""
     
     def __init__(self, **kwargs):
-        """Initialize the orchestrator with all specialized agents."""
+        """Initialize the orchestrator with all required agents."""
         super().__init__(**kwargs)
         
         # Initialize all specialized agents
-        self.research_agent = InterviewResearchAgent(**kwargs)
-        self.question_generator = QuestionGeneratorAgent(**kwargs)
-        self.answer_enhancer = AnswerEnhancementAgent(**kwargs)
-        self.quality_reviewer = QualityReviewAgent(**kwargs)
-        self.frequency_analyzer = FrequencyAnalysisAgent(**kwargs)
-        self.db_agent = DatabaseIntegrationAgent(**kwargs)
+        self.database_agent = DatabaseIntegrationAgent()
+        self.answer_enhancement_agent = AnswerEnhancementAgent()
+        self.frequency_analysis_agent = FrequencyAnalysisAgent()
+        self.question_generator_agent = QuestionGeneratorAgent()
+        self.research_agent = InterviewResearchAgent()
+        self.quality_agent = QualityReviewAgent()
+        self.mdx_styling_agent = MDXStylingAgent()
         
-        self.logger.info("Interview Sheet Orchestrator initialized with all specialized agents")
+        self.logger.info("Interview Sheet Orchestrator initialized with all agents")
     
     def _get_prompt_templates(self) -> Dict[str, Any]:
-        """Orchestrator doesn't need its own templates - it coordinates other agents."""
+        """Orchestrator doesn't need prompt templates."""
         return {}
     
     def generate_content(self, *args, **kwargs) -> dict:
-        """Orchestrator does not generate content directly."""
-        raise NotImplementedError("Orchestrator coordinates other agents")
+        """Orchestrator doesn't generate content directly."""
+        raise NotImplementedError("Orchestrator coordinates other agents, doesn't generate content")
     
     def revamp_existing_sheet(self, sheet_id: str) -> Dict[str, Any]:
         """Revamp an existing interview sheet with world-class quality.
@@ -47,252 +48,246 @@ class InterviewSheetOrchestrator(BaseAgent):
             sheet_id: ID of the sheet to revamp
             
         Returns:
-            Revamping results with statistics
+            Comprehensive revamping results
         """
-        self.logger.info(f"🚀 Starting world-class revamping for sheet: {sheet_id}")
+        self.logger.info(f"Starting revamp process for sheet: {sheet_id}")
         
         try:
-            # Step 1: Fetch existing sheet and questions
-            self.logger.info("📊 Step 1: Fetching existing sheet data...")
-            sheet_data = self.db_agent.fetch_interview_sheet(sheet_id)
-            questions_data = self.db_agent.fetch_sheet_questions(sheet_id)
-            
-            if not sheet_data or not questions_data:
-                raise ValueError(f"Could not fetch data for sheet {sheet_id}")
+            # Step 1: Fetch sheet data
+            sheet_data = self.database_agent.fetch_interview_sheet(sheet_id)
+            if not sheet_data:
+                raise ValueError(f"Sheet with ID {sheet_id} not found")
             
             sheet_name = sheet_data.get('name', 'Unknown Sheet')
-            self.logger.info(f"📋 Found sheet: {sheet_name} with {len(questions_data)} questions")
+            self.logger.info(f"Fetched sheet: {sheet_name}")
             
-            # Step 2: Research the topic for better context
-            self.logger.info("🔍 Step 2: Researching topic for enhanced context...")
+            # Step 2: Fetch all questions
+            questions = self.database_agent.fetch_sheet_questions(sheet_id)
+            if not questions:
+                self.logger.warning(f"No questions found for sheet {sheet_id}")
+                return {"error": "No questions found", "sheet_id": sheet_id}
+            
+            self.logger.info(f"Found {len(questions)} questions to revamp")
+            
+            # Step 3: Research phase
+            self.logger.info("Starting research phase...")
             research_insights = self.research_agent.analyze_interview_topic(
-                sheet_name, sheet_data.get('description', ''), questions_data
+                sheet_name, 
+                sheet_data.get('description', ''), 
+                questions
             )
             
-            # Step 3: Analyze and potentially add new questions
-            self.logger.info("💡 Step 3: Analyzing gaps and generating additional questions...")
-            new_questions = self.question_generator.identify_missing_questions(
-                sheet_name, questions_data, research_insights
-            )
+            # Step 4: Process each question
+            enhanced_questions = []
+            failed_updates = []
+            statistics = {
+                "total_questions": len(questions),
+                "enhanced": 0,
+                "failed": 0,
+                "added": 0
+            }
             
-            revamped_questions = []
-            update_stats = {"enhanced": 0, "added": 0, "failed": 0}
-            
-            # Step 4: Revamp existing questions
-            self.logger.info("✨ Step 4: Revamping existing questions with world-class quality...")
-            for i, question_data in enumerate(questions_data, 1):
-                self.logger.info(f"🎯 Revamping question {i}/{len(questions_data)}")
-                
+            for i, question_data in enumerate(questions):
                 try:
-                    # Enhance the answer with Indian context, humor, and expert insights
-                    enhanced_answer = self.answer_enhancer.create_world_class_answer(
-                        question_data.get('question', ''),
-                        question_data.get('answer', ''),
-                        sheet_name,
-                        research_insights
+                    self.logger.info(f"Processing question {i+1}/{len(questions)}")
+                    
+                    question_id = question_data.get('_id', '')
+                    question_text = question_data.get('question', '')
+                    existing_answer = question_data.get('answer', '')
+                    
+                    # Step 4a: Analyze frequency
+                    frequency_analysis = self.frequency_analysis_agent.analyze_question_frequency(
+                        question_text, sheet_name
                     )
                     
-                    # Analyze frequency and company context
-                    frequency_analysis = self.frequency_analyzer.analyze_question_frequency(
-                        question_data.get('question', ''), sheet_name
+                    # Step 4b: Create enhanced answer
+                    enhanced_answer = self.answer_enhancement_agent.create_world_class_answer(
+                        question_text, existing_answer, sheet_name, research_insights
                     )
                     
-                    # Review quality
-                    quality_review = self.quality_reviewer.review_qa_pair(
-                        question_data.get('question', ''),
-                        enhanced_answer,
-                        sheet_name
+                    # Step 4c: Apply MDX styling
+                    styled_answer = self.mdx_styling_agent.format_mdx_content(
+                        enhanced_answer, "interview_answer"
                     )
                     
-                    # Apply improvements if needed
-                    if quality_review.get('score', 0) < 8.0:
-                        enhanced_answer = self.answer_enhancer.apply_quality_improvements(
-                            enhanced_answer, quality_review.get('suggestions', [])
-                        )
-                    
-                    # Update in database
-                    success = self.db_agent.update_question_answer(
-                        sheet_id, 
-                        question_data.get('_id'),
-                        enhanced_answer,
-                        frequency_analysis
+                    # Step 4d: Quality review
+                    quality_review = self.quality_agent.review_qa_pair(
+                        question_text, styled_answer, sheet_name
                     )
                     
-                    if success:
-                        update_stats["enhanced"] += 1
-                        revamped_questions.append({
-                            "question": question_data.get('question', ''),
-                            "enhanced_answer": enhanced_answer,
-                            "frequency_analysis": frequency_analysis,
-                            "quality_score": quality_review.get('score', 0)
+                    # Step 4e: Update database
+                    update_success = self.database_agent.update_question_answer(
+                        sheet_id, question_id, styled_answer, frequency_analysis
+                    )
+                    
+                    if update_success:
+                        statistics["enhanced"] += 1
+                        enhanced_questions.append({
+                            "question_id": question_id,
+                            "question": question_text,
+                            "enhanced_answer": styled_answer,
+                            "quality_score": quality_review.get("overall_score", 0),
+                            "frequency_analysis": frequency_analysis
                         })
                     else:
-                        update_stats["failed"] += 1
-                        self.logger.warning(f"Failed to update question {i}")
-                
+                        statistics["failed"] += 1
+                        failed_updates.append({
+                            "question_id": question_id,
+                            "question": question_text,
+                            "error": "Database update failed"
+                        })
+                    
                 except Exception as e:
-                    self.logger.error(f"Error revamping question {i}: {str(e)}")
-                    update_stats["failed"] += 1
+                    self.logger.error(f"Error processing question {i+1}: {str(e)}")
+                    statistics["failed"] += 1
+                    failed_updates.append({
+                        "question_id": question_data.get('_id', ''),
+                        "question": question_data.get('question', ''),
+                        "error": str(e)
+                    })
             
-            # Step 5: Add new questions if any were identified
-            if new_questions:
-                self.logger.info(f"➕ Step 5: Adding {len(new_questions)} new questions...")
-                for new_q in new_questions:
-                    try:
-                        enhanced_answer = self.answer_enhancer.create_world_class_answer(
-                            new_q['question'], '', sheet_name, research_insights
-                        )
-                        
-                        frequency_analysis = self.frequency_analyzer.analyze_question_frequency(
-                            new_q['question'], sheet_name
-                        )
-                        
-                        # Add to database (you'll need to implement this API)
-                        success = self.db_agent.add_question_to_sheet(
-                            sheet_id, new_q['question'], enhanced_answer, frequency_analysis
-                        )
-                        
-                        if success:
-                            update_stats["added"] += 1
-                    except Exception as e:
-                        self.logger.error(f"Error adding new question: {str(e)}")
-                        update_stats["failed"] += 1
-            
-            # Step 6: Final quality review of the entire sheet
-            self.logger.info("🔍 Step 6: Final quality review...")
-            final_review = self.quality_reviewer.review_complete_sheet(
-                sheet_name, revamped_questions, research_insights
-            )
-            
-            self.logger.info(f"🎉 Revamping completed! Enhanced: {update_stats['enhanced']}, Added: {update_stats['added']}, Failed: {update_stats['failed']}")
-            
-            return {
+            # Step 5: Generate completion report
+            completion_report = {
                 "sheet_id": sheet_id,
                 "sheet_name": sheet_name,
-                "statistics": update_stats,
-                "revamped_questions": revamped_questions,
+                "statistics": statistics,
                 "research_insights": research_insights,
-                "final_review": final_review,
+                "enhanced_questions": enhanced_questions,
+                "failed_updates": failed_updates,
                 "completion_time": datetime.now().isoformat()
             }
             
+            self.logger.info(f"Revamp completed. Enhanced: {statistics['enhanced']}, Failed: {statistics['failed']}")
+            
+            return completion_report
+            
         except Exception as e:
-            self.logger.error(f"❌ Error revamping sheet: {str(e)}")
-            raise
+            self.logger.error(f"Error in revamp process: {str(e)}")
+            return {
+                "error": str(e),
+                "sheet_id": sheet_id,
+                "completion_time": datetime.now().isoformat()
+            }
     
     def create_new_sheet(self, sheet_name: str, description: str, 
                         target_questions: int = 50) -> Dict[str, Any]:
-        """Create a brand new interview sheet from scratch.
+        """Create a new world-class interview sheet from scratch.
         
         Args:
             sheet_name: Name of the new sheet
-            description: Description of the sheet
+            description: Description of the sheet topic
             target_questions: Number of questions to generate
             
         Returns:
-            Complete new sheet data
+            Complete sheet data with metadata
         """
-        self.logger.info(f"🚀 Creating new world-class interview sheet: {sheet_name}")
+        self.logger.info(f"Creating new world-class sheet: {sheet_name}")
         
         try:
-            # Step 1: Research the topic comprehensively
-            self.logger.info("🔍 Step 1: Comprehensive topic research...")
-            research_insights = self.research_agent.comprehensive_topic_research(
-                sheet_name, description
-            )
+            # Step 1: Comprehensive research
+            self.logger.info("Starting comprehensive research...")
+            research_insights = self.research_agent.comprehensive_topic_research(sheet_name, description)
             
-            # Step 2: Generate comprehensive question list
-            self.logger.info(f"💡 Step 2: Generating {target_questions} world-class questions...")
-            questions = self.question_generator.generate_comprehensive_questions(
+            # Step 2: Generate questions
+            self.logger.info(f"Generating {target_questions} questions...")
+            questions = self.question_generator_agent.generate_comprehensive_questions(
                 sheet_name, description, research_insights, target_questions
             )
             
-            # Step 3: Create world-class answers for each question
-            self.logger.info("✨ Step 3: Creating world-class answers...")
-            complete_qa_pairs = []
+            # Step 3: Create enhanced answers for each question
+            enhanced_qa_pairs = []
+            total_quality_score = 0
             
-            for i, question in enumerate(questions, 1):
-                self.logger.info(f"🎯 Creating answer {i}/{len(questions)}")
-                
+            for i, question_data in enumerate(questions):
                 try:
-                    # Create comprehensive answer
-                    answer = self.answer_enhancer.create_world_class_answer(
-                        question['question'], '', sheet_name, research_insights
+                    self.logger.info(f"Creating answer for question {i+1}/{len(questions)}")
+                    
+                    question_text = question_data.get('question', '')
+                    
+                    # Create enhanced answer
+                    enhanced_answer = self.answer_enhancement_agent.create_world_class_answer(
+                        question_text, "", sheet_name, research_insights
                     )
                     
-                    # Analyze frequency and context
-                    frequency_analysis = self.frequency_analyzer.analyze_question_frequency(
-                        question['question'], sheet_name
+                    # Apply MDX styling
+                    styled_answer = self.mdx_styling_agent.format_mdx_content(
+                        enhanced_answer, "interview_answer"
                     )
                     
                     # Quality review
-                    quality_review = self.quality_reviewer.review_qa_pair(
-                        question['question'], answer, sheet_name
+                    quality_review = self.quality_agent.review_qa_pair(
+                        question_text, styled_answer, sheet_name
                     )
                     
-                    # Apply improvements if needed
-                    if quality_review.get('score', 0) < 8.0:
-                        answer = self.answer_enhancer.apply_quality_improvements(
-                            answer, quality_review.get('suggestions', [])
-                        )
+                    quality_score = quality_review.get("overall_score", 0)
+                    total_quality_score += quality_score
                     
-                    complete_qa_pairs.append({
-                        "question": question['question'],
-                        "answer": answer,
-                        "difficulty": question.get('difficulty', 'Medium'),
-                        "category": question.get('category', 'General'),
+                    # Frequency analysis
+                    frequency_analysis = self.frequency_analysis_agent.analyze_question_frequency(
+                        question_text, sheet_name
+                    )
+                    
+                    enhanced_qa_pairs.append({
+                        "question": question_text,
+                        "answer": styled_answer,
+                        "quality_score": quality_score,
                         "frequency_analysis": frequency_analysis,
-                        "quality_score": quality_review.get('score', 0)
+                        "difficulty": frequency_analysis.get("overall_frequency", "Medium")
                     })
                     
                 except Exception as e:
-                    self.logger.error(f"Error creating answer for question {i}: {str(e)}")
+                    self.logger.error(f"Error creating answer for question {i+1}: {str(e)}")
+                    continue
             
-            # Step 4: Final quality review and organization
-            self.logger.info("🔍 Step 4: Final organization and quality review...")
-            final_review = self.quality_reviewer.review_complete_sheet(
-                sheet_name, complete_qa_pairs, research_insights
-            )
+            # Step 4: Analyze difficulty distribution
+            difficulty_distribution = self._analyze_difficulty_distribution(enhanced_qa_pairs)
             
-            # Step 5: Create final sheet structure
+            # Step 5: Create sheet data
+            average_quality_score = total_quality_score / len(enhanced_qa_pairs) if enhanced_qa_pairs else 0
+            
             sheet_data = {
                 "name": sheet_name,
                 "description": description,
-                "created_at": datetime.now().isoformat(),
-                "total_questions": len(complete_qa_pairs),
-                "estimated_prep_time": f"{len(complete_qa_pairs) * 2} hours",
-                "difficulty_distribution": self._analyze_difficulty_distribution(complete_qa_pairs),
-                "research_insights": research_insights,
-                "final_review": final_review,
-                "questions": complete_qa_pairs,
+                "total_questions": len(enhanced_qa_pairs),
+                "average_quality_score": round(average_quality_score, 2),
+                "difficulty_distribution": difficulty_distribution,
+                "estimated_prep_time": f"{len(enhanced_qa_pairs) * 2} hours",
                 "metadata": {
-                    "version": "2.0",
-                    "created_by": "Interview Sheet AI Orchestrator",
-                    "quality_assured": True,
                     "indian_context": True,
                     "humor_integrated": True,
-                    "expert_reviewed": True
-                }
+                    "quality_assured": True,
+                    "research_based": True,
+                    "created_at": datetime.now().isoformat()
+                },
+                "questions": enhanced_qa_pairs
             }
             
             # Step 6: Save to file
             filepath = self._save_sheet_to_file(sheet_data)
             
-            self.logger.info(f"🎉 New sheet created successfully: {filepath}")
-            
-            return {
+            completion_report = {
                 "sheet_data": sheet_data,
-                "filepath": filepath,
                 "statistics": {
-                    "total_questions": len(complete_qa_pairs),
-                    "average_quality_score": sum(qa.get('quality_score', 0) for qa in complete_qa_pairs) / len(complete_qa_pairs),
-                    "completion_time": datetime.now().isoformat()
-                }
+                    "total_questions": len(enhanced_qa_pairs),
+                    "average_quality_score": average_quality_score,
+                    "difficulty_distribution": difficulty_distribution
+                },
+                "research_insights": research_insights,
+                "filepath": filepath,
+                "completion_time": datetime.now().isoformat()
             }
             
+            self.logger.info(f"New sheet created successfully: {len(enhanced_qa_pairs)} questions")
+            
+            return completion_report
+            
         except Exception as e:
-            self.logger.error(f"❌ Error creating new sheet: {str(e)}")
-            raise
+            self.logger.error(f"Error creating new sheet: {str(e)}")
+            return {
+                "error": str(e),
+                "sheet_name": sheet_name,
+                "completion_time": datetime.now().isoformat()
+            }
     
     def batch_revamp_all_sheets(self) -> Dict[str, Any]:
         """Revamp all existing interview sheets in the database.
@@ -300,71 +295,99 @@ class InterviewSheetOrchestrator(BaseAgent):
         Returns:
             Batch processing results
         """
-        self.logger.info("🚀 Starting batch revamping of all interview sheets...")
+        self.logger.info("Starting batch revamp of all interview sheets")
         
         try:
             # Fetch all sheets
-            all_sheets = self.db_agent.fetch_all_interview_sheets()
+            all_sheets = self.database_agent.fetch_all_interview_sheets()
             
             if not all_sheets:
-                self.logger.warning("No sheets found in database")
-                return {"message": "No sheets found"}
+                return {
+                    "error": "No sheets found in database",
+                    "total_sheets": 0,
+                    "successful": 0,
+                    "failed": 0
+                }
             
-            batch_results = []
-            total_sheets = len(all_sheets)
+            self.logger.info(f"Found {len(all_sheets)} sheets to revamp")
             
-            for i, sheet in enumerate(all_sheets, 1):
-                sheet_id = sheet.get('_id')
-                sheet_name = sheet.get('name', 'Unknown')
-                
-                self.logger.info(f"📋 Processing sheet {i}/{total_sheets}: {sheet_name}")
-                
+            # Process each sheet
+            results = []
+            successful = 0
+            failed = 0
+            
+            for i, sheet in enumerate(all_sheets):
                 try:
+                    sheet_id = sheet.get('_id', '')
+                    sheet_name = sheet.get('name', 'Unknown')
+                    
+                    self.logger.info(f"Processing sheet {i+1}/{len(all_sheets)}: {sheet_name}")
+                    
+                    # Revamp the sheet
                     result = self.revamp_existing_sheet(sheet_id)
-                    batch_results.append({
-                        "sheet_id": sheet_id,
-                        "sheet_name": sheet_name,
-                        "status": "success",
-                        "result": result
-                    })
+                    
+                    if "error" not in result:
+                        successful += 1
+                        result["status"] = "success"
+                    else:
+                        failed += 1
+                        result["status"] = "failed"
+                    
+                    result["sheet_name"] = sheet_name
+                    result["sheet_id"] = sheet_id
+                    results.append(result)
+                    
                 except Exception as e:
-                    self.logger.error(f"Failed to revamp sheet {sheet_name}: {str(e)}")
-                    batch_results.append({
-                        "sheet_id": sheet_id,
-                        "sheet_name": sheet_name,
+                    self.logger.error(f"Error processing sheet {i+1}: {str(e)}")
+                    failed += 1
+                    results.append({
+                        "sheet_name": sheet.get('name', 'Unknown'),
+                        "sheet_id": sheet.get('_id', ''),
                         "status": "failed",
                         "error": str(e)
                     })
             
-            return {
-                "total_sheets": total_sheets,
-                "successful": len([r for r in batch_results if r["status"] == "success"]),
-                "failed": len([r for r in batch_results if r["status"] == "failed"]),
-                "results": batch_results,
+            batch_results = {
+                "total_sheets": len(all_sheets),
+                "successful": successful,
+                "failed": failed,
+                "results": results,
                 "completion_time": datetime.now().isoformat()
             }
             
+            self.logger.info(f"Batch revamp completed. Successful: {successful}, Failed: {failed}")
+            
+            return batch_results
+            
         except Exception as e:
-            self.logger.error(f"❌ Error in batch revamping: {str(e)}")
-            raise
+            self.logger.error(f"Error in batch revamp: {str(e)}")
+            return {
+                "error": str(e),
+                "total_sheets": 0,
+                "successful": 0,
+                "failed": 0,
+                "completion_time": datetime.now().isoformat()
+            }
     
     def _analyze_difficulty_distribution(self, qa_pairs: List[Dict]) -> Dict[str, int]:
         """Analyze the difficulty distribution of questions."""
         distribution = {"Easy": 0, "Medium": 0, "Hard": 0}
-        for qa in qa_pairs:
-            difficulty = qa.get('difficulty', 'Medium')
-            distribution[difficulty] = distribution.get(difficulty, 0) + 1
+        
+        for qa_pair in qa_pairs:
+            difficulty = qa_pair.get("difficulty", "Medium")
+            if difficulty in distribution:
+                distribution[difficulty] += 1
+        
         return distribution
     
     def _save_sheet_to_file(self, sheet_data: Dict[str, Any]) -> str:
-        """Save sheet data to JSON file."""
+        """Save sheet data to a JSON file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        sheet_name_clean = sheet_data['name'].replace(' ', '_').replace('/', '_')
-        filename = f"interview_sheet_{sheet_name_clean}_{timestamp}.json"
+        filename = f"interview_sheet_{sheet_data['name'].replace(' ', '_').lower()}_{timestamp}.json"
+        filepath = os.path.join("output", filename)
         
-        output_dir = "./output"
-        os.makedirs(output_dir, exist_ok=True)
-        filepath = os.path.join(output_dir, filename)
+        # Ensure output directory exists
+        os.makedirs("output", exist_ok=True)
         
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(sheet_data, f, indent=2, ensure_ascii=False)

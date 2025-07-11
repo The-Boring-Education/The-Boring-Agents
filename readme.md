@@ -30,6 +30,9 @@ The Boring Agents is a Python-based AI agent system that automates content gener
 -   🗣️ Behavioral interview questions with STAR method guidance
 -   🏗️ System design questions with architecture examples
 -   📋 Complete interview prep packages
+-   🇮🇳 **NEW: Indian context integration with humor and cultural references**
+-   🎯 **NEW: World-class answer structure with code examples**
+-   📊 **NEW: Frequency analysis and company-specific insights**
 
 ### Project Ideas & Implementation
 
@@ -74,7 +77,7 @@ source venv/bin/activate
 
 #### Generate Course Content
 
-````bash
+```bash
 # Create course outline
 python main.py content course-outline --topic "Python Web Development" --level intermediate
 
@@ -87,6 +90,10 @@ python main.py content tips-and-tricks --topic "React" --level advanced
 # NEW: Generate complete Shiksha course
 python main.py shiksha create-course --course-name "Zero to One Frontend Development" --description "Master React.js from basics to advanced concepts" --difficulty Beginner --roadmap Frontend --save
 
+# NEW: Generate world-class Shiksha course with Indian context
+python main.py shiksha create-world-class-course --course-name "Advanced React Development for Indian Developers" --description "Build production-ready React apps with Indian startup examples and career guidance" --difficulty Advanced --roadmap Frontend --save
+```
+
 #### Create Interview Prep Materials
 
 ```bash
@@ -98,7 +105,16 @@ python main.py interview coding-challenges --technology "Python" --difficulty ha
 
 # Complete interview package
 python main.py interview complete-prep --technology "Node.js"
-````
+
+# NEW: Revamp existing interview sheet with world-class quality
+python main.py interview revamp-sheet --sheet-id "673333d146a1961fc8b84345" --save
+
+# NEW: Create new world-class interview sheet from scratch
+python main.py interview create-world-class-sheet --sheet-name "React Advanced Concepts" --description "Master advanced React patterns, hooks, and performance optimization for Indian startups" --target-questions 50 --save
+
+# NEW: Batch revamp all interview sheets (use with caution!)
+python main.py interview revamp-all-sheets --save
+```
 
 #### Generate Project Ideas
 
@@ -133,7 +149,15 @@ the_boring_agents/
 │   │   └── exercise_creator_agent.py
 │   ├── interview/              # Interview preparation agents
 │   │   ├── __init__.py
-│   │   └── interview_agent.py
+│   │   ├── interview_agent.py
+│   │   ├── interview_sheet_orchestrator.py
+│   │   ├── answer_enhancement_agent.py
+│   │   ├── database_integration_agent.py
+│   │   ├── frequency_analysis_agent.py
+│   │   ├── question_generator_agent.py
+│   │   ├── interview_research_agent.py
+│   │   ├── quality_review_agent.py
+│   │   └── mdx_styling_agent.py
 │   └── project/                # Project generation agents
 │       ├── __init__.py
 │       └── project_agent.py

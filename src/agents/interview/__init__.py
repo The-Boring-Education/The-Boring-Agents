@@ -8,6 +8,7 @@ from .frequency_analysis_agent import FrequencyAnalysisAgent
 from .question_generator_agent import QuestionGeneratorAgent
 from .interview_research_agent import InterviewResearchAgent
 from .quality_review_agent import QualityReviewAgent
+from .mdx_styling_agent import MDXStylingAgent
 
 __all__ = [
     "InterviewAgent",
@@ -17,5 +18,6 @@ __all__ = [
     "FrequencyAnalysisAgent",
     "QuestionGeneratorAgent",
     "InterviewResearchAgent",
-    "QualityReviewAgent"
+    "QualityReviewAgent",
+    "MDXStylingAgent"
 ] 
