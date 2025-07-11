@@ -63,6 +63,13 @@ cp .env.example .env
 # Edit .env and add your API keys
 ```
 
+4. Activate the virtual environment (if using one):
+
+```bash
+# For virtualenv
+source venv/bin/activate
+```
+
 ### Basic Usage
 
 #### Generate Course Content

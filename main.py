@@ -10,7 +10,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from src.core.config import config
-from src.agents import ContentAgent, InterviewAgent, ProjectAgent, ShikshaOrchestrator
+from src.agents import ContentAgent, InterviewAgent, ProjectAgent, ShikshaOrchestrator, EnhancedShikshaOrchestrator
 from src.utils import setup_logging, generate_filename
 
 console = Console()
@@ -230,6 +230,69 @@ def create_course(course_name, description, difficulty, roadmap, save):
         
     except Exception as e:
         console.print(f"[red]Error creating course: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@shiksha.command()
+@click.option('--course-name', required=True, help='Name of the course')
+@click.option('--description', required=True, help='Course description')
+@click.option('--difficulty', default='Beginner', help='Difficulty level (Beginner, Intermediate, Advanced)')
+@click.option('--roadmap', default='Backend', help='Roadmap category (Backend, Frontend, Full Stack, etc.)')
+@click.option('--api-url', help='Custom API URL for research (optional)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def create_world_class_course(course_name, description, difficulty, roadmap, api_url, save):
+    """Create a world-class Shiksha course with Indian context, humor, and excellent instruction."""
+    console.print(f"[green]🚀 Creating world-class Shiksha course: {course_name}...[/green]")
+    
+    try:
+        orchestrator = EnhancedShikshaOrchestrator()
+        course_data = orchestrator.create_world_class_course(
+            course_name=course_name,
+            description=description,
+            difficulty_level=difficulty,
+            roadmap=roadmap,
+            api_base_url=api_url
+        )
+        
+        # Display course summary
+        data = course_data.get("data", {})
+        chapters = data.get("chapters", [])
+        
+        table = Table(title=f"🌟 World-Class Shiksha Course: {course_name}")
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+        
+        table.add_row("Course Name", data.get("name", "N/A"))
+        table.add_row("Slug", data.get("slug", "N/A"))
+        table.add_row("Difficulty", data.get("difficultyLevel", "N/A"))
+        table.add_row("Roadmap", data.get("roadmap", "N/A"))
+        table.add_row("Chapters", str(len(chapters)))
+        table.add_row("Enhanced Features", ", ".join(data.get("features", [])))
+        table.add_row("Live Date", data.get("liveOn", "N/A"))
+        
+        console.print(table)
+        
+        # Show research insights if available
+        research_insights = course_data.get("research_insights", {})
+        if research_insights:
+            console.print("\n📊 [bold]Research Insights:[/bold]")
+            for recommendation in research_insights.get("key_recommendations", [])[:3]:
+                console.print(f"   • {recommendation}")
+        
+        if save:
+            filepath = orchestrator.save_course(course_data)
+            console.print(f"[blue]✅ World-class course saved to: {filepath}[/blue]")
+        
+        console.print(f"\n[yellow]🎉 World-class course creation completed successfully![/yellow]")
+        console.print(f"[green]This course includes:[/green]")
+        console.print("   🇮🇳 Indian context and examples")
+        console.print("   😄 Humor and engaging analogies")
+        console.print("   🛠️ Hands-on exercises and projects")
+        console.print("   💼 Career-focused content")
+        console.print("   📊 Research-based insights")
+        
+    except Exception as e:
+        console.print(f"[red]❌ Error creating world-class course: {str(e)}[/red]")
         raise click.Abort()
 
 
