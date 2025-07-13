@@ -225,7 +225,7 @@ class ProjectIdeaAgent(BaseAgent):
             - Network opportunities with like-minded builders
             
             **Salary Impact:**
-            - {experience_level} developers with real projects: ₹{self._get_salary_range(experience_level)} higher
+            - {experience_level} developers with real projects: ₹5-10 LPA higher
             - Premium for problem-solving skills vs just coding skills
             - Negotiation power from demonstrable impact
             
