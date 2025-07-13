@@ -36,14 +36,14 @@ The Boring Agents is a Python-based AI agent system that automates content gener
 
 ### Project Ideas & Implementation
 
--   💡 Real-world project ideas across different domains
--   🏗️ Detailed technical architecture designs
--   📋 Step-by-step implementation guides
--   🗓️ Project roadmaps and timelines
--   💼 Portfolio optimization recommendations
--   🤖 **NEW: AI-powered tech stack and difficulty determination**
--   🎯 **NEW: Domain-specific project generation with career guidance**
--   📊 **NEW: Automatic roadmap classification (Frontend/Backend/Full Stack)**
+-   💡 **2-Parameter Simplicity**: Just provide idea + description, AI handles everything else
+-   🤖 **AI-Powered Intelligence**: Auto-determines tech stack, difficulty, and roadmap
+-   🎯 **Domain-Aware**: Understands 20+ domains (fintech, edtech, healthtech, etc.)
+-   🏗️ **Production-Ready**: Detailed technical architecture and implementation guides
+-   📋 **Career-Focused**: Every project includes salary impact and skill development
+-   🗓️ **Complete Roadmaps**: Step-by-step timelines with practical assignments
+-   💼 **Portfolio Optimization**: Projects designed to boost career prospects
+-   📄 **MDX Support**: Create projects from markdown files for version control
 
 ## Quick Start
 
@@ -123,33 +123,54 @@ python main.py interview revamp-all-sheets --save
 
 The AI automatically determines the best tech stack, difficulty level, and roadmap based on:
 
--   **Domain**: Fintech projects get React+Node.js+MongoDB, HealthTech gets React+Python+Django, etc.
--   **User Profile**: Students get Beginner/Intermediate, professionals get Intermediate/Advanced
--   **Project Idea**: Mobile app ideas get React Native, AI projects get Python+TensorFlow, etc.
+-   **Project Idea & Description**: AI analyzes your concept to determine everything else
+-   **Smart Domain Detection**: Automatically identifies if it's fintech, edtech, healthtech, etc.
+-   **Intelligent Tech Stack**: Chooses the optimal technologies for your project
+-   **Dynamic Difficulty**: Determines complexity based on project requirements
+-   **Target Audience**: Auto-determines user profile and career goals
 
 ```bash
-# Generate domain-specific project (AI chooses tech stack automatically)
-python main.py projects create-real-project --domain fintech --save
-python main.py projects create-real-project --domain edtech --target-role "Full Stack Developer" --save
-python main.py projects create-real-project --domain healthtech --user-profile "Working professional seeking career change" --save
+# Create a project with just an idea and description (AI determines everything else)
+python main.py projects create --idea "Food delivery app for college students" --description "Build a mobile app that lets college students order food from campus cafeterias and nearby restaurants with group ordering features and split payment options" --save
 
-# Create project from your idea (AI determines best tech stack)
-python main.py projects create-custom-project --project-idea "Build a food delivery app for college campuses" --save
-python main.py projects create-custom-project --project-idea "AI-powered resume analyzer for Indian job market" --user-profile "Final year engineering student" --save
-
-# Demo projects
-python main.py projects demo-fintech-project --save
-python main.py projects demo-static-project --save
+# Create project from an MDX file
+python main.py projects create-from-mdx --mdx-file "./project-idea.mdx" --save
 ```
 
-#### Legacy Project Commands (Manual Tech Stack)
+**Example MDX File Format:**
 
-```bash
-# Manual tech stack specification (for advanced users)
-python main.py projects ideas --technology "React" --domain "e-commerce"
-python main.py projects architecture --project "Social Media App" --technologies "MERN Stack"
-python main.py projects complete-package --technology "Django" --difficulty advanced
+```markdown
+# Project Idea: Smart Campus Food Delivery App
+
+## Description
+
+Build a comprehensive food delivery platform specifically designed for college campuses. The app should solve the unique challenges students face:
+
+-   **Group Ordering**: Allow multiple students to order together from the same restaurant
+-   **Split Payments**: Integrate with UPI and digital wallets for easy payment splitting
+-   **Campus Integration**: Work with campus cafeterias and nearby restaurants
+-   **Student Budget**: Focus on affordable options and student discounts
+-   **Delivery Coordination**: Smart delivery to dorms and common areas
+
+The app should be mobile-first, work with slow internet connections, and integrate with popular Indian payment methods like UPI, Paytm, and GPay.
 ```
+
+**🤖 AI Auto-Determines:**
+
+-   Domain: Food delivery / EdTech
+-   Tech Stack: React Native, Node.js, MongoDB, UPI APIs
+-   Difficulty: Intermediate
+-   Target Role: Full Stack Mobile Developer
+-   Roadmap: Full Stack
+-   Career Impact: 20-30% salary boost potential
+
+**🎯 Pro Engineering Approach:**
+
+-   **Just 2 Parameters**: Only idea and description needed - AI handles the rest
+-   **Intelligent Analysis**: AI analyzes your concept to determine optimal tech stack
+-   **Domain Expertise**: AI understands 20+ domains (fintech, edtech, healthtech, etc.)
+-   **Career-Focused**: Every project includes salary impact analysis and skill development
+-   **Indian Context**: Projects tailored for Indian market and job requirements
 
 ## Project Structure
 
@@ -279,13 +300,14 @@ class CustomAgent(BaseAgent):
 
 ### Design Principles
 
--   **Modular architecture** - Each product type has its own specialized agent
--   **Extensible base classes** - Easy to add new agent types
--   **Configuration-driven** - Environment-based settings for flexibility
--   **CLI-first approach** - Simple command-line interface for quick usage
--   **Structured output** - Consistent JSON format for easy integration
--   **Intelligent automation** - AI determines optimal tech stack, difficulty, and roadmap
--   **Domain-aware** - Understands different industry requirements and patterns
+-   **Simplicity First** - Just 2 parameters (idea + description) for maximum usability
+-   **AI-Powered Intelligence** - Let AI handle complex decisions about tech stack and difficulty
+-   **Domain Expertise** - Deep understanding of 20+ industries and their requirements
+-   **Career-Focused** - Every output designed to boost professional growth
+-   **Modular Architecture** - Each product type has its own specialized agent
+-   **CLI-First Approach** - Simple command-line interface for quick usage
+-   **Structured Output** - Consistent JSON format for easy integration
+-   **Configuration-Driven** - Environment-based settings for flexibility
 
 ## Roadmap
 

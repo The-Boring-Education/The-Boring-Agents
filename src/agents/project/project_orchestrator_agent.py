@@ -1,6 +1,6 @@
 """Project Orchestrator Agent - Main coordinator for complete project creation with career focus."""
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import json
 import os
 from datetime import datetime, timedelta
@@ -34,30 +34,47 @@ class ProjectOrchestratorAgent(BaseAgent):
         """Orchestrator does not generate content directly."""
         raise NotImplementedError("Orchestrator coordinates other agents")
     
-    def create_complete_project(self, domain: str, 
-                              user_profile: str = "College student looking for internships",
-                              target_role: str = "Software Developer") -> Dict[str, Any]:
-        """Create a complete project from idea to deployment with career guidance.
+    def create_complete_project(self, idea: str, description: str) -> Dict[str, Any]:
+        """Create a complete project from just an idea and description.
+        
+        The AI automatically determines everything else:
+        - Domain/industry from the idea
+        - Tech stack based on requirements  
+        - Difficulty based on complexity
+        - User profile from context
+        - Target role from career goals
         
         Args:
-            domain: Domain/industry for the project (fintech, edtech, healthtech, etc.)
-            user_profile: Target user's background and goals
-            target_role: Target job role
+            idea: The project idea (can be a title or concept)
+            description: Detailed description of what to build
             
         Returns:
             Complete project with all sections, chapters, and content
         """
-        self.logger.info(f"🚀 Starting complete project creation for {domain} domain")
+        self.logger.info(f"🚀 Creating complete project from idea: {idea[:50]}...")
         
         try:
-            # Step 1: Automatically determine tech stack and difficulty based on domain
-            tech_stack = self._auto_determine_tech_stack(domain)
-            difficulty = self._auto_determine_difficulty(user_profile)
+            # Step 1: Intelligent Analysis - Auto-determine everything from idea + description
+            self.logger.info("🧠 Step 1: Analyzing idea and auto-determining project parameters...")
             
-            self.logger.info(f"🎯 Auto-determined: {tech_stack} stack, {difficulty} difficulty")
+            # Combine idea and description for analysis
+            full_context = f"Project Idea: {idea}\n\nDescription: {description}"
             
-            # Step 2: Generate Real-Life Project Idea
-            self.logger.info("💡 Step 1: Generating real-life project idea...")
+            # Auto-determine all parameters using AI
+            project_params = self._intelligent_project_analysis(full_context)
+            
+            domain = project_params["domain"]
+            tech_stack = project_params["tech_stack"]
+            difficulty = project_params["difficulty"]
+            user_profile = project_params["user_profile"]
+            target_role = project_params["target_role"]
+            project_name = project_params["project_name"]
+            
+            self.logger.info(f"🎯 Auto-determined: {domain} domain, {tech_stack} stack, {difficulty} difficulty")
+            self.logger.info(f"👤 Target: {user_profile} → {target_role}")
+            
+            # Step 2: Generate Real-Life Project Idea (enhance the provided idea)
+            self.logger.info("💡 Step 2: Enhancing project idea with market research...")
             project_idea_result = self.idea_agent.generate_real_life_project(
                 domain=domain,
                 tech_stack=tech_stack,
@@ -66,30 +83,29 @@ class ProjectOrchestratorAgent(BaseAgent):
                 market_focus="Indian market"
             )
             
-            project_idea = project_idea_result["project_idea"]
-            project_name = self._extract_project_name(project_idea)
-            problem_statement = self._extract_problem_statement(project_idea)
+            # Use original idea but enhance with market insights
+            enhanced_project_idea = self._enhance_original_idea(idea, description, project_idea_result["project_idea"])
             
-            # Step 2: Analyze Career Impact
-            self.logger.info("📈 Step 2: Analyzing career impact...")
+            # Step 3: Analyze Career Impact
+            self.logger.info("📈 Step 3: Analyzing career impact...")
             career_analysis = self.idea_agent.analyze_career_impact(
-                project_idea=project_idea,
+                project_idea=enhanced_project_idea,
                 target_role=target_role,
                 experience_level=difficulty
             )
             
-            # Step 3: Create Project Structure
-            self.logger.info("🏗️ Step 3: Creating comprehensive project structure...")
+            # Step 4: Create Project Structure
+            self.logger.info("🏗️ Step 4: Creating comprehensive project structure...")
             project_structure = self.planner_agent.create_project_structure(
-                project_idea=project_idea,
+                project_idea=enhanced_project_idea,
                 tech_stack=tech_stack,
                 difficulty=difficulty,
                 target_audience=user_profile,
                 learning_goals="Build portfolio project and gain job-ready skills"
             )
             
-            # Step 4: Create Project Roadmap
-            self.logger.info("🗺️ Step 4: Creating project roadmap...")
+            # Step 5: Create Project Roadmap
+            self.logger.info("🗺️ Step 5: Creating project roadmap...")
             roadmap = self.planner_agent.create_project_roadmap(
                 project_name=project_name,
                 duration=self._get_project_duration(difficulty),
@@ -97,42 +113,26 @@ class ProjectOrchestratorAgent(BaseAgent):
                 career_goals=f"Get hired as a {target_role}"
             )
             
-            # Step 5: Generate Project Introduction
-            self.logger.info("📖 Step 5: Creating engaging project introduction...")
+            # Step 6: Generate Project Introduction
+            self.logger.info("📖 Step 6: Creating engaging project introduction...")
             intro_content = self.content_agent.generate_project_introduction(
                 project_name=project_name,
-                problem_statement=problem_statement,
-                target_users=self._extract_target_users(project_idea),
+                problem_statement=description,
+                target_users=self._extract_target_users_from_params(project_params),
                 tech_stack=tech_stack,
                 career_relevance=self._extract_career_relevance(career_analysis["career_analysis"])
             )
             
-            # Step 6: Generate Detailed Content for Each Section
-            self.logger.info("✍️ Step 6: Generating detailed content for all sections...")
+            # Step 7: Generate Detailed Content for Each Section
+            self.logger.info("✍️ Step 7: Generating detailed content for all sections...")
             complete_sections = self._generate_complete_sections(
                 project_structure, project_name, tech_stack, domain
-            )
-            
-            # Step 7: Create Final Project Schema
-            self.logger.info("📋 Step 7: Creating final project schema...")
-            project_metadata = {
-                "name": project_name,
-                "description": problem_statement,
-                "tech_stack": tech_stack.split(", "),
-                "roadmap": self._determine_roadmap(tech_stack),
-                "difficulty": difficulty,
-                "domain": domain
-            }
-            
-            final_schema = self.planner_agent.generate_course_schema(
-                project_structure["parsed_structure"],
-                project_metadata
             )
             
             # Step 8: Create final project structure in correct API format
             final_project_data = self._create_project_structure(
                 project_name=project_name,
-                description=problem_statement,
+                description=description,
                 difficulty_level=difficulty,
                 roadmap=self._determine_roadmap(tech_stack),
                 tech_stack=tech_stack.split(", "),
@@ -142,7 +142,7 @@ class ProjectOrchestratorAgent(BaseAgent):
                     "target_role": target_role,
                     "skill_development": self._extract_skills(career_analysis["career_analysis"]),
                     "hiring_advantages": career_analysis.get("hiring_advantages", []),
-                    "interview_preparation": self._create_interview_prep(project_idea, career_analysis),
+                    "interview_preparation": self._create_interview_prep(enhanced_project_idea, career_analysis),
                     "portfolio_guidance": self._create_portfolio_guidance(project_name, tech_stack),
                     "salary_impact": self._estimate_salary_impact(difficulty, domain)
                 },
@@ -162,78 +162,34 @@ class ProjectOrchestratorAgent(BaseAgent):
             self.logger.error(f"❌ Error creating complete project: {str(e)}")
             raise
     
-    def generate_project_from_idea(self, project_idea: str,
-                                 user_profile: str = "Indian developers") -> Dict[str, Any]:
-        """Create a complete project from a provided project idea.
+    def create_project_from_mdx(self, mdx_file_path: str) -> Dict[str, Any]:
+        """Create a complete project from an MDX file containing idea and description.
+        
+        The MDX file should contain:
+        # Project Idea: Your idea here
+        ## Description
+        Your detailed description here...
         
         Args:
-            project_idea: Custom project idea provided by user
-            user_profile: User profile to determine difficulty
+            mdx_file_path: Path to the MDX file
             
         Returns:
-            Complete project based on the provided idea
+            Complete project based on the MDX content
         """
-        self.logger.info(f"🎯 Creating project from custom idea: {project_idea[:50]}...")
+        self.logger.info(f"📄 Creating project from MDX file: {mdx_file_path}")
         
         try:
-            # Auto-determine tech stack and difficulty from the project idea
-            tech_stack = self._auto_determine_tech_stack_from_idea(project_idea)
-            difficulty = self._auto_determine_difficulty(user_profile)
+            # Read and parse MDX file
+            idea, description = self._parse_mdx_file(mdx_file_path)
             
-            self.logger.info(f"🎯 Auto-determined: {tech_stack} stack, {difficulty} difficulty")
+            if not idea or not description:
+                raise ValueError("MDX file must contain both idea and description")
             
-            project_name = self._extract_project_name(project_idea)
-            problem_statement = self._extract_problem_statement(project_idea)
-            
-            # Use auto-determined values for project structure
-            project_structure = self.planner_agent.create_project_structure(
-                project_idea=project_idea,
-                tech_stack=tech_stack,
-                difficulty=difficulty
-            )
-            
-            # Generate content for the custom idea
-            intro_content = self.content_agent.generate_project_introduction(
-                project_name=project_name,
-                problem_statement=problem_statement,
-                target_users="Indian users looking for better solutions",
-                tech_stack=tech_stack,
-                career_relevance="Demonstrates problem-solving and technical skills"
-            )
-            
-            complete_sections = self._generate_complete_sections(
-                project_structure, project_name, tech_stack, "custom"
-            )
-            
-            # Create final project structure
-            final_project_data = self._create_project_structure(
-                project_name=project_name,
-                description=problem_statement,
-                difficulty_level=difficulty,
-                roadmap=self._determine_roadmap(tech_stack),
-                tech_stack=tech_stack.split(", "),
-                meta_content=intro_content,
-                sections=complete_sections,
-                career_enhancement={
-                    "target_role": "Software Developer",
-                    "skill_development": ["Problem-solving", "Full-stack development", "Project management"],
-                    "hiring_advantages": ["Custom solution approach", "Real-world problem solving"],
-                    "interview_preparation": self._create_interview_prep(project_idea, {}),
-                    "portfolio_guidance": self._create_portfolio_guidance(project_name, tech_stack),
-                    "salary_impact": self._estimate_salary_impact(difficulty, "custom")
-                },
-                success_metrics={
-                    "learning_objectives": ["Custom project implementation", "Technical problem solving"],
-                    "completion_criteria": self._define_completion_criteria(difficulty),
-                    "portfolio_readiness": self._assess_portfolio_readiness(complete_sections),
-                    "career_readiness": "Good - demonstrates custom problem-solving abilities"
-                }
-            )
-            
-            return final_project_data
+            # Create project using the parsed content
+            return self.create_complete_project(idea, description)
             
         except Exception as e:
-            self.logger.error(f"❌ Error creating custom project: {str(e)}")
+            self.logger.error(f"❌ Error creating project from MDX: {str(e)}")
             raise
     
     def _generate_complete_sections(self, project_structure: Dict[str, Any], 
@@ -651,3 +607,251 @@ class ProjectOrchestratorAgent(BaseAgent):
                 "success_metrics": success_metrics
             }
         } 
+
+    def _intelligent_project_analysis(self, context: str) -> Dict[str, Any]:
+        """Intelligently analyze context to determine project parameters."""
+        prompt = f"""
+        Analyze the following project context and determine the optimal parameters:
+        
+        {context}
+        
+        Based on this project idea and description, determine:
+        
+        1. **Domain/Industry**: What industry does this project belong to? 
+           Choose from: fintech, edtech, healthtech, ecommerce, social, productivity, entertainment, food, travel, logistics, agriculture, fashion, real-estate, sports, news, weather, photography, music, fitness, gaming, or other
+        
+        2. **Tech Stack**: What's the best technology stack for this project?
+           Consider the project requirements and complexity.
+        
+        3. **Difficulty**: What difficulty level is appropriate?
+           - Beginner: Simple CRUD apps, basic features
+           - Intermediate: Multiple features, integrations, moderate complexity
+           - Advanced: Complex algorithms, scaling, advanced features
+        
+        4. **User Profile**: Who is the target audience for building this project?
+           Consider: College students, working professionals, entrepreneurs, etc.
+        
+        5. **Target Role**: What job role would this project help someone get?
+           Consider: Frontend Developer, Backend Developer, Full Stack Developer, etc.
+        
+        6. **Project Name**: Create a catchy, professional project name
+        
+        Respond in this exact format:
+        Domain: [domain]
+        Tech Stack: [comma-separated technologies]
+        Difficulty: [Beginner/Intermediate/Advanced]
+        User Profile: [target user description]
+        Target Role: [job role]
+        Project Name: [project name]
+        """
+        
+        response = self._generate_with_prompt(prompt)
+        
+        # Parse the response into a dictionary
+        params = {}
+        for line in response.split('\n'):
+            if ':' in line:
+                key, value = line.split(':', 1)
+                key = key.strip().lower().replace(' ', '_')
+                value = value.strip()
+                params[key] = value
+        
+        # Ensure all required keys exist with defaults
+        return {
+            "domain": params.get("domain", "productivity"),
+            "tech_stack": params.get("tech_stack", "React, Node.js, MongoDB, Express.js"),
+            "difficulty": params.get("difficulty", "Intermediate"),
+            "user_profile": params.get("user_profile", "Developers looking to build portfolio projects"),
+            "target_role": params.get("target_role", "Software Developer"),
+            "project_name": params.get("project_name", "Innovative Project")
+        }
+    
+    def _enhance_original_idea(self, original_idea: str, description: str, enhanced_idea: str) -> str:
+        """Enhance the original project idea with market research and specific details."""
+        prompt = f"""
+        Original Project Idea: {original_idea}
+        Description: {description}
+        
+        Market Research Enhancement: {enhanced_idea}
+        
+        Create a comprehensive project idea that combines the original concept with market insights.
+        
+        Focus on:
+        - Clear problem statement
+        - Specific target market in India
+        - Unique value proposition
+        - Technical requirements
+        - Real-world application
+        - Business potential
+        
+        Return a detailed project idea description that can be used for development planning.
+        """
+        
+        return self._generate_with_prompt(prompt)
+
+    def _extract_target_users_from_params(self, params: Dict[str, Any]) -> str:
+        """Extract target users from the determined project parameters."""
+        user_profile = params.get("user_profile")
+        if user_profile:
+            return user_profile
+        return "Indian users seeking better solutions"
+
+    def _parse_mdx_file(self, mdx_file_path: str) -> Tuple[str, str]:
+        """Parse an MDX file to extract the project idea and description.
+        
+        Supports multiple formats:
+        
+        Format 1:
+        # Project Idea: Your idea here
+        ## Description
+        Your detailed description here...
+        
+        Format 2:
+        # Your Project Title
+        Your description here...
+        
+        Format 3:
+        ## Idea
+        Your idea here
+        ## Description  
+        Your description here...
+        
+        Args:
+            mdx_file_path: Path to the MDX file
+            
+        Returns:
+            Tuple of (idea, description)
+        """
+        try:
+            with open(mdx_file_path, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+            
+            if not content:
+                raise ValueError("MDX file is empty")
+            
+            # Try different parsing strategies
+            idea, description = self._parse_mdx_content(content)
+            
+            if not idea:
+                raise ValueError("Could not extract project idea from MDX file")
+            if not description:
+                raise ValueError("Could not extract project description from MDX file")
+            
+            self.logger.info(f"Successfully parsed MDX: idea='{idea[:50]}...', description={len(description)} chars")
+            return idea, description
+            
+        except FileNotFoundError:
+            raise FileNotFoundError(f"MDX file not found: {mdx_file_path}")
+        except Exception as e:
+            raise ValueError(f"Error parsing MDX file: {str(e)}")
+    
+    def _parse_mdx_content(self, content: str) -> Tuple[str, str]:
+        """Parse MDX content to extract idea and description using multiple strategies."""
+        lines = content.split('\n')
+        
+        # Strategy 1: Look for "# Project Idea:" and "## Description"
+        idea, description = self._parse_format_1(lines)
+        if idea and description:
+            return idea, description
+        
+        # Strategy 2: Look for "## Idea" and "## Description"
+        idea, description = self._parse_format_2(lines)
+        if idea and description:
+            return idea, description
+        
+        # Strategy 3: First H1 as idea, rest as description
+        idea, description = self._parse_format_3(lines)
+        if idea and description:
+            return idea, description
+        
+        # Strategy 4: Fallback - split by first paragraph
+        idea, description = self._parse_fallback(content)
+        return idea, description
+    
+    def _parse_format_1(self, lines: List[str]) -> Tuple[str, str]:
+        """Parse format: # Project Idea: ... \n ## Description \n ..."""
+        idea = ""
+        description = ""
+        in_description = False
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            
+            if line.startswith("# Project Idea:"):
+                idea = line.replace("# Project Idea:", "").strip()
+            elif line.startswith("## Description"):
+                in_description = True
+                # Get all content after this line
+                description = "\n".join(lines[i+1:]).strip()
+                break
+        
+        return idea, description
+    
+    def _parse_format_2(self, lines: List[str]) -> Tuple[str, str]:
+        """Parse format: ## Idea \n ... \n ## Description \n ..."""
+        idea = ""
+        description = ""
+        current_section = None
+        current_content = []
+        
+        for line in lines:
+            line = line.strip()
+            
+            if line.startswith("## Idea"):
+                if current_content and current_section == "description":
+                    description = "\n".join(current_content).strip()
+                current_section = "idea"
+                current_content = []
+            elif line.startswith("## Description"):
+                if current_content and current_section == "idea":
+                    idea = "\n".join(current_content).strip()
+                current_section = "description"
+                current_content = []
+            elif current_section and line:
+                current_content.append(line)
+        
+        # Handle the last section
+        if current_content and current_section == "description":
+            description = "\n".join(current_content).strip()
+        elif current_content and current_section == "idea" and not description:
+            idea = "\n".join(current_content).strip()
+        
+        return idea, description
+    
+    def _parse_format_3(self, lines: List[str]) -> Tuple[str, str]:
+        """Parse format: # Title \n content..."""
+        idea = ""
+        description_lines = []
+        found_title = False
+        
+        for line in lines:
+            line = line.strip()
+            
+            if line.startswith("# ") and not found_title:
+                idea = line.replace("# ", "").strip()
+                found_title = True
+            elif found_title and line:
+                description_lines.append(line)
+        
+        description = "\n".join(description_lines).strip()
+        return idea, description
+    
+    def _parse_fallback(self, content: str) -> Tuple[str, str]:
+        """Fallback parsing: first line/paragraph as idea, rest as description."""
+        paragraphs = content.split('\n\n')
+        
+        if len(paragraphs) >= 2:
+            idea = paragraphs[0].strip().replace('#', '').strip()
+            description = '\n\n'.join(paragraphs[1:]).strip()
+            return idea, description
+        
+        # If only one paragraph, try to split by sentences
+        lines = content.split('\n')
+        if len(lines) >= 2:
+            idea = lines[0].strip().replace('#', '').strip()
+            description = '\n'.join(lines[1:]).strip()
+            return idea, description
+        
+        # Last resort: use the whole content as both idea and description
+        text = content.strip().replace('#', '').strip()
+        return text, text 
