@@ -41,6 +41,9 @@ The Boring Agents is a Python-based AI agent system that automates content gener
 -   📋 Step-by-step implementation guides
 -   🗓️ Project roadmaps and timelines
 -   💼 Portfolio optimization recommendations
+-   🤖 **NEW: AI-powered tech stack and difficulty determination**
+-   🎯 **NEW: Domain-specific project generation with career guidance**
+-   📊 **NEW: Automatic roadmap classification (Frontend/Backend/Full Stack)**
 
 ## Quick Start
 
@@ -116,16 +119,35 @@ python main.py interview create-world-class-sheet --sheet-name "React Advanced C
 python main.py interview revamp-all-sheets --save
 ```
 
-#### Generate Project Ideas
+#### Generate Intelligent Project Ideas
+
+The AI automatically determines the best tech stack, difficulty level, and roadmap based on:
+
+-   **Domain**: Fintech projects get React+Node.js+MongoDB, HealthTech gets React+Python+Django, etc.
+-   **User Profile**: Students get Beginner/Intermediate, professionals get Intermediate/Advanced
+-   **Project Idea**: Mobile app ideas get React Native, AI projects get Python+TensorFlow, etc.
 
 ```bash
-# Get project ideas
+# Generate domain-specific project (AI chooses tech stack automatically)
+python main.py projects create-real-project --domain fintech --save
+python main.py projects create-real-project --domain edtech --target-role "Full Stack Developer" --save
+python main.py projects create-real-project --domain healthtech --user-profile "Working professional seeking career change" --save
+
+# Create project from your idea (AI determines best tech stack)
+python main.py projects create-custom-project --project-idea "Build a food delivery app for college campuses" --save
+python main.py projects create-custom-project --project-idea "AI-powered resume analyzer for Indian job market" --user-profile "Final year engineering student" --save
+
+# Demo projects
+python main.py projects demo-fintech-project --save
+python main.py projects demo-static-project --save
+```
+
+#### Legacy Project Commands (Manual Tech Stack)
+
+```bash
+# Manual tech stack specification (for advanced users)
 python main.py projects ideas --technology "React" --domain "e-commerce"
-
-# Create project architecture
 python main.py projects architecture --project "Social Media App" --technologies "MERN Stack"
-
-# Complete project package
 python main.py projects complete-package --technology "Django" --difficulty advanced
 ```
 
@@ -262,6 +284,8 @@ class CustomAgent(BaseAgent):
 -   **Configuration-driven** - Environment-based settings for flexibility
 -   **CLI-first approach** - Simple command-line interface for quick usage
 -   **Structured output** - Consistent JSON format for easy integration
+-   **Intelligent automation** - AI determines optimal tech stack, difficulty, and roadmap
+-   **Domain-aware** - Understands different industry requirements and patterns
 
 ## Roadmap
 
