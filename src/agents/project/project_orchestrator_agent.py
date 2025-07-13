@@ -200,11 +200,11 @@ class ProjectOrchestratorAgent(BaseAgent):
         parsed_structure = project_structure.get("parsed_structure", {})
         
         for i, section_data in enumerate(parsed_structure.get("sections", []), 1):
-            section_name = section_data.get("name", f"Section {i}")
+            section_name = str(section_data.get("name", f"Section {i}"))
             chapters = []
             
             # Generate section introduction
-            chapter_names = [ch.get("name", "") for ch in section_data.get("chapters", [])]
+            chapter_names = [str(ch.get("name", "")) for ch in section_data.get("chapters", [])]
             section_intro = self.content_agent.generate_section_intro(
                 section_name=section_name,
                 section_goal=f"Master the skills needed for {section_name.lower()}",
@@ -213,7 +213,7 @@ class ProjectOrchestratorAgent(BaseAgent):
             )
             
             for j, chapter_data in enumerate(section_data.get("chapters", []), 1):
-                chapter_name = chapter_data.get("name", f"Chapter {j}")
+                chapter_name = str(chapter_data.get("name", f"Chapter {j}"))
                 
                 # Generate detailed chapter content
                 chapter_content = self.content_agent.generate_chapter_content(
@@ -311,7 +311,10 @@ class ProjectOrchestratorAgent(BaseAgent):
     
     def _determine_roadmap(self, tech_stack: str) -> str:
         """Determine roadmap category based on tech stack."""
-        tech_lower = tech_stack.lower()
+        if not tech_stack:
+            return "Full Stack"
+        
+        tech_lower = str(tech_stack).lower()
         if any(tech in tech_lower for tech in ['react', 'vue', 'angular', 'frontend']):
             return "Frontend"
         elif any(tech in tech_lower for tech in ['node', 'python', 'java', 'backend', 'api']):
@@ -451,14 +454,21 @@ class ProjectOrchestratorAgent(BaseAgent):
     
     def _needs_assignment(self, chapter_name: str) -> bool:
         """Determine if a chapter needs a practical assignment."""
+        if not chapter_name:
+            return False
+        
         practical_keywords = [
             "implementation", "building", "creating", "developing", 
             "setup", "deployment", "testing", "integration"
         ]
-        return any(keyword in chapter_name.lower() for keyword in practical_keywords)
+        chapter_name_str = str(chapter_name).lower()
+        return any(keyword in chapter_name_str for keyword in practical_keywords)
     
     def _auto_determine_tech_stack(self, domain: str) -> str:
         """Automatically determine the best tech stack for a domain."""
+        if not domain:
+            return "React, Node.js, MongoDB, Express.js"
+        
         domain_tech_map = {
             "fintech": "React, Node.js, MongoDB, Express.js",
             "edtech": "React, Node.js, PostgreSQL, Redis",
@@ -482,11 +492,14 @@ class ProjectOrchestratorAgent(BaseAgent):
             "fitness": "React Native, Node.js, MongoDB, Health APIs"
         }
         
-        return domain_tech_map.get(domain.lower(), "React, Node.js, MongoDB, Express.js")
+        return domain_tech_map.get(str(domain).lower(), "React, Node.js, MongoDB, Express.js")
     
     def _auto_determine_tech_stack_from_idea(self, project_idea: str) -> str:
         """Determine tech stack from project idea description."""
-        idea_lower = project_idea.lower()
+        if not project_idea:
+            return "React, Node.js, MongoDB, Express.js"
+        
+        idea_lower = str(project_idea).lower()
         
         # Mobile app indicators
         if any(keyword in idea_lower for keyword in ['mobile app', 'smartphone', 'android', 'ios', 'app store']):
@@ -518,7 +531,10 @@ class ProjectOrchestratorAgent(BaseAgent):
     
     def _auto_determine_difficulty(self, user_profile: str) -> str:
         """Determine difficulty based on user profile."""
-        profile_lower = user_profile.lower()
+        if not user_profile:
+            return "Intermediate"
+        
+        profile_lower = str(user_profile).lower()
         
         # Beginner indicators
         if any(keyword in profile_lower for keyword in [
