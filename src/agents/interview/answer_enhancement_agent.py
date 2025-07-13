@@ -28,10 +28,15 @@ class AnswerEnhancementAgent(BaseAgent):
             
             Create a WORLD-CLASS answer that will help Indian students ACE their interviews and justify the ₹49 they're paying.
             
-            ## 🎯 Quick Answer
+            #### 🎯 Quick Answer
+            
+            
             Give a concise, confident answer they can say in the first 30 seconds.
             
-            ## 📚 Introduction
+            
+            #### 📚 Introduction
+            
+            
             **What is it?**
             - Clear definition in simple terms
             - Why it exists and what problem it solves
@@ -47,51 +52,90 @@ class AnswerEnhancementAgent(BaseAgent):
             - Best practices and common patterns
             - Performance considerations
             
-            ## 💻 Code Example
+            
+            #### 💻 Code Example
+            
+            
             Provide a clear, working code example with comments explaining each part.
             
-            ## ❌ Bad Code Example
+            
+            #### ❌ Bad Code Example
+            
+            
             Show a common mistake or anti-pattern and explain what NOT to do.
             
-            ## ✅ Good Code Example
+            
+            #### ✅ Good Code Example
+            
+            
             Show the best practice and proper implementation.
             
-            ## 🤔 Why This Concept Matters
+            
+            #### 🤔 Why This Concept Matters
+            
+            
             Real-world importance, industry relevance, and why it matters for your career.
             
-            ## 🎭 Different Ways Interviewers Ask This
-            2-3 variations of how this question might be framed.
             
-            ## 🔗 Related Concepts to Revise
-            Quick revision of 2-3 related topics they should know.
+            #### 🎭 Different Ways Interviewers Ask This
             
-            ## 😄 How will you remember it?
+            
+            1. [First variation of how this question might be framed]
+            2. [Second variation of how this question might be framed]
+            3. [Third variation of how this question might be framed]
+            
+            
+            #### 😄 How will you remember it?
+            
+            
             Create a funny, memorable analogy using Indian context (e.g., Mumbai local trains, masala dabba, street food stall).
             
-            ## 💡 Tips or Tricks
-            Share practical tips or tricks for this concept.
             
-            ## 💼 Interview Pro Tips
+            #### 💡 Tip
+            
+            
+            Share one practical, actionable tip that will make a real difference for this concept.
+            
+            
+            #### 💼 Interview Pro Tips
+            
+            
             **What interviewers want to hear:**
-            - Key buzzwords and concepts
-            - Trade-offs and considerations
-            - When to use vs. when not to use
+            
+            1. Key buzzwords and concepts
+            2. Trade-offs and considerations  
+            3. When to use vs. when not to use
             
             **Red flags to avoid:**
-            - Common misconceptions
-            - Don't say these things in interviews
-            - Mistakes freshers make
             
-            ## 🧠 Practice Problems
-            Give 2 problems to solve for practice (with brief descriptions).
+            1. Common misconceptions
+            2. Things you shouldn't say in interviews
+            3. Mistakes freshers typically make
             
-            ## 🤖 Ask AI these questions
-            Suggest 1-2 deeper or related problems the student can ask an AI to dig deeper.
             
-            ## 🏢 Companies That Ask This
-            - Definitely: [List 3-4 companies]
-            - Sometimes: [List 3-4 companies]
-            - Rarely: [List 2-3 companies]
+            #### 🧠 Practice Problems
+            
+            
+            1. [First problem to solve for practice with brief description]
+            2. [Second problem to solve for practice with brief description]
+            
+            
+            #### 🤖 Ask AI these questions
+            
+            
+            1. [First deeper or related problem the student can ask an AI]
+            2. [Second deeper or related problem the student can ask an AI]
+            
+            
+            #### 🏢 Companies That Ask This
+            
+            
+            **Definitely:** [List 3-4 companies that definitely ask this]
+            
+            **Sometimes:** [List 3-4 companies that sometimes ask this]
+            
+            **Rarely:** [List 2-3 companies that rarely ask this]
+            
             
             ## Writing Style:
             - Write like you're mentoring your younger sibling
@@ -124,86 +168,116 @@ class AnswerEnhancementAgent(BaseAgent):
             **Existing Answer (if any):** {existing_answer}
             **Research Context:** {research_insights}
             
-            Create a WORLD-CLASS answer with this EXACT structure:
+            Create a WORLD-CLASS answer with this EXACT structure and formatting:
             
-            ## 🎯 Quick Answer
+            #### 🎯 Quick Answer
+            
             [Concise, confident answer they can say immediately]
             
-            ## 📖 Introduction
+            
+            #### 📖 Introduction
+            
             [What this concept is, why it matters, and the problem it solves]
             
-            ## 💻 Code Example
+            
+            #### 💻 Code Example
+            
             ```javascript
             // Clear, working code example
             // With comments explaining each part
             ```
             
-            ## ❌ Bad Code Example
+            
+            #### ❌ Bad Code Example
+            
             ```javascript
             // Common mistakes and anti-patterns
             // What NOT to do
             ```
             
-            ## ✅ Good Code Example
+            
+            #### ✅ Good Code Example
+            
             ```javascript
             // Best practices and proper implementation
             // What TO do
             ```
             
-            ## 🤔 Why This Concept Matters
+            
+            #### 🤔 Why This Concept Matters
+            
             [Real-world importance, industry relevance, and why it matters for your career]
             
-            ## 🎭 Different Ways Interviewers Ask This
-            2-3 variations of how this question might be framed.
             
-            ## 🔗 Related Concepts to Revise
-            [Quick revision of 2-3 related topics they should know]
+            #### 🎭 Different Ways Interviewers Ask This
             
-            ## 😄 How will you remember it?
-            [Funny Indian analogy to remember this concept]
+            1. [First variation of how this question might be framed]
+            2. [Second variation of how this question might be framed]
+            3. [Third variation of how this question might be framed]
             
-            ## 💡 Tips or Tricks
-            [Share practical tips or tricks for this concept]
             
-            ## 💼 Interview Pro Tips
+            #### 😄 How will you remember it?
+            
+            [Funny Indian analogy to remember this concept - make it memorable and relatable]
+            
+            
+            #### 💡 Tip
+            
+            [Share ONE specific, actionable tip that will make a real difference - be very practical and specific]
+            
+            
+            #### 💼 Interview Pro Tips
+            
             **What interviewers want to hear:**
-            - Key buzzwords and concepts
-            - Trade-offs and considerations
-            - When to use vs. when not to use
+            1. [First key point they want to hear]
+            2. [Second key point they want to hear]
+            3. [Third key point they want to hear]
             
             **Red flags to avoid:**
-            - Common misconceptions
-            - Don't say these things in interviews
-            - Mistakes freshers make
+            1. [First thing to avoid saying]
+            2. [Second thing to avoid saying]
+            3. [Third thing to avoid saying]
             
-            ## 🧠 Practice Problems
-            1. [Problem 1 description]
-            2. [Problem 2 description]
             
-            ## 🤖 Ask AI these questions
-            1. [Deeper or related problem 1]
-            2. [Deeper or related problem 2]
+            #### 🧠 Practice Problems
             
-            ## 🏢 Companies That Ask This
-            - Definitely: [List 3-4 companies]
-            - Sometimes: [List 3-4 companies]
-            - Rarely: [List 2-3 companies]
+            1. [First problem description - be specific and actionable]
+            2. [Second problem description - be specific and actionable]
+            3. [Third problem description - be specific and actionable]
             
-            ## Writing Style Requirements:
-            - Use conversational Hindi-English (but stay professional)
-            - Add humor naturally throughout (not forced)
-            - Include specific Indian examples (Swiggy, Zomato, etc.)
-            - Use emojis for engagement
-            - Make it feel like talking to a friend over chai
-            - Include self-deprecating tech humor
-            - Add cultural references (Bollywood, cricket, festivals)
+            
+            #### 🤖 Ask AI these questions
+            
+            1. [First deeper or related problem]
+            2. [Second deeper or related problem]
+            
+            
+            #### 🏢 Companies That Ask This
+            
+            **Definitely:** [List 3-4 companies that definitely ask this]
+            
+            **Sometimes:** [List 3-4 companies that sometimes ask this]
+            
+            **Rarely:** [List 2-3 companies that rarely ask this]
+            
+            
+            ## CRITICAL FORMATTING REQUIREMENTS:
+            
+            1. **Spacing**: Always add TWO blank lines after each section heading and before the next section
+            2. **Headings**: Use EXACTLY four hashtags (####) for all section headings
+            3. **Lists**: For numbered lists, use "1.", "2.", "3." format with proper numbering
+            4. **Consistency**: Every section should follow the exact spacing pattern shown above
+            5. **Code Blocks**: Always include proper code examples with explanatory comments
+            6. **Structure**: Follow the exact order and naming of sections as specified
             
             Make this answer so engaging that students:
             1. Actually enjoy reading it
-            2. Remember concepts through humor
-            3. Feel confident and prepared
+            2. Remember concepts through humor and analogies
+            3. Feel confident and prepared for interviews
             4. Want to share with friends
             5. Think "This ₹49 was totally worth it!"
+            
+            Remember: Quality over quantity. Each section should be substantial and valuable.
             """
         )
         

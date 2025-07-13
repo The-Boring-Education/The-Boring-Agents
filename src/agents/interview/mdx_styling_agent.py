@@ -21,57 +21,91 @@ class MDXStylingAgent(BaseAgent):
             **Content to Format:** {content}
             **Content Type:** {content_type_param}
             
-            Format this content with proper MDX styling that is:
-            1. **Highly Readable** - Clear hierarchy and structure
-            2. **Visually Appealing** - Good use of formatting elements
-            3. **Professional** - Suitable for educational content
-            4. **Engaging** - Uses formatting to enhance engagement
+            Format this content with STRICT adherence to these formatting rules:
             
-            ## Formatting Rules:
+            ## CRITICAL FORMATTING REQUIREMENTS:
             
-            ### Headers
-            - Use H2 (##) for main sections
-            - Use H3 (###) for subsections
-            - Use H4 (####) for minor sections
-            - Keep headers concise and descriptive
+            ### Headers and Spacing
+            - Use H4 (####) for ALL section headers - NO EXCEPTIONS
+            - Add exactly TWO blank lines after each section heading
+            - Add exactly TWO blank lines before each new section heading
+            - Keep headers concise and descriptive with emojis
+            
+            ### Numbered Lists
+            - Use proper numbered format: "1.", "2.", "3." with a space after the period
+            - Each list item should be on its own line
+            - Add blank line before starting any numbered list
+            - For sub-points, use proper indentation with "   a.", "   b.", etc.
             
             ### Code Blocks
             - Use proper language tags (```javascript, ```python, etc.)
             - Add comments to explain complex code
             - Use inline code (`code`) for short snippets
             - Format code blocks with proper indentation
+            - Add blank lines before and after code blocks
             
-            ### Lists
-            - Use numbered lists for sequential steps
-            - Use bullet points for related items
-            - Use nested lists for sub-items
-            - Keep list items concise
+            ### Content Structure
+            - Every section must have substantial content - no placeholder text
+            - Use consistent spacing throughout
+            - Ensure readability with proper line breaks
+            - Make lists visually clear and scannable
             
-            ### Emphasis
-            - Use **bold** for important concepts
-            - Use *italic* for emphasis
-            - Use `code` for technical terms
-            - Use ~~strikethrough~~ for deprecated concepts
+            ### Quality Standards
+            - Content should be engaging and professional
+            - Use emojis strategically for section headers
+            - Maintain consistent tone throughout
+            - Ensure technical accuracy in all examples
             
-            ### Blockquotes
-            - Use > for important tips and warnings
-            - Use for highlighting key insights
+            ## SPECIFIC FORMATTING EXAMPLE:
             
-            ### Tables
-            - Use proper table formatting for comparisons
-            - Keep tables simple and readable
+            #### 🎯 Quick Answer
             
-            ### Spacing
-            - Add proper line breaks between sections
-            - Use consistent spacing
-            - Don't over-format - keep it clean
             
-            ### Special Elements
-            - Use callouts for important information
-            - Use dividers (---) to separate major sections
-            - Use emojis strategically for engagement
+            This is the content for quick answer section.
             
-            Return the properly formatted MDX content that maintains all the original information while being much more readable and visually appealing.
+            
+            #### 📖 Introduction
+            
+            
+            This is the introduction content.
+            
+            
+            #### 🧠 Practice Problems
+            
+            
+            1. First problem description that is specific and actionable
+            2. Second problem description that is specific and actionable
+            3. Third problem description that is specific and actionable
+            
+            
+            #### 💼 Interview Pro Tips
+            
+            
+            **What interviewers want to hear:**
+            
+            1. First key point they want to hear
+            2. Second key point they want to hear
+            3. Third key point they want to hear
+            
+            **Red flags to avoid:**
+            
+            1. First thing to avoid saying
+            2. Second thing to avoid saying
+            3. Third thing to avoid saying
+            
+            
+            ## VALIDATION CHECKLIST:
+            Before returning the content, verify:
+            ✓ All headers use #### format
+            ✓ Two blank lines after each header
+            ✓ Two blank lines before each new section
+            ✓ Numbered lists use "1.", "2.", "3." format
+            ✓ No "Related Concepts to Revise" section
+            ✓ "Tips or Tricks" is renamed to "Tip"
+            ✓ Content is substantial and valuable
+            ✓ Proper spacing throughout
+            
+            Return the properly formatted MDX content that strictly follows these rules.
             """
         )
         
@@ -151,23 +185,23 @@ class MDXStylingAgent(BaseAgent):
         return content
     
     def _fix_headers(self, content: str) -> str:
-        """Fix header formatting."""
-        # Ensure proper header hierarchy
+        """Fix header formatting to use H4 and ensure proper structure."""
         lines = content.split('\n')
         fixed_lines = []
         
         for line in lines:
+            # Convert any header level to H4 for consistency
             if line.startswith('# '):
-                # Convert H1 to H2 for better hierarchy
-                line = line.replace('# ', '## ')
-            elif line.startswith('## ') and 'Quick Answer' in line:
-                # Keep Quick Answer as H2
-                pass
-            elif line.startswith('## ') and any(keyword in line for keyword in ['Introduction', 'Code Example', 'Why This Concept']):
-                # Keep main sections as H2
-                pass
-            elif line.startswith('### ') and any(keyword in line for keyword in ['Memory Trick', 'Pro Tips', 'Career Impact']):
-                # Keep subsections as H3
+                # Convert H1 to H4
+                line = line.replace('# ', '#### ')
+            elif line.startswith('## '):
+                # Convert H2 to H4
+                line = line.replace('## ', '#### ')
+            elif line.startswith('### '):
+                # Convert H3 to H4
+                line = line.replace('### ', '#### ')
+            elif line.startswith('#### '):
+                # Already H4, keep as is
                 pass
             
             fixed_lines.append(line)
@@ -201,40 +235,65 @@ class MDXStylingAgent(BaseAgent):
         return content
     
     def _fix_lists(self, content: str) -> str:
-        """Fix list formatting."""
+        """Fix list formatting to ensure proper numbered lists."""
         lines = content.split('\n')
         fixed_lines = []
+        in_numbered_list = False
         
-        for line in lines:
-            # Fix bullet points
-            if line.strip().startswith('- ') and not line.strip().startswith('- **'):
-                # Add emphasis to list items
-                line = line.replace('- ', '- **')
-                if not line.endswith('**'):
-                    line = line + '**'
+        for i, line in enumerate(lines):
+            stripped_line = line.strip()
             
-            # Fix numbered lists
-            if re.match(r'^\d+\.\s', line.strip()):
-                # Ensure proper spacing
-                line = re.sub(r'^(\d+\.)\s*', r'\1 ', line)
+            # Check if this is a numbered list item
+            if stripped_line and (stripped_line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')) or 
+                                 stripped_line.startswith(tuple(f'{j}.' for j in range(10, 100)))):
+                if not in_numbered_list:
+                    # Starting a new numbered list, add blank line before if needed
+                    if fixed_lines and fixed_lines[-1].strip():
+                        fixed_lines.append('')
+                    in_numbered_list = True
+                
+                # Ensure proper format: "1. Content"
+                if '. ' not in stripped_line:
+                    stripped_line = stripped_line.replace('.', '. ', 1)
+                fixed_lines.append(stripped_line)
             
-            fixed_lines.append(line)
+            # Check if this is a bullet point that should be numbered
+            elif stripped_line.startswith('- ') and in_numbered_list:
+                # Convert bullet to number (this is a simple approach)
+                list_number = len([l for l in fixed_lines if l.strip() and 
+                                 any(l.strip().startswith(f'{j}.') for j in range(1, 100))]) + 1
+                content = stripped_line[2:].strip()  # Remove "- "
+                fixed_lines.append(f"{list_number}. {content}")
+            
+            else:
+                if stripped_line == '':
+                    in_numbered_list = False
+                elif not stripped_line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')) and \
+                     not stripped_line.startswith(tuple(f'{j}.' for j in range(10, 100))):
+                    in_numbered_list = False
+                
+                fixed_lines.append(line)
         
         return '\n'.join(fixed_lines)
     
     def _fix_spacing(self, content: str) -> str:
-        """Fix spacing and line breaks."""
-        # Add proper spacing between sections
-        content = re.sub(r'##\s+([^\n]+)\n([^\n])', r'## \1\n\n\2', content)
-        content = re.sub(r'###\s+([^\n]+)\n([^\n])', r'### \1\n\n\2', content)
+        """Fix spacing to ensure proper breathable space between sections."""
+        # Add proper spacing between H4 sections and content
+        content = re.sub(r'(####\s+[^\n]+)\n([^\n])', r'\1\n\n\n\2', content)
         
-        # Add spacing around code blocks
-        content = re.sub(r'\n```', r'\n\n```', content)
-        content = re.sub(r'```\n', r'```\n\n', content)
+        # Add proper spacing before H4 sections (except the first one)
+        content = re.sub(r'([^\n])\n(####\s+[^\n]+)', r'\1\n\n\n\2', content)
         
-        # Add spacing around lists
-        content = re.sub(r'\n- ', r'\n\n- ', content)
-        content = re.sub(r'\n[0-9]+\. ', r'\n\n\g<0>', content)
+        # Ensure code blocks have proper spacing
+        content = re.sub(r'([^\n])\n(```)', r'\1\n\n\2', content)
+        content = re.sub(r'(```[^\n]*)\n([^\n])', r'\1\n\n\2', content)
+        
+        # Add spacing around numbered lists
+        content = re.sub(r'([^\n])\n(1\.)', r'\1\n\n\2', content)
+        content = re.sub(r'(\d+\.\s+[^\n]+)\n([^\n\d])', r'\1\n\n\2', content)
+        
+        # Clean up excessive spacing (more than 3 consecutive blank lines)
+        content = re.sub(r'\n{4,}', '\n\n\n', content)
         
         return content
     
