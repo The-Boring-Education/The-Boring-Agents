@@ -18,6 +18,7 @@ from src.agents import (
     InterviewSheetOrchestrator
 )
 from src.agents.project import ProjectOrchestratorAgent
+from src.agents.interview.interview_sheet_creator import InterviewSheetCreator
 from src.utils import setup_logging, generate_filename
 
 console = Console()
@@ -298,6 +299,177 @@ def revamp_all_sheets(save):
         
     except Exception as e:
         console.print(f"[red]Error in batch revamping: {str(e)}[/red]")
+        raise click.Abort()
+
+
+# New Interview Sheet Creation Commands (Phased Approach)
+@interview.command()
+@click.option('--topic', required=True, help='Interview topic (e.g., JavaScript, React, Python)')
+@click.option('--roadmap', default='Tech', help='Roadmap category (Tech, Frontend, Backend, etc.)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def create_sheet(topic, roadmap, save):
+    """Phase 1: Create initial interview sheet structure."""
+    console.print(f"[green]🎯 Phase 1: Creating interview sheet for {topic}...[/green]")
+    
+    try:
+        creator = InterviewSheetCreator()
+        result = creator.create_interview_sheet(topic, roadmap)
+        
+        if result["status"] == "success":
+            sheet_data = result["sheet_data"]
+            
+            # Display sheet summary
+            table = Table(title=f"📋 Interview Sheet Created: {topic}")
+            table.add_column("Property", style="cyan")
+            table.add_column("Value", style="green")
+            
+            table.add_row("Sheet ID", sheet_data["_id"])
+            table.add_row("Name", sheet_data["name"])
+            table.add_row("Slug", sheet_data["slug"])
+            table.add_row("Roadmap", sheet_data["roadmap"])
+            table.add_row("Questions Count", str(len(sheet_data["questions"])))
+            table.add_row("File Path", result["filepath"])
+            
+            console.print(table)
+            
+            console.print(f"\n[yellow]✅ Phase 1 Complete![/yellow]")
+            console.print(f"[green]📝 Next step: Generate questions list[/green]")
+            console.print(f"[blue]Run: python main.py interview generate-questions --topic {topic}[/blue]")
+            
+        else:
+            console.print(f"[red]❌ Error creating sheet: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error creating interview sheet: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--topic', required=True, help='Interview topic (e.g., JavaScript, React, Python)')
+@click.option('--roadmap', default='Tech', help='Roadmap category (Tech, Frontend, Backend, etc.)')
+@click.option('--count', default=50, help='Number of questions to generate')
+@click.option('--save', is_flag=True, help='Save output to file')
+def generate_questions(topic, roadmap, count, save):
+    """Phase 2: Generate questions list and save to MDX file."""
+    console.print(f"[green]🎯 Phase 2: Generating {count} questions for {topic}...[/green]")
+    
+    try:
+        creator = InterviewSheetCreator()
+        result = creator.generate_questions_list(topic, roadmap, count)
+        
+        if result["status"] == "success":
+            console.print(f"\n[yellow]✅ Phase 2 Complete![/yellow]")
+            console.print(f"[green]📝 Questions list saved to: {result['mdx_filepath']}[/green]")
+            console.print(f"[blue]📋 Review the MDX file and edit questions as needed[/blue]")
+            console.print(f"[blue]📋 Then run: python main.py interview generate-answers --mdx-file {result['mdx_filepath']}[/blue]")
+            
+            # Show questions summary
+            questions_content = result["questions_content"]
+            question_lines = [line for line in questions_content.split('\n') if line.strip().startswith('- Question:')]
+            
+            console.print(f"\n📊 [bold]Generated {len(question_lines)} questions[/bold]")
+            console.print(f"[green]📝 Review and edit the MDX file before proceeding to Phase 3[/green]")
+            
+        else:
+            console.print(f"[red]❌ Error generating questions: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error generating questions: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--mdx-file', required=True, help='Path to MDX file containing questions')
+@click.option('--sheet-file', help='Path to existing sheet JSON file (optional)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def generate_answers(mdx_file, sheet_file, save):
+    """Phase 3: Generate answers for questions from MDX file."""
+    console.print(f"[green]🎯 Phase 3: Generating answers from {mdx_file}...[/green]")
+    
+    try:
+        creator = InterviewSheetCreator()
+        result = creator.generate_answers_for_questions(mdx_file, sheet_file)
+        
+        if result["status"] == "success":
+            console.print(f"\n[yellow]✅ Phase 3 Complete![/yellow]")
+            console.print(f"[green]📝 Complete sheet with answers saved to: {result['filepath']}[/green]")
+            console.print(f"[blue]📋 Generated answers for {result['questions_count']} questions[/blue]")
+            console.print(f"[blue]📋 Next step: Validate and prepare for database[/blue]")
+            console.print(f"[blue]Run: python main.py interview validate-sheet --sheet-file {result['filepath']}[/blue]")
+            
+        else:
+            console.print(f"[red]❌ Error generating answers: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error generating answers: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--sheet-file', required=True, help='Path to sheet JSON file to validate')
+@click.option('--save', is_flag=True, help='Save output to file')
+def validate_sheet(sheet_file, save):
+    """Phase 4: Validate sheet and prepare for database publication."""
+    console.print(f"[green]🎯 Phase 4: Validating sheet for publication...[/green]")
+    
+    try:
+        creator = InterviewSheetCreator()
+        result = creator.validate_sheet_for_publication(sheet_file)
+        
+        if result["status"] == "success":
+            console.print(f"\n[yellow]✅ Phase 4 Complete![/yellow]")
+            console.print(f"[green]📝 Final sheet ready for database: {result['filepath']}[/green]")
+            console.print(f"[blue]📋 Sheet validation passed successfully[/blue]")
+            console.print(f"[blue]📋 Next step: Publish to database[/blue]")
+            console.print(f"[blue]Run: python main.py interview publish-sheet --sheet-file {result['filepath']}[/blue]")
+            
+            # Show validation summary
+            validation = result.get("validation", {})
+            if validation.get("is_valid"):
+                console.print(f"[green]✅ Sheet structure is valid[/green]")
+            else:
+                console.print(f"[red]❌ Sheet validation failed:[/red]")
+                for error in validation.get("errors", []):
+                    console.print(f"[red]   • {error}[/red]")
+            
+        else:
+            console.print(f"[red]❌ Sheet validation failed: {result.get('message', 'Unknown error')}[/red]")
+            for error in result.get("errors", []):
+                console.print(f"[red]   • {error}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error validating sheet: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--sheet-file', required=True, help='Path to final sheet JSON file to publish')
+@click.option('--save', is_flag=True, help='Save output to file')
+def publish_sheet(sheet_file, save):
+    """Phase 5: Publish sheet to database."""
+    console.print(f"[green]🎯 Phase 5: Publishing sheet to database...[/green]")
+    console.print(f"[yellow]⚠️  This will publish to: {config.api_base_url}[/yellow]")
+    
+    if not click.confirm("Continue with database publication?"):
+        console.print("Operation cancelled.")
+        return
+    
+    try:
+        creator = InterviewSheetCreator()
+        result = creator.publish_to_database(sheet_file)
+        
+        if result["status"] == "success":
+            console.print(f"\n[yellow]✅ Phase 5 Complete![/yellow]")
+            console.print(f"[green]🎉 Interview sheet published successfully![/green]")
+            console.print(f"[blue]📋 Sheet ID: {result['sheet_id']}[/blue]")
+            console.print(f"[blue]📋 API URL: {result['api_url']}[/blue]")
+            console.print(f"[green]🎯 All phases completed successfully![/green]")
+            
+        else:
+            console.print(f"[red]❌ Error publishing sheet: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error publishing sheet: {str(e)}[/red]")
         raise click.Abort()
 
 

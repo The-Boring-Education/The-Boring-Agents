@@ -26,6 +26,18 @@ class Config(BaseSettings):
     temperature: float = Field(default=0.7, env="TEMPERATURE")
     max_context_length: int = Field(default=16000, env="MAX_CONTEXT_LENGTH")
     
+    # API Configuration
+    environment: str = Field(default="dev", env="ENVIRONMENT")  # dev or prod
+    dev_api_base_url: str = Field(default="https://tbe-dev-git-development-tbe.vercel.app/api/v1", env="DEV_API_BASE_URL")
+    prod_api_base_url: str = Field(default="https://www.theboringeducation.com/api/v1", env="PROD_API_BASE_URL")
+    
+    @property
+    def api_base_url(self) -> str:
+        """Get the appropriate API base URL based on environment."""
+        if self.environment == "prod":
+            return self.prod_api_base_url
+        return self.dev_api_base_url
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
