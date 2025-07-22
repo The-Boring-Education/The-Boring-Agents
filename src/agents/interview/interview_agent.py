@@ -2,6 +2,7 @@
 
 from typing import Dict, Any, List, Optional
 from langchain.prompts import PromptTemplate
+import random
 
 from ...core.base_agent import BaseAgent
 
@@ -13,100 +14,43 @@ class InterviewAgent(BaseAgent):
         """Get prompt templates for interview content generation."""
         
         question_sheet_template = PromptTemplate(
-            input_variables=["technology", "experience_level", "question_count"],
+            input_variables=["topic"],
             template="""
-            Create a comprehensive interview question sheet for {technology} targeting {experience_level} level candidates.
-            Generate {question_count} questions covering different aspects and difficulty levels.
+            You are a senior tech interviewer with 20+ years of experience who has conducted 300+ interviews. 
+            You have deep knowledge of the Indian tech industry and understand what companies actually ask in interviews.
+            
+            Create a comprehensive interview question sheet for {topic}. Generate 30-50 high-quality questions that cover:
+            
+            1. **Core Fundamentals** - Basic concepts, syntax, and principles
+            2. **Practical Implementation** - Real-world scenarios and problem-solving
+            3. **Advanced Concepts** - Complex topics and edge cases
+            4. **Best Practices** - Industry standards and optimization
+            5. **System Design** - Architecture and scalability considerations
             
             For each question, provide:
-            1. Question text
-            2. Detailed answer/explanation
-            3. Difficulty level (1-5)
-            4. Key concepts tested
-            5. Follow-up questions (if applicable)
-            6. Code example (if relevant)
+            - A clear, concise question title
+            - The actual question text
+            - A comprehensive answer with:
+              * Quick answer summary
+              * Detailed explanation with code examples
+              * Good vs bad code examples
+              * Why this concept matters
+              * Different ways interviewers ask this
+              * Related concepts to revise
+              * Memory tricks and tips
+              * Interview pro tips
+              * Practice problems
+              * Companies that ask this
             
-            Cover these areas:
-            - Fundamentals and core concepts
-            - Practical implementation
-            - Problem-solving scenarios
-            - Best practices
-            - Advanced concepts
-            - Real-world applications
+            Format each answer in markdown with proper sections and emojis for readability.
             
-            Format as a structured sheet that's easy to review and practice with.
-            """
-        )
-        
-        coding_challenges_template = PromptTemplate(
-            input_variables=["technology", "difficulty", "challenge_count"],
-            template="""
-            Create {challenge_count} coding challenges for {technology} at {difficulty} difficulty level.
-            
-            For each challenge, provide:
-            1. Problem statement
-            2. Input/Output examples
-            3. Constraints
-            4. Expected time complexity
-            5. Expected space complexity
-            6. Sample solution with explanation
-            7. Alternative approaches
-            8. Edge cases to consider
-            
-            Make the challenges practical and relevant to real-world scenarios.
-            Include problems that test different skills like algorithms, data structures, and system design.
-            """
-        )
-        
-        behavioral_questions_template = PromptTemplate(
-            input_variables=["role_type", "experience_level"],
-            template="""
-            Generate behavioral interview questions for a {role_type} position targeting {experience_level} candidates.
-            
-            Create 15-20 questions covering:
-            1. Leadership and teamwork
-            2. Problem-solving and decision-making
-            3. Communication and collaboration
-            4. Adaptability and learning
-            5. Project management
-            6. Conflict resolution
-            7. Innovation and creativity
-            
-            For each question, provide:
-            - The question text
-            - What the interviewer is looking for
-            - STAR method framework for answering
-            - Sample answer structure
-            - Red flags to avoid
-            """
-        )
-        
-        system_design_template = PromptTemplate(
-            input_variables=["system_type", "complexity_level"],
-            template="""
-            Create system design interview questions for {system_type} systems at {complexity_level} complexity.
-            
-            Generate 5-7 comprehensive system design questions including:
-            1. Problem statement
-            2. Requirements (functional and non-functional)
-            3. Scale expectations (users, data, requests/sec)
-            4. Key components to discuss
-            5. Database design considerations
-            6. API design
-            7. Scalability challenges
-            8. Sample architecture diagram description
-            9. Technology stack recommendations
-            10. Trade-offs to discuss
-            
-            Focus on real-world systems that candidates might encounter in the industry.
+            Think like an experienced interviewer who knows exactly what companies ask and how to evaluate candidates effectively.
+            Focus on questions that actually come up in Indian tech interviews, not just theoretical concepts.
             """
         )
         
         return {
-            "question_sheet": question_sheet_template,
-            "coding_challenges": coding_challenges_template,
-            "behavioral_questions": behavioral_questions_template,
-            "system_design": system_design_template
+            "question_sheet": question_sheet_template
         }
     
     def generate_content(self, content_type: str, **kwargs) -> Dict[str, Any]:
@@ -143,136 +87,277 @@ class InterviewAgent(BaseAgent):
         
         return result
     
-    def create_question_sheet(self, technology: str, experience_level: str = "intermediate",
-                            question_count: int = 25) -> Dict[str, Any]:
-        """Create a comprehensive question sheet for a technology.
+    def create_question_sheet(self, topic: str) -> Dict[str, Any]:
+        """Create a comprehensive question sheet for a technology topic.
         
         Args:
-            technology: The technology/framework to focus on
-            experience_level: Target experience level
-            question_count: Number of questions to generate
+            topic: The technology/topic to focus on (e.g., "JavaScript", "React", "Python")
             
         Returns:
-            Complete question sheet with answers
+            Complete question sheet with structured questions and answers
         """
-        return self.generate_content(
-            "question_sheet",
-            technology=technology,
-            experience_level=experience_level,
-            question_count=question_count
-        )
-    
-    def create_coding_challenges(self, technology: str, difficulty: str = "medium",
-                               challenge_count: int = 10) -> Dict[str, Any]:
-        """Create coding challenges for interview preparation.
+        result = self.generate_content("question_sheet", topic=topic)
         
-        Args:
-            technology: The technology/language
-            difficulty: Challenge difficulty (easy, medium, hard)
-            challenge_count: Number of challenges to generate
-            
-        Returns:
-            Coding challenges with solutions
-        """
-        return self.generate_content(
-            "coding_challenges",
-            technology=technology,
-            difficulty=difficulty,
-            challenge_count=challenge_count
-        )
-    
-    def create_behavioral_questions(self, role_type: str = "Software Engineer",
-                                  experience_level: str = "mid-level") -> Dict[str, Any]:
-        """Create behavioral interview questions.
+        # Parse the generated content into structured format
+        structured_questions = self._parse_questions_from_content(result['generated_content'])
         
-        Args:
-            role_type: Type of role (Software Engineer, Tech Lead, etc.)
-            experience_level: Target experience level
-            
-        Returns:
-            Behavioral questions with answer guidance
-        """
-        return self.generate_content(
-            "behavioral_questions",
-            role_type=role_type,
-            experience_level=experience_level
-        )
-    
-    def create_system_design_questions(self, system_type: str = "web applications",
-                                     complexity_level: str = "medium") -> Dict[str, Any]:
-        """Create system design interview questions.
-        
-        Args:
-            system_type: Type of systems to focus on
-            complexity_level: Complexity level (low, medium, high)
-            
-        Returns:
-            System design questions with guidance
-        """
-        return self.generate_content(
-            "system_design",
-            system_type=system_type,
-            complexity_level=complexity_level
-        )
-    
-    def create_complete_interview_prep(self, technology: str, 
-                                     experience_level: str = "intermediate") -> Dict[str, Any]:
-        """Create a complete interview preparation package.
-        
-        Args:
-            technology: Primary technology to focus on
-            experience_level: Target experience level
-            
-        Returns:
-            Complete interview prep package
-        """
-        # Generate all types of content
-        question_sheet = self.create_question_sheet(technology, experience_level)
-        coding_challenges = self.create_coding_challenges(technology)
-        behavioral_questions = self.create_behavioral_questions("Software Engineer", experience_level)
-        system_design = self.create_system_design_questions()
+        # Determine roadmap based on topic
+        roadmap = self._determine_roadmap(topic)
         
         return {
-            "technology": technology,
-            "experience_level": experience_level,
-            "components": {
-                "technical_questions": question_sheet,
-                "coding_challenges": coding_challenges,
-                "behavioral_questions": behavioral_questions,
-                "system_design": system_design
-            },
+            "topic": topic,
+            "roadmap": roadmap,
+            "questions": structured_questions,
             "metadata": {
+                "total_questions": len(structured_questions),
                 "created_at": self._get_timestamp(),
-                "total_prep_time": "15-20 hours",
-                "recommended_study_plan": self._create_study_plan()
+                "roadmap": roadmap
             }
         }
     
+    def _parse_questions_from_content(self, content: str) -> List[Dict[str, Any]]:
+        """Parse the generated content into structured question format."""
+        questions = []
+        
+        # Split content by question markers (## headers)
+        sections = content.split('##')
+        
+        for section in sections:
+            if not section.strip():
+                continue
+                
+            lines = section.strip().split('\n')
+            if len(lines) < 2:
+                continue
+            
+            # Extract title (first line after ##)
+            title_line = lines[0].strip()
+            if not title_line or title_line.startswith('#'):
+                continue
+            
+            # Find the question text and answer
+            question_text = ""
+            answer_text = ""
+            in_answer = False
+            
+            for line in lines[1:]:
+                line = line.strip()
+                
+                # Check for answer section markers
+                if any(marker in line for marker in ['🎯', '📖', '💻', '❌', '✅', '🤔', '🎭', '🔗', '😄', '💡', '💼', '🧠', '🏢']):
+                    in_answer = True
+                    answer_text += line + '\n'
+                    continue
+                
+                if in_answer:
+                    answer_text += line + '\n'
+                else:
+                    # If we haven't found answer markers yet, this is question text
+                    if line and not line.startswith('---'):
+                        question_text += line + '\n'
+            
+            # If we have both question and answer, create the question
+            if question_text.strip() and answer_text.strip():
+                # Determine frequency, company types, and priority
+                frequency = self._determine_frequency(title_line, question_text)
+                company_types = self._determine_company_types(title_line, question_text)
+                priority = self._determine_priority(title_line, question_text)
+                
+                questions.append({
+                    "title": title_line,
+                    "question": question_text.strip(),
+                    "answer": answer_text.strip(),
+                    "frequency": frequency,
+                    "companyTypes": company_types,
+                    "priority": priority
+                })
+        
+        # If no questions were parsed, create a fallback structure
+        if not questions:
+            # Create a simple question structure from the content
+            questions.append({
+                "title": "Sample Question",
+                "question": "What are the key concepts in this technology?",
+                "answer": content[:500] + "..." if len(content) > 500 else content,
+                "frequency": "Asked Frequently",
+                "companyTypes": ["MidSize", "MNC"],
+                "priority": "Medium"
+            })
+        
+        return questions
+    
+    def _determine_frequency(self, title: str, question: str) -> str:
+        """Determine how frequently this question is asked."""
+        # Keywords that indicate high frequency
+        high_freq_keywords = [
+            'difference between', 'what is', 'explain', 'how does', 'basic',
+            'fundamental', 'core', 'syntax', 'variable', 'function', 'loop',
+            'array', 'object', 'class', 'method', 'property', 'event'
+        ]
+        
+        # Keywords that indicate medium frequency
+        medium_freq_keywords = [
+            'advanced', 'optimization', 'performance', 'memory', 'async',
+            'promise', 'callback', 'closure', 'hoisting', 'prototype',
+            'inheritance', 'polymorphism', 'design pattern', 'algorithm'
+        ]
+        
+        # Keywords that indicate low frequency
+        low_freq_keywords = [
+            'edge case', 'rare', 'complex', 'expert', 'senior level',
+            'system design', 'architecture', 'scalability', 'microservices',
+            'distributed', 'concurrent', 'threading', 'advanced algorithm'
+        ]
+        
+        text = (title + ' ' + question).lower()
+        
+        if any(keyword in text for keyword in high_freq_keywords):
+            return 'Most Asked'
+        elif any(keyword in text for keyword in medium_freq_keywords):
+            return 'Asked Frequently'
+        elif any(keyword in text for keyword in low_freq_keywords):
+            return 'Asked Sometimes'
+        else:
+            return 'Asked Frequently'  # Default
+    
+    def _determine_company_types(self, title: str, question: str) -> List[str]:
+        """Determine which company types ask this question."""
+        text = (title + ' ' + question).lower()
+        
+        company_types = []
+        
+        # Startup questions (practical, hands-on, fast-paced)
+        startup_keywords = [
+            'practical', 'implementation', 'real-world', 'quick', 'fast',
+            'startup', 'mvp', 'prototype', 'hands-on', 'coding', 'debug'
+        ]
+        
+        # Midsize questions (balanced, established practices)
+        midsize_keywords = [
+            'best practice', 'standard', 'convention', 'maintainable',
+            'readable', 'documentation', 'testing', 'quality', 'process'
+        ]
+        
+        # MNC questions (formal, enterprise, large-scale)
+        mnc_keywords = [
+            'enterprise', 'large scale', 'distributed', 'security',
+            'compliance', 'standardization', 'governance', 'architecture'
+        ]
+        
+        # FAANG questions (advanced, algorithmic, system design)
+        faang_keywords = [
+            'algorithm', 'complexity', 'optimization', 'system design',
+            'scalability', 'performance', 'advanced', 'senior level',
+            'data structure', 'leetcode', 'competitive programming'
+        ]
+        
+        if any(keyword in text for keyword in startup_keywords):
+            company_types.append('Startup')
+        
+        if any(keyword in text for keyword in midsize_keywords):
+            company_types.append('MidSize')
+        
+        if any(keyword in text for keyword in mnc_keywords):
+            company_types.append('MNC')
+        
+        if any(keyword in text for keyword in faang_keywords):
+            company_types.append('FAANG')
+        
+        # If no specific type detected, assign based on question complexity
+        if not company_types:
+            if 'basic' in text or 'fundamental' in text:
+                company_types = ['Startup', 'MidSize']
+            elif 'advanced' in text or 'complex' in text:
+                company_types = ['MNC', 'FAANG']
+            else:
+                company_types = ['MidSize', 'MNC']
+        
+        return company_types
+    
+    def _determine_priority(self, title: str, question: str) -> str:
+        """Determine the priority level of this question."""
+        text = (title + ' ' + question).lower()
+        
+        # High priority keywords
+        high_priority_keywords = [
+            'fundamental', 'core', 'basic', 'essential', 'must know',
+            'critical', 'important', 'key concept', 'foundation'
+        ]
+        
+        # Medium priority keywords
+        medium_priority_keywords = [
+            'common', 'frequently', 'often', 'typical', 'standard',
+            'regular', 'usual', 'normal', 'average'
+        ]
+        
+        # Low priority keywords
+        low_priority_keywords = [
+            'advanced', 'complex', 'rare', 'edge case', 'expert',
+            'senior', 'specialized', 'niche', 'optional'
+        ]
+        
+        if any(keyword in text for keyword in high_priority_keywords):
+            return 'High'
+        elif any(keyword in text for keyword in low_priority_keywords):
+            return 'Low'
+        else:
+            return 'Medium'  # Default
+    
+    def _determine_roadmap(self, topic: str) -> str:
+        """Determine the roadmap category based on the topic."""
+        topic_lower = topic.lower()
+        
+        # Frontend technologies
+        frontend_techs = [
+            'javascript', 'react', 'vue', 'angular', 'html', 'css',
+            'typescript', 'svelte', 'nextjs', 'nuxt', 'frontend',
+            'ui', 'ux', 'web', 'browser', 'dom'
+        ]
+        
+        # Backend technologies
+        backend_techs = [
+            'python', 'java', 'nodejs', 'node.js', 'express', 'django', 'flask',
+            'spring', 'php', 'ruby', 'go', 'rust', 'backend', 'api',
+            'server', 'database', 'sql', 'nosql', 'mongodb', 'mysql'
+        ]
+        
+        # Fullstack technologies
+        fullstack_techs = [
+            'mern', 'mean', 'fullstack', 'full stack', 'full-stack',
+            'web development', 'full stack development'
+        ]
+        
+        # General tech topics
+        general_techs = [
+            'dsa', 'data structures', 'algorithms', 'system design',
+            'computer science', 'programming', 'coding', 'software',
+            'development', 'engineering'
+        ]
+        
+        if any(tech in topic_lower for tech in frontend_techs):
+            return 'Frontend'
+        elif any(tech in topic_lower for tech in backend_techs):
+            return 'Backend'
+        elif any(tech in topic_lower for tech in fullstack_techs):
+            return 'Fullstack'
+        else:
+            return 'Tech'  # Default for general topics
+    
     def _estimate_question_count(self, content: str) -> int:
         """Estimate number of questions in generated content."""
-        # Simple heuristic: count question marks and numbered items
-        question_marks = content.count('?')
-        numbered_items = len([line for line in content.split('\n') if line.strip().startswith(('1.', '2.', '3.'))])
-        return max(question_marks, numbered_items)
+        # Count markdown headers that likely indicate questions
+        question_headers = content.count('## ')
+        return max(question_headers, 30)  # Minimum 30 questions
     
     def _estimate_prep_time(self, content: str) -> str:
         """Estimate preparation time for the content."""
         word_count = len(content.split())
-        if word_count < 1000:
-            return "1-2 hours"
-        elif word_count < 3000:
-            return "3-5 hours"
+        if word_count < 5000:
+            return "2-3 hours"
+        elif word_count < 10000:
+            return "4-6 hours"
         else:
             return "6-8 hours"
-    
-    def _create_study_plan(self) -> List[str]:
-        """Create a recommended study plan."""
-        return [
-            "Week 1: Review technical questions and core concepts",
-            "Week 2: Practice coding challenges and algorithms",
-            "Week 3: Prepare behavioral stories using STAR method",
-            "Week 4: Practice system design and mock interviews"
-        ]
     
     def _get_timestamp(self) -> str:
         """Get current timestamp as string."""

@@ -70,10 +70,12 @@ def show_agent_capabilities():
     interview_table.add_column("Feature", style="cyan")
     interview_table.add_column("Description", style="white")
     
-    interview_table.add_row("Question Sheets", "Tech questions with detailed answers")
-    interview_table.add_row("Coding Challenges", "Algorithmic problems with solutions")
-    interview_table.add_row("Behavioral Questions", "STAR method guidance")
-    interview_table.add_row("System Design", "Architecture questions & examples")
+    interview_table.add_row("Simplified Generation", "Just provide topic (e.g., 'JavaScript', 'React')")
+    interview_table.add_row("Expert Perspective", "20+ years experience, 300+ interviews")
+    interview_table.add_row("Smart Categorization", "Auto-classify by frequency, company type, priority")
+    interview_table.add_row("Auto Roadmap Detection", "Frontend/Backend/Fullstack/Tech")
+    interview_table.add_row("Indian Context", "Tailored for Indian tech industry")
+    interview_table.add_row("Comprehensive Answers", "Detailed explanations with code examples")
     
     console.print(interview_table)
     
@@ -100,9 +102,9 @@ python main.py content video-suggestions --topic "Node.js" --module "Authenticat
 python main.py content tips-and-tricks --topic "Python" --level advanced
 
 # Interview Preparation
-python main.py interview question-sheet --technology "JavaScript" --count 30
-python main.py interview coding-challenges --technology "Python" --difficulty hard
-python main.py interview complete-prep --technology "Django"
+python main.py interview question-sheet --topic "JavaScript"
+python main.py interview question-sheet --topic "React"
+python main.py interview question-sheet --topic "Python"
 
 # Project Ideas & Implementation
 python main.py projects ideas --technology "Vue.js" --domain "fintech"

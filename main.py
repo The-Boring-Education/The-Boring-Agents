@@ -114,71 +114,68 @@ def interview():
 
 
 @interview.command()
-@click.option('--technology', required=True, help='Technology/framework')
-@click.option('--level', default='intermediate', help='Experience level')
-@click.option('--count', default=25, help='Number of questions')
+@click.option('--topic', required=True, help='Technology topic (e.g., JavaScript, React, Python)')
 @click.option('--save', is_flag=True, help='Save output to file')
-def question_sheet(technology, level, count, save):
-    """Generate interview question sheet."""
-    console.print(f"[green]Generating {count} interview questions for {technology}...[/green]")
+def question_sheet(topic, save):
+    """Generate interview question sheet for a technology topic."""
+    console.print(f"[green]Generating interview questions for {topic}...[/green]")
     
     agent = InterviewAgent()
-    result = agent.create_question_sheet(technology, level, count)
-    
-    console.print(Panel(result['generated_content'], title=f"{technology} Interview Questions"))
-    
-    if save:
-        filename = generate_filename(f"interview_{technology.replace(' ', '_')}")
-        filepath = agent.save_content(result, filename)
-        console.print(f"[blue]Saved to: {filepath}[/blue]")
-
-
-@interview.command()
-@click.option('--technology', required=True, help='Programming language/technology')
-@click.option('--difficulty', default='medium', help='Challenge difficulty')
-@click.option('--count', default=10, help='Number of challenges')
-@click.option('--save', is_flag=True, help='Save output to file')
-def coding_challenges(technology, difficulty, count, save):
-    """Generate coding challenges."""
-    console.print(f"[green]Generating {count} coding challenges for {technology}...[/green]")
-    
-    agent = InterviewAgent()
-    result = agent.create_coding_challenges(technology, difficulty, count)
-    
-    console.print(Panel(result['generated_content'], title=f"{technology} Coding Challenges"))
-    
-    if save:
-        filename = generate_filename(f"coding_{technology.replace(' ', '_')}")
-        filepath = agent.save_content(result, filename)
-        console.print(f"[blue]Saved to: {filepath}[/blue]")
-
-
-@interview.command()
-@click.option('--technology', required=True, help='Primary technology')
-@click.option('--level', default='intermediate', help='Experience level')
-@click.option('--save', is_flag=True, help='Save output to file')
-def complete_prep(technology, level, save):
-    """Generate complete interview preparation package."""
-    console.print(f"[green]Generating complete interview prep for {technology}...[/green]")
-    
-    agent = InterviewAgent()
-    result = agent.create_complete_interview_prep(technology, level)
+    result = agent.create_question_sheet(topic)
     
     # Display summary
-    table = Table(title=f"Interview Prep Package: {technology}")
-    table.add_column("Component", style="cyan")
-    table.add_column("Status", style="green")
+    table = Table(title=f"Interview Sheet: {topic}")
+    table.add_column("Property", style="cyan")
+    table.add_column("Value", style="green")
     
-    for component in result['components'].keys():
-        table.add_row(component.replace('_', ' ').title(), "✓ Generated")
+    table.add_row("Topic", result['topic'])
+    table.add_row("Roadmap", result['roadmap'])
+    table.add_row("Total Questions", str(result['metadata']['total_questions']))
+    table.add_row("Estimated Prep Time", result['metadata'].get('estimated_prep_time', 'N/A'))
     
     console.print(table)
-    console.print(f"[yellow]Estimated prep time: {result['metadata']['total_prep_time']}[/yellow]")
+    
+    # Show question distribution
+    questions = result['questions']
+    if questions:
+        console.print(f"\n📊 [bold]Question Distribution:[/bold]")
+        
+        # Frequency distribution
+        freq_dist = {}
+        for q in questions:
+            freq = q.get('frequency', 'Asked Frequently')
+            freq_dist[freq] = freq_dist.get(freq, 0) + 1
+        
+        for freq, count in freq_dist.items():
+            console.print(f"   {freq}: {count} questions")
+        
+        # Priority distribution
+        priority_dist = {}
+        for q in questions:
+            priority = q.get('priority', 'Medium')
+            priority_dist[priority] = priority_dist.get(priority, 0) + 1
+        
+        console.print(f"\n🎯 [bold]Priority Distribution:[/bold]")
+        for priority, count in priority_dist.items():
+            console.print(f"   {priority}: {count} questions")
+        
+        # Company types
+        company_dist = {}
+        for q in questions:
+            for company_type in q.get('companyTypes', []):
+                company_dist[company_type] = company_dist.get(company_type, 0) + 1
+        
+        console.print(f"\n🏢 [bold]Company Type Distribution:[/bold]")
+        for company_type, count in company_dist.items():
+            console.print(f"   {company_type}: {count} questions")
     
     if save:
-        filename = generate_filename(f"complete_prep_{technology.replace(' ', '_')}")
+        filename = generate_filename(f"interview_{topic.replace(' ', '_')}")
         filepath = agent.save_content(result, filename)
         console.print(f"[blue]Saved to: {filepath}[/blue]")
+    
+    console.print(f"\n[yellow]Interview sheet generated successfully![/yellow]")
+    console.print(f"[green]This sheet contains {len(questions)} high-quality questions with proper categorization.[/green]")
 
 
 @interview.command()
@@ -225,60 +222,6 @@ def revamp_sheet(sheet_id, save):
         
     except Exception as e:
         console.print(f"[red]Error revamping sheet: {str(e)}[/red]")
-        raise click.Abort()
-
-
-@interview.command()
-@click.option('--sheet-name', required=True, help='Name of the new interview sheet')
-@click.option('--description', required=True, help='Description of the sheet topic')
-@click.option('--target-questions', default=50, help='Number of questions to generate')
-@click.option('--save', is_flag=True, help='Save output to file')
-def create_world_class_sheet(sheet_name, description, target_questions, save):
-    """Create a new world-class interview sheet from scratch."""
-    console.print(f"[green]🚀 Creating world-class interview sheet: {sheet_name}...[/green]")
-    
-    try:
-        orchestrator = InterviewSheetOrchestrator()
-        result = orchestrator.create_new_sheet(sheet_name, description, target_questions)
-        
-        # Display results
-        stats = result.get("statistics", {})
-        sheet_data = result.get("sheet_data", {})
-        
-        table = Table(title=f"New Sheet Created: {sheet_name}")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="green")
-        
-        table.add_row("Total Questions", str(sheet_data.get("total_questions", 0)))
-        table.add_row("Average Quality Score", f"{stats.get('average_quality_score', 0):.1f}/10")
-        table.add_row("Estimated Prep Time", sheet_data.get("estimated_prep_time", "N/A"))
-        
-        console.print(table)
-        
-        # Show difficulty distribution
-        difficulty_dist = sheet_data.get("difficulty_distribution", {})
-        if difficulty_dist:
-            console.print(f"\n📊 [bold]Difficulty Distribution:[/bold]")
-            for difficulty, count in difficulty_dist.items():
-                console.print(f"   {difficulty}: {count} questions")
-        
-        # Show metadata
-        metadata = sheet_data.get("metadata", {})
-        if metadata:
-            console.print(f"\n✨ [bold]Quality Features:[/bold]")
-            console.print(f"   🇮🇳 Indian Context: {metadata.get('indian_context', False)}")
-            console.print(f"   😄 Humor Integrated: {metadata.get('humor_integrated', False)}")
-            console.print(f"   ✅ Quality Assured: {metadata.get('quality_assured', False)}")
-        
-        if save:
-            filepath = result.get("filepath", "")
-            console.print(f"[blue]Sheet saved to: {filepath}[/blue]")
-        
-        console.print(f"\n🎉 World-class interview sheet created successfully!")
-        console.print(f"[yellow]This sheet is ready for ₹49 premium pricing![/yellow]")
-        
-    except Exception as e:
-        console.print(f"[red]Error creating sheet: {str(e)}[/red]")
         raise click.Abort()
 
 

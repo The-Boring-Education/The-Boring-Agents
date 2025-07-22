@@ -25,14 +25,16 @@ The Boring Agents is a Python-based AI agent system that automates content gener
 
 ### Interview Preparation
 
--   ❓ Technical question sheets with detailed answers
--   💻 Coding challenges with multiple solutions
--   🗣️ Behavioral interview questions with STAR method guidance
--   🏗️ System design questions with architecture examples
--   📋 Complete interview prep packages
--   🇮🇳 **NEW: Indian context integration with humor and cultural references**
--   🎯 **NEW: World-class answer structure with code examples**
--   📊 **NEW: Frequency analysis and company-specific insights**
+-   ❓ **Simplified Question Generation**: Just provide a topic (e.g., "JavaScript", "React", "Python")
+-   🎯 **Expert Interviewer Perspective**: Agent acts like a senior interviewer with 20+ years experience and 300+ interviews
+-   📊 **Smart Categorization**: Automatic classification of questions by:
+    -   **Frequency**: 'Most Asked', 'Asked Frequently', 'Asked Sometimes'
+    -   **Company Types**: 'Startup', 'MidSize', 'MNC', 'FAANG'
+    -   **Priority**: 'High', 'Medium', 'Low'
+-   🛣️ **Auto Roadmap Detection**: Automatically determines if topic is 'Frontend', 'Backend', 'Fullstack', or 'Tech'
+-   🇮🇳 **Indian Context**: Questions tailored for Indian tech industry and interview patterns
+-   📋 **Comprehensive Answers**: Each question includes detailed explanations, code examples, and interview tips
+-   🔄 **Sheet Revamping**: Enhance existing interview sheets with world-class quality
 
 ### Project Ideas & Implementation
 
@@ -100,24 +102,28 @@ python main.py shiksha create-world-class-course --course-name "Advanced React D
 #### Create Interview Prep Materials
 
 ```bash
-# Generate question sheet
-python main.py interview question-sheet --technology "JavaScript" --count 30
+# Generate interview question sheet (simplified - just provide topic)
+python main.py interview question-sheet --topic "JavaScript" --save
 
-# Create coding challenges
-python main.py interview coding-challenges --technology "Python" --difficulty hard
+# Generate React interview questions
+python main.py interview question-sheet --topic "React" --save
 
-# Complete interview package
-python main.py interview complete-prep --technology "Node.js"
+# Generate Python interview questions
+python main.py interview question-sheet --topic "Python" --save
 
-# NEW: Revamp existing interview sheet with world-class quality
+# Revamp existing interview sheet with world-class quality
 python main.py interview revamp-sheet --sheet-id "673333d146a1961fc8b84345" --save
 
-# NEW: Create new world-class interview sheet from scratch
-python main.py interview create-world-class-sheet --sheet-name "React Advanced Concepts" --description "Master advanced React patterns, hooks, and performance optimization for Indian startups" --target-questions 50 --save
-
-# NEW: Batch revamp all interview sheets (use with caution!)
+# Batch revamp all interview sheets (use with caution!)
 python main.py interview revamp-all-sheets --save
 ```
+
+**🤖 AI Auto-Determines:**
+
+-   **Roadmap**: Frontend/Backend/Fullstack/Tech based on topic
+-   **Question Categories**: Frequency, company types, and priority
+-   **Indian Context**: Questions tailored for Indian tech industry
+-   **Expert Perspective**: Like a senior interviewer with 20+ years experience
 
 #### Generate Intelligent Project Ideas
 
