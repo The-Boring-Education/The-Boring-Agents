@@ -71,9 +71,10 @@ python main.py interview publish-sheet --sheet-file ./output/final_sheet_javascr
 OPENAI_API_KEY=your_openai_api_key_here
 
 # Environment
-ENVIRONMENT=dev  # or prod
+ENVIRONMENT=local  # local, dev, or prod
 
 # API URLs
+LOCAL_API_BASE_URL=http://localhost:3000/api/v1
 DEV_API_BASE_URL=https://tbe-dev-git-development-tbe.vercel.app/api/v1
 PROD_API_BASE_URL=https://www.theboringeducation.com/api/v1
 ```
@@ -195,15 +196,23 @@ python main.py interview create-sheet --topic "Python" --roadmap "Backend"
 
 ## 🔗 API Integration
 
+### Local Development
+
+-   URL: `http://localhost:3000/api/v1`
+-   Use for local development and testing
+-   Set `ENVIRONMENT=local` in .env file
+
 ### Development
 
 -   URL: `https://tbe-dev-git-development-tbe.vercel.app/api/v1`
 -   Use for testing and development
+-   Set `ENVIRONMENT=dev` in .env file
 
 ### Production
 
 -   URL: `https://www.theboringeducation.com/api/v1`
 -   Use for live deployment
+-   Set `ENVIRONMENT=prod` in .env file
 
 ## 🎯 Usage Workflow
 

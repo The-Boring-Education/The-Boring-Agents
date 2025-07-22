@@ -238,16 +238,14 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
             
             answer = self._generate_with_prompt(answer_prompt)
             
-            # Create complete question object
+            # Create complete question object (including companyTypes for API)
             question_obj = {
                 "question": question_data['question'],
                 "answer": answer,
-                "category": question_data.get('category', 'Fundamentals'),
                 "difficulty": question_data.get('difficulty', 'Intermediate'),
                 "frequency": question_data.get('frequency', 'Asked Frequently'),
                 "priority": question_data.get('priority', 'Medium'),
-                "companyTypes": question_data.get('companyTypes', ['Startup', 'MidSize', 'MNC']),
-                "roadmap": sheet_data['roadmap']
+                "companyTypes": question_data.get('companyTypes', ['Startup', 'MidSize', 'MNC'])
             }
             
             answered_questions.append(question_obj)
@@ -324,7 +322,7 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
             console.print(f"[blue]Step 1: Verifying sheet exists...[/blue]")
             
             sheet_response = requests.get(
-                f"{config.api_base_url}/interview-prep/{sheet_id}",
+                f"{config.api_v1_url}/interview-prep/{sheet_id}",
                 headers={
                     "Content-Type": "application/json",
                     "x-admin-secret": "TBEAdmin"
@@ -354,12 +352,13 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
                     "title": question["question"],
                     "question": question["question"],
                     "answer": question["answer"],
-                    "frequency": question["frequency"]
+                    "frequency": question["frequency"],
+                    "companyTypes": question.get("companyTypes", ["Startup", "MidSize", "MNC"])
                 }
                 
                 # Add question API call
                 question_response = requests.post(
-                    f"{config.api_base_url}/interview-prep/{sheet_id}/question",
+                    f"{config.api_v1_url}/interview-prep/{sheet_id}/question",
                     headers={
                         "Content-Type": "application/json",
                         "x-admin-secret": "TBEAdmin"
@@ -384,7 +383,7 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
                 "status": "success",
                 "message": f"Questions added successfully to sheet with {successful_questions} questions",
                 "sheet_id": sheet_id,
-                "api_url": f"{config.api_base_url}/interview-prep/{sheet_id}",
+                "api_url": f"{config.api_v1_url}/interview-prep/{sheet_id}",
                 "successful_questions": successful_questions,
                 "failed_questions": failed_questions
             }
@@ -454,6 +453,12 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
                 for field in question_required:
                     if field not in question:
                         errors.append(f"Question {i+1} missing required field: {field}")
+                
+                # Check for unwanted fields (companyTypes is now allowed)
+                unwanted_fields = ['category', 'roadmap']
+                for field in unwanted_fields:
+                    if field in question:
+                        console.print(f"[yellow]⚠️  Question {i+1} contains unwanted field: {field}[/yellow]")
         
         return {
             "is_valid": len(errors) == 0,
@@ -462,6 +467,19 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
     
     def _prepare_final_sheet(self, sheet_data: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare final sheet for database publication."""
+        # Clean questions to remove unwanted fields but keep companyTypes
+        cleaned_questions = []
+        for question in sheet_data.get("questions", []):
+            cleaned_question = {
+                "question": question.get("question"),
+                "answer": question.get("answer"),
+                "difficulty": question.get("difficulty"),
+                "frequency": question.get("frequency"),
+                "priority": question.get("priority"),
+                "companyTypes": question.get("companyTypes", ['Startup', 'MidSize', 'MNC'])
+            }
+            cleaned_questions.append(cleaned_question)
+        
         # Ensure all required fields are present
         final_sheet = {
             "features": sheet_data.get("features", []),
@@ -471,7 +489,7 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
             "description": sheet_data.get("description"),
             "liveOn": sheet_data.get("liveOn"),
             "roadmap": sheet_data.get("roadmap"),
-            "questions": sheet_data.get("questions", []),
+            "questions": cleaned_questions,
             "meta": sheet_data.get("meta", "")
         }
         

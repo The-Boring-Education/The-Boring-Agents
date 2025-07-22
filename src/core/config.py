@@ -27,16 +27,24 @@ class Config(BaseSettings):
     max_context_length: int = Field(default=16000, env="MAX_CONTEXT_LENGTH")
     
     # API Configuration
-    environment: str = Field(default="dev", env="ENVIRONMENT")  # dev or prod
-    dev_api_base_url: str = Field(default="https://tbe-dev-git-development-tbe.vercel.app/api/v1", env="DEV_API_BASE_URL")
-    prod_api_base_url: str = Field(default="https://www.theboringeducation.com/api/v1", env="PROD_API_BASE_URL")
+    environment: str = Field(default="dev", env="ENVIRONMENT")  # local, dev, or prod
+    local_api_base_url: str = Field(default="http://localhost:3000", env="LOCAL_API_BASE_URL")
+    dev_api_base_url: str = Field(default="https://tbe-dev-git-development-tbe.vercel.app", env="DEV_API_BASE_URL")
+    prod_api_base_url: str = Field(default="https://www.theboringeducation.com", env="PROD_API_BASE_URL")
     
     @property
     def api_base_url(self) -> str:
         """Get the appropriate API base URL based on environment."""
-        if self.environment == "prod":
+        if self.environment == "local":
+            return self.local_api_base_url
+        elif self.environment == "prod":
             return self.prod_api_base_url
         return self.dev_api_base_url
+    
+    @property
+    def api_v1_url(self) -> str:
+        """Get the API v1 URL with /api/v1 suffix."""
+        return f"{self.api_base_url}/api/v1"
     
     class Config:
         env_file = ".env"

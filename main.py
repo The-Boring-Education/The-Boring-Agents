@@ -449,11 +449,18 @@ def validate_sheet(sheet_file, save):
 def publish_sheet(sheet_file, sheet_id, save):
     """Phase 5: Add questions to existing interview sheet."""
     console.print(f"[green]🎯 Phase 5: Adding questions to interview sheet...[/green]")
-    console.print(f"[yellow]⚠️  This will add questions to: {config.api_base_url}[/yellow]")
+    console.print(f"[yellow]⚠️  This will add questions to: {config.api_base_url} ({config.environment} environment)[/yellow]")
     
-    if not click.confirm("Continue with adding questions to database?"):
+    # Confirm environment
+    if not click.confirm(f"Continue with adding questions to {config.environment} environment?"):
         console.print("Operation cancelled.")
         return
+    
+    # Double-check for production
+    if config.environment == "prod":
+        if not click.confirm("⚠️  You are about to add questions to PRODUCTION environment. Are you sure?"):
+            console.print("Operation cancelled.")
+            return
     
     try:
         creator = InterviewSheetCreator()
@@ -709,6 +716,9 @@ def status():
     
     table.add_row("OpenAI API Key", "***" if config.openai_api_key else "Not set", 
                   "✓" if config.openai_api_key else "✗")
+    table.add_row("Environment", config.environment, "✓")
+    table.add_row("API Base URL", config.api_base_url, "✓")
+    table.add_row("API V1 URL", config.api_v1_url, "✓")
     table.add_row("Default Model", config.default_model, "✓")
     table.add_row("Output Directory", config.output_dir, "✓")
     table.add_row("Log Level", config.log_level, "✓")
