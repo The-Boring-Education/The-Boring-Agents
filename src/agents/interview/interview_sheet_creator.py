@@ -139,7 +139,6 @@ Provide validation results with any issues found.
         # Create sheet structure
         sheet_data = {
             "features": [],
-            "_id": self._generate_id(),
             "name": f"{topic} Interview Questions",
             "slug": self._generate_slug(topic),
             "coverImageURL": self._generate_cover_image_url(topic),
@@ -240,7 +239,6 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
             
             # Create complete question object
             question_obj = {
-                "_id": self._generate_id(),
                 "question": question_data['question'],
                 "answer": answer,
                 "category": question_data.get('category', 'Fundamentals'),
@@ -316,8 +314,8 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
         return {
             "status": "success",
             "message": "Sheet ready for database publication",
-            "sheet_id": sheet_data.get("_id"),
-            "api_url": f"{config.api_base_url}/interview-prep/{sheet_data.get('_id')}"
+            "sheet_id": "MongoDB will generate this",
+            "api_url": f"{config.api_base_url}/interview-prep/[MongoDB_ID]"
         }
     
     def _parse_questions_from_mdx(self, mdx_content: str) -> List[Dict[str, Any]]:
@@ -361,14 +359,14 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
         """Validate sheet structure for publication."""
         errors = []
         
-        required_fields = ['_id', 'name', 'slug', 'description', 'roadmap', 'questions']
+        required_fields = ['name', 'slug', 'description', 'roadmap', 'questions']
         for field in required_fields:
             if field not in sheet_data:
                 errors.append(f"Missing required field: {field}")
         
         if 'questions' in sheet_data:
             for i, question in enumerate(sheet_data['questions']):
-                question_required = ['_id', 'question', 'answer', 'difficulty', 'frequency', 'priority']
+                question_required = ['question', 'answer', 'difficulty', 'frequency', 'priority']
                 for field in question_required:
                     if field not in question:
                         errors.append(f"Question {i+1} missing required field: {field}")
@@ -383,7 +381,6 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
         # Ensure all required fields are present
         final_sheet = {
             "features": sheet_data.get("features", []),
-            "_id": sheet_data.get("_id"),
             "name": sheet_data.get("name"),
             "slug": sheet_data.get("slug"),
             "coverImageURL": sheet_data.get("coverImageURL"),

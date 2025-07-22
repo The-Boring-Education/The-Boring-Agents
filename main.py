@@ -323,7 +323,7 @@ def create_sheet(topic, roadmap, save):
             table.add_column("Property", style="cyan")
             table.add_column("Value", style="green")
             
-            table.add_row("Sheet ID", sheet_data["_id"])
+            table.add_row("Sheet ID", "MongoDB will generate")
             table.add_row("Name", sheet_data["name"])
             table.add_row("Slug", sheet_data["slug"])
             table.add_row("Roadmap", sheet_data["roadmap"])
@@ -461,7 +461,7 @@ def publish_sheet(sheet_file, save):
         if result["status"] == "success":
             console.print(f"\n[yellow]✅ Phase 5 Complete![/yellow]")
             console.print(f"[green]🎉 Interview sheet published successfully![/green]")
-            console.print(f"[blue]📋 Sheet ID: {result['sheet_id']}[/blue]")
+            console.print(f"[blue]📋 Sheet ID: {result['sheet_id']} (MongoDB will generate)[/blue]")
             console.print(f"[blue]📋 API URL: {result['api_url']}[/blue]")
             console.print(f"[green]🎯 All phases completed successfully![/green]")
             

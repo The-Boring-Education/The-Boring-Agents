@@ -93,7 +93,6 @@ output/
 ```json
 {
     "features": [],
-    "_id": "673427888dabf8ca6e3c7c4b",
     "name": "Database Interview Questions",
     "slug": "db-interview-questions",
     "coverImageURL": "https://ik.imagekit.io/tbe/webapp/database-interview-questions.svg",
