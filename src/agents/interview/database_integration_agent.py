@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 
 from ...core.base_agent import BaseAgent
+from ...utils.validation import InterviewQuestionValidator
 
 
 class DatabaseIntegrationAgent(BaseAgent):
@@ -142,17 +143,32 @@ class DatabaseIntegrationAgent(BaseAgent):
             True if update was successful, False otherwise
         """
         try:
+            # Validate the question data before updating
+            question_data = {
+                "title": f"Question {question_id}",
+                "question": "Updated question",
+                "answer": new_answer,
+                "frequency": frequency_analysis.get("frequency", "Asked Frequently") if frequency_analysis else "Asked Frequently",
+                "companyTypes": frequency_analysis.get("companies", ["MidSize", "MNC"]) if frequency_analysis else ["MidSize", "MNC"],
+                "priority": "Medium"
+            }
+            
+            validation_result = InterviewQuestionValidator.validate_question_data(question_data)
+            if not validation_result["is_valid"]:
+                self.logger.error(f"Question validation failed: {validation_result['errors']}")
+                return False
+            
             url = f"{self.api_base_url}/interview-prep/{sheet_id}/question/{question_id}"
             
             payload = {
-                "answer": new_answer
+                "answer": validation_result["data"]["answer"]
             }
             
             # Add frequency analysis if provided
             if frequency_analysis:
                 payload.update({
-                    "frequency": frequency_analysis.get("frequency", "Medium"),
-                    "companies": frequency_analysis.get("companies", []),
+                    "frequency": validation_result["data"]["frequency"],
+                    "companies": validation_result["data"]["companyTypes"],
                     "difficulty": frequency_analysis.get("difficulty", "Medium")
                 })
             

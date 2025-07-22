@@ -12,6 +12,7 @@ from .helpers import (
     validate_content_structure,
     format_duration
 )
+from .validation import InterviewQuestionValidator
 
 __all__ = [
     "setup_logging",
@@ -23,5 +24,6 @@ __all__ = [
     "extract_keywords",
     "generate_filename",
     "validate_content_structure",
-    "format_duration"
+    "format_duration",
+    "InterviewQuestionValidator"
 ]

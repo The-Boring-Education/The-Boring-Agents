@@ -6,6 +6,7 @@ import json
 import os
 
 from ...core.base_agent import BaseAgent
+from ...utils.validation import InterviewQuestionValidator
 from .database_integration_agent import DatabaseIntegrationAgent
 from .answer_enhancement_agent import AnswerEnhancementAgent
 from .frequency_analysis_agent import FrequencyAnalysisAgent
@@ -115,9 +116,31 @@ class InterviewSheetOrchestrator(BaseAgent):
                         question_text, styled_answer, sheet_name
                     )
                     
-                    # Step 4e: Update database
+                    # Step 4e: Validate question data before updating
+                    question_data = {
+                        "title": f"Question: {question_text[:50]}...",
+                        "question": question_text,
+                        "answer": styled_answer,
+                        "frequency": frequency_analysis.get("overall_frequency", "Asked Frequently"),
+                        "companyTypes": self._extract_company_types_from_analysis(frequency_analysis),
+                        "priority": "High" if frequency_analysis.get("overall_frequency") in ["Most Asked", "Very High"] else "Medium"
+                    }
+                    
+                    validation_result = InterviewQuestionValidator.validate_question_data(question_data)
+                    
+                    if not validation_result["is_valid"]:
+                        self.logger.error(f"Question validation failed: {validation_result['errors']}")
+                        statistics["failed"] += 1
+                        failed_updates.append({
+                            "question_id": question_id,
+                            "question": question_text,
+                            "error": f"Validation failed: {validation_result['errors']}"
+                        })
+                        continue
+                    
+                    # Step 4f: Update database with validated data
                     update_success = self.database_agent.update_question_answer(
-                        sheet_id, question_id, styled_answer, frequency_analysis
+                        sheet_id, question_id, validation_result["data"]["answer"], frequency_analysis
                     )
                     
                     if update_success:
@@ -125,9 +148,10 @@ class InterviewSheetOrchestrator(BaseAgent):
                         enhanced_questions.append({
                             "question_id": question_id,
                             "question": question_text,
-                            "enhanced_answer": styled_answer,
+                            "enhanced_answer": validation_result["data"]["answer"],
                             "quality_score": quality_review.get("overall_score", 0),
-                            "frequency_analysis": frequency_analysis
+                            "frequency_analysis": frequency_analysis,
+                            "validation_data": validation_result["data"]
                         })
                     else:
                         statistics["failed"] += 1
@@ -245,9 +269,46 @@ class InterviewSheetOrchestrator(BaseAgent):
             # Step 5: Create sheet data
             average_quality_score = total_quality_score / len(enhanced_qa_pairs) if enhanced_qa_pairs else 0
             
+            # Convert enhanced_qa_pairs to proper question format for validation
+            validated_questions = []
+            for qa_pair in enhanced_qa_pairs:
+                # Extract frequency and company types from frequency analysis
+                frequency_analysis = qa_pair.get("frequency_analysis", {})
+                frequency = frequency_analysis.get("overall_frequency", "Asked Frequently")
+                companies = frequency_analysis.get("company_breakdown", {})
+                
+                # Determine company types from analysis
+                company_types = []
+                if companies.get("FAANG", {}).get("Frequency", "Low") in ["Very High", "High"]:
+                    company_types.append("FAANG")
+                if companies.get("Indian Unicorns", {}).get("Frequency", "Low") in ["Very High", "High"]:
+                    company_types.append("Startup")
+                if companies.get("Mid-size Startups", {}).get("Frequency", "Low") in ["Very High", "High"]:
+                    company_types.append("MidSize")
+                if companies.get("Service Companies", {}).get("Frequency", "Low") in ["Very High", "High"]:
+                    company_types.append("MNC")
+                
+                # Fallback if no company types determined
+                if not company_types:
+                    company_types = ["MidSize", "MNC"]
+                
+                # Determine priority based on frequency
+                priority = "High" if frequency in ["Most Asked", "Very High"] else "Medium"
+                
+                validated_question = {
+                    "title": f"Question: {qa_pair['question'][:50]}...",
+                    "question": qa_pair["question"],
+                    "answer": qa_pair["answer"],
+                    "frequency": frequency,
+                    "companyTypes": company_types,
+                    "priority": priority
+                }
+                validated_questions.append(validated_question)
+            
             sheet_data = {
                 "name": sheet_name,
                 "description": description,
+                "roadmap": "Tech",  # Default roadmap
                 "total_questions": len(enhanced_qa_pairs),
                 "average_quality_score": round(average_quality_score, 2),
                 "difficulty_distribution": difficulty_distribution,
@@ -259,8 +320,28 @@ class InterviewSheetOrchestrator(BaseAgent):
                     "research_based": True,
                     "created_at": datetime.now().isoformat()
                 },
-                "questions": enhanced_qa_pairs
+                "questions": validated_questions
             }
+            
+            # Step 5a: Validate sheet data before saving
+            self.logger.info("Validating sheet data before saving...")
+            validation_result = InterviewQuestionValidator.validate_sheet_data(sheet_data)
+            
+            if not validation_result["is_valid"]:
+                self.logger.error(f"Sheet validation failed: {validation_result['errors']}")
+                raise ValueError(f"Sheet validation failed: {validation_result['errors']}")
+            
+            if validation_result["warnings"]:
+                self.logger.warning(f"Sheet validation warnings: {validation_result['warnings']}")
+            
+            # Step 5b: Check if sheet can be published
+            publication_check = InterviewQuestionValidator.can_publish_to_db(sheet_data)
+            
+            if not publication_check["can_publish"]:
+                self.logger.error(f"Sheet cannot be published: {publication_check['reason']}")
+                raise ValueError(f"Sheet cannot be published: {publication_check['reason']}")
+            
+            self.logger.info("✅ Sheet validation passed - ready for publication")
             
             # Step 6: Save to file
             filepath = self._save_sheet_to_file(sheet_data)
@@ -379,6 +460,27 @@ class InterviewSheetOrchestrator(BaseAgent):
                 distribution[difficulty] += 1
         
         return distribution
+    
+    def _extract_company_types_from_analysis(self, frequency_analysis: Dict[str, Any]) -> List[str]:
+        """Extract company types from frequency analysis data."""
+        company_types = []
+        companies = frequency_analysis.get("company_breakdown", {})
+        
+        # Check each company category
+        if companies.get("FAANG", {}).get("Frequency", "Low") in ["Very High", "High"]:
+            company_types.append("FAANG")
+        if companies.get("Indian Unicorns", {}).get("Frequency", "Low") in ["Very High", "High"]:
+            company_types.append("Startup")
+        if companies.get("Mid-size Startups", {}).get("Frequency", "Low") in ["Very High", "High"]:
+            company_types.append("MidSize")
+        if companies.get("Service Companies", {}).get("Frequency", "Low") in ["Very High", "High"]:
+            company_types.append("MNC")
+        
+        # Fallback if no company types determined
+        if not company_types:
+            company_types = ["MidSize", "MNC"]
+        
+        return company_types
     
     def _save_sheet_to_file(self, sheet_data: Dict[str, Any]) -> str:
         """Save sheet data to a JSON file."""

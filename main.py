@@ -174,8 +174,29 @@ def question_sheet(topic, save):
         filepath = agent.save_content(result, filename)
         console.print(f"[blue]Saved to: {filepath}[/blue]")
     
-    console.print(f"\n[yellow]Interview sheet generated successfully![/yellow]")
-    console.print(f"[green]This sheet contains {len(questions)} high-quality questions with proper categorization.[/green]")
+    # Validate sheet for publication
+    sheet_data = {
+        "name": f"{topic} Interview Questions",
+        "description": f"Comprehensive interview preparation for {topic}",
+        "roadmap": result['roadmap'],
+        "questions": result['questions']
+    }
+    
+    publication_check = agent.validate_sheet_for_publication(sheet_data)
+    
+    if publication_check["can_publish"]:
+        console.print(f"\n[yellow]Interview sheet generated successfully![/yellow]")
+        console.print(f"[green]This sheet contains {len(questions)} high-quality questions with proper categorization.[/green]")
+        console.print(f"[green]✅ Sheet is ready for publication to database[/green]")
+        
+        if publication_check["warnings"]:
+            console.print(f"[yellow]⚠️  Warnings: {len(publication_check['warnings'])} issues found but sheet is still valid[/yellow]")
+    else:
+        console.print(f"\n[red]❌ Sheet validation failed![/red]")
+        console.print(f"[red]Reason: {publication_check['reason']}[/red]")
+        for error in publication_check["errors"]:
+            console.print(f"[red]   • {error}[/red]")
+        raise click.Abort()
 
 
 @interview.command()

@@ -261,15 +261,6 @@ class AnswerEnhancementAgent(BaseAgent):
             **Rarely:** [List 2-3 companies that rarely ask this]
             
             
-            ## CRITICAL FORMATTING REQUIREMENTS:
-            
-            1. **Spacing**: Always add TWO blank lines after each section heading and before the next section
-            2. **Headings**: Use EXACTLY four hashtags (####) for all section headings
-            3. **Lists**: For numbered lists, use "1.", "2.", "3." format with proper numbering
-            4. **Consistency**: Every section should follow the exact spacing pattern shown above
-            5. **Code Blocks**: Always include proper code examples with explanatory comments
-            6. **Structure**: Follow the exact order and naming of sections as specified
-            
             Make this answer so engaging that students:
             1. Actually enjoy reading it
             2. Remember concepts through humor and analogies

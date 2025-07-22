@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 import random
 
 from ...core.base_agent import BaseAgent
+from ...utils.validation import InterviewQuestionValidator
 
 
 class InterviewAgent(BaseAgent):
@@ -104,19 +105,57 @@ class InterviewAgent(BaseAgent):
         # Determine roadmap based on topic
         roadmap = self._determine_roadmap(topic)
         
+        # Create sheet data
+        sheet_data = {
+            "name": f"{topic} Interview Questions",
+            "description": f"Comprehensive interview preparation for {topic} with expert-curated questions",
+            "roadmap": roadmap,
+            "questions": structured_questions
+        }
+        
+        # Validate the sheet data
+        validation_result = InterviewQuestionValidator.validate_sheet_data(sheet_data)
+        
+        if not validation_result["is_valid"]:
+            self.logger.error(f"Validation failed: {validation_result['errors']}")
+            raise ValueError(f"Sheet validation failed: {validation_result['errors']}")
+        
+        if validation_result["warnings"]:
+            self.logger.warning(f"Validation warnings: {validation_result['warnings']}")
+        
         return {
             "topic": topic,
             "roadmap": roadmap,
-            "questions": structured_questions,
+            "questions": validation_result["data"]["questions"],
             "metadata": {
-                "total_questions": len(structured_questions),
+                "total_questions": len(validation_result["data"]["questions"]),
                 "created_at": self._get_timestamp(),
-                "roadmap": roadmap
+                "roadmap": roadmap,
+                "validation_warnings": validation_result["warnings"]
             }
         }
     
     def _parse_questions_from_content(self, content: str) -> List[Dict[str, Any]]:
         """Parse the generated content into structured question format."""
+        questions = []
+        
+        # Try multiple parsing strategies
+        questions = self._parse_questions_strategy_1(content)
+        
+        if not questions:
+            questions = self._parse_questions_strategy_2(content)
+        
+        if not questions:
+            questions = self._parse_questions_strategy_3(content)
+        
+        # If still no questions, create intelligent fallback
+        if not questions:
+            questions = self._create_intelligent_fallback(content)
+        
+        return questions
+    
+    def _parse_questions_strategy_1(self, content: str) -> List[Dict[str, Any]]:
+        """Parse questions using ## headers strategy."""
         questions = []
         
         # Split content by question markers (## headers)
@@ -158,10 +197,10 @@ class InterviewAgent(BaseAgent):
             
             # If we have both question and answer, create the question
             if question_text.strip() and answer_text.strip():
-                # Determine frequency, company types, and priority
-                frequency = self._determine_frequency(title_line, question_text)
-                company_types = self._determine_company_types(title_line, question_text)
-                priority = self._determine_priority(title_line, question_text)
+                # Use AI to intelligently determine frequency, company types, and priority
+                frequency = self._ai_determine_frequency(title_line, question_text, answer_text)
+                company_types = self._ai_determine_company_types(title_line, question_text, answer_text)
+                priority = self._ai_determine_priority(title_line, question_text, answer_text)
                 
                 questions.append({
                     "title": title_line,
@@ -172,136 +211,300 @@ class InterviewAgent(BaseAgent):
                     "priority": priority
                 })
         
-        # If no questions were parsed, create a fallback structure
-        if not questions:
-            # Create a simple question structure from the content
+        return questions
+    
+    def _parse_questions_strategy_2(self, content: str) -> List[Dict[str, Any]]:
+        """Parse questions using **Question:** markers strategy."""
+        questions = []
+        
+        # Look for "**Question:**" patterns
+        question_blocks = content.split('**Question:**')
+        
+        for i, block in enumerate(question_blocks[1:], 1):  # Skip first empty block
+            lines = block.split('\n')
+            
+            # Extract question text (everything until **Answer:** or next section)
+            question_text = ""
+            answer_text = ""
+            in_answer = False
+            
+            for line in lines:
+                line = line.strip()
+                
+                if '**Answer:**' in line:
+                    in_answer = True
+                    answer_text += line + '\n'
+                    continue
+                
+                if in_answer:
+                    answer_text += line + '\n'
+                else:
+                    if line and not line.startswith('**'):
+                        question_text += line + '\n'
+            
+            if question_text.strip() and answer_text.strip():
+                # Generate a title from the question
+                title = f"Question {i}: {question_text[:50].strip()}..."
+                
+                # Use AI to intelligently determine frequency, company types, and priority
+                frequency = self._ai_determine_frequency(title, question_text, answer_text)
+                company_types = self._ai_determine_company_types(title, question_text, answer_text)
+                priority = self._ai_determine_priority(title, question_text, answer_text)
+                
+                questions.append({
+                    "title": title,
+                    "question": question_text.strip(),
+                    "answer": answer_text.strip(),
+                    "frequency": frequency,
+                    "companyTypes": company_types,
+                    "priority": priority
+                })
+        
+        return questions
+    
+    def _parse_questions_strategy_3(self, content: str) -> List[Dict[str, Any]]:
+        """Parse questions using numbered list strategy."""
+        questions = []
+        
+        # Look for numbered questions (1., 2., etc.)
+        lines = content.split('\n')
+        current_question = None
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Check for numbered questions
+            if line.startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')):
+                if current_question:
+                    questions.append(current_question)
+                
+                # Start new question
+                title = line
+                current_question = {
+                    "title": title,
+                    "question": "",
+                    "answer": "",
+                    "frequency": "Asked Frequently",
+                    "companyTypes": ["MidSize", "MNC"],
+                    "priority": "Medium"
+                }
+            elif current_question:
+                # Add content to current question
+                if not current_question["question"]:
+                    current_question["question"] = line
+                else:
+                    current_question["answer"] += line + '\n'
+        
+        # Add the last question
+        if current_question:
+            questions.append(current_question)
+        
+        return questions
+    
+    def _create_intelligent_fallback(self, content: str) -> List[Dict[str, Any]]:
+        """Create intelligent fallback questions from content."""
+        questions = []
+        
+        # Extract key topics from content
+        topics = self._extract_topics_from_content(content)
+        
+        for i, topic in enumerate(topics[:5], 1):  # Limit to 5 questions
+            # Create a question about this topic
+            question_text = f"What is {topic} and how is it used in JavaScript?"
+            
+            # Use AI to determine the characteristics
+            frequency = self._ai_determine_frequency(f"Question {i}: {topic}", question_text, content)
+            company_types = self._ai_determine_company_types(f"Question {i}: {topic}", question_text, content)
+            priority = self._ai_determine_priority(f"Question {i}: {topic}", question_text, content)
+            
             questions.append({
-                "title": "Sample Question",
-                "question": "What are the key concepts in this technology?",
-                "answer": content[:500] + "..." if len(content) > 500 else content,
-                "frequency": "Asked Frequently",
-                "companyTypes": ["MidSize", "MNC"],
-                "priority": "Medium"
+                "title": f"Question {i}: {topic}",
+                "question": question_text,
+                "answer": content[:300] + "..." if len(content) > 300 else content,
+                "frequency": frequency,
+                "companyTypes": company_types,
+                "priority": priority
             })
         
         return questions
     
-    def _determine_frequency(self, title: str, question: str) -> str:
-        """Determine how frequently this question is asked."""
-        # Keywords that indicate high frequency
-        high_freq_keywords = [
-            'difference between', 'what is', 'explain', 'how does', 'basic',
-            'fundamental', 'core', 'syntax', 'variable', 'function', 'loop',
-            'array', 'object', 'class', 'method', 'property', 'event'
+    def _extract_topics_from_content(self, content: str) -> List[str]:
+        """Extract key topics from content for fallback questions."""
+        # Common JavaScript topics
+        js_topics = [
+            "variables", "functions", "objects", "arrays", "closures", 
+            "prototypes", "hoisting", "callbacks", "promises", "async/await",
+            "DOM manipulation", "event handling", "scope", "this keyword",
+            "arrow functions", "destructuring", "spread operator", "modules"
         ]
         
-        # Keywords that indicate medium frequency
-        medium_freq_keywords = [
-            'advanced', 'optimization', 'performance', 'memory', 'async',
-            'promise', 'callback', 'closure', 'hoisting', 'prototype',
-            'inheritance', 'polymorphism', 'design pattern', 'algorithm'
-        ]
+        # Find topics mentioned in content
+        found_topics = []
+        content_lower = content.lower()
         
-        # Keywords that indicate low frequency
-        low_freq_keywords = [
-            'edge case', 'rare', 'complex', 'expert', 'senior level',
-            'system design', 'architecture', 'scalability', 'microservices',
-            'distributed', 'concurrent', 'threading', 'advanced algorithm'
-        ]
+        for topic in js_topics:
+            if topic in content_lower:
+                found_topics.append(topic)
         
-        text = (title + ' ' + question).lower()
+        # If no topics found, return some defaults
+        if not found_topics:
+            found_topics = ["variables", "functions", "objects"]
         
-        if any(keyword in text for keyword in high_freq_keywords):
-            return 'Most Asked'
-        elif any(keyword in text for keyword in medium_freq_keywords):
-            return 'Asked Frequently'
-        elif any(keyword in text for keyword in low_freq_keywords):
-            return 'Asked Sometimes'
-        else:
-            return 'Asked Frequently'  # Default
+        return found_topics
     
-    def _determine_company_types(self, title: str, question: str) -> List[str]:
-        """Determine which company types ask this question."""
-        text = (title + ' ' + question).lower()
+    def _ai_determine_frequency(self, title: str, question: str, answer: str) -> str:
+        """Use AI to intelligently determine how frequently this question is asked."""
         
-        company_types = []
+        frequency_prompt = f"""
+        You are an expert interviewer with 20+ years of experience who has conducted 300+ interviews at top Indian tech companies.
         
-        # Startup questions (practical, hands-on, fast-paced)
-        startup_keywords = [
-            'practical', 'implementation', 'real-world', 'quick', 'fast',
-            'startup', 'mvp', 'prototype', 'hands-on', 'coding', 'debug'
-        ]
+        Analyze this interview question and determine how frequently it's asked in real interviews:
         
-        # Midsize questions (balanced, established practices)
-        midsize_keywords = [
-            'best practice', 'standard', 'convention', 'maintainable',
-            'readable', 'documentation', 'testing', 'quality', 'process'
-        ]
+        **Question Title:** {title}
+        **Question Text:** {question}
+        **Answer Content:** {answer[:500]}...
         
-        # MNC questions (formal, enterprise, large-scale)
-        mnc_keywords = [
-            'enterprise', 'large scale', 'distributed', 'security',
-            'compliance', 'standardization', 'governance', 'architecture'
-        ]
+        Based on your extensive interview experience, classify this question as:
         
-        # FAANG questions (advanced, algorithmic, system design)
-        faang_keywords = [
-            'algorithm', 'complexity', 'optimization', 'system design',
-            'scalability', 'performance', 'advanced', 'senior level',
-            'data structure', 'leetcode', 'competitive programming'
-        ]
+        - "Most Asked" - Questions that appear in 80%+ of interviews for this topic
+        - "Asked Frequently" - Questions that appear in 40-80% of interviews for this topic  
+        - "Asked Sometimes" - Questions that appear in 10-40% of interviews for this topic
         
-        if any(keyword in text for keyword in startup_keywords):
-            company_types.append('Startup')
+        Consider:
+        1. **Fundamental vs Advanced**: Basic concepts are asked more frequently
+        2. **Practical vs Theoretical**: Hands-on questions are more common
+        3. **Industry Relevance**: Questions about real-world scenarios are asked more
+        4. **Difficulty Level**: Entry-level questions are asked more than senior-level
+        5. **Company Size**: Different companies focus on different question types
         
-        if any(keyword in text for keyword in midsize_keywords):
-            company_types.append('MidSize')
+        Return ONLY the classification: "Most Asked", "Asked Frequently", or "Asked Sometimes"
+        """
         
-        if any(keyword in text for keyword in mnc_keywords):
-            company_types.append('MNC')
-        
-        if any(keyword in text for keyword in faang_keywords):
-            company_types.append('FAANG')
-        
-        # If no specific type detected, assign based on question complexity
-        if not company_types:
-            if 'basic' in text or 'fundamental' in text:
-                company_types = ['Startup', 'MidSize']
-            elif 'advanced' in text or 'complex' in text:
-                company_types = ['MNC', 'FAANG']
+        try:
+            response = self._generate_with_prompt(frequency_prompt)
+            # Clean the response to get just the classification
+            response = response.strip().lower()
+            
+            if "most asked" in response:
+                return "Most Asked"
+            elif "asked sometimes" in response:
+                return "Asked Sometimes"
             else:
-                company_types = ['MidSize', 'MNC']
-        
-        return company_types
+                return "Asked Frequently"  # Default fallback
+                
+        except Exception as e:
+            self.logger.error(f"Error determining frequency: {str(e)}")
+            return "Asked Frequently"  # Safe fallback
     
-    def _determine_priority(self, title: str, question: str) -> str:
-        """Determine the priority level of this question."""
-        text = (title + ' ' + question).lower()
+    def _ai_determine_company_types(self, title: str, question: str, answer: str) -> List[str]:
+        """Use AI to intelligently determine which company types ask this question."""
         
-        # High priority keywords
-        high_priority_keywords = [
-            'fundamental', 'core', 'basic', 'essential', 'must know',
-            'critical', 'important', 'key concept', 'foundation'
-        ]
+        company_types_prompt = f"""
+        You are an expert interviewer with 20+ years of experience who has conducted 300+ interviews at different types of companies.
         
-        # Medium priority keywords
-        medium_priority_keywords = [
-            'common', 'frequently', 'often', 'typical', 'standard',
-            'regular', 'usual', 'normal', 'average'
-        ]
+        Analyze this interview question and determine which company types typically ask it:
         
-        # Low priority keywords
-        low_priority_keywords = [
-            'advanced', 'complex', 'rare', 'edge case', 'expert',
-            'senior', 'specialized', 'niche', 'optional'
-        ]
+        **Question Title:** {title}
+        **Question Text:** {question}
+        **Answer Content:** {answer[:500]}...
         
-        if any(keyword in text for keyword in high_priority_keywords):
-            return 'High'
-        elif any(keyword in text for keyword in low_priority_keywords):
-            return 'Low'
-        else:
-            return 'Medium'  # Default
+        Based on your experience, classify which company types ask this question:
+        
+        **Company Types:**
+        - "Startup" - Fast-paced, practical, hands-on questions (Flipkart, Swiggy, Ola, Razorpay)
+        - "MidSize" - Balanced, established practices (Freshworks, Zoho, InMobi, Paytm)
+        - "MNC" - Enterprise, formal, large-scale (TCS, Infosys, Wipro, Accenture)
+        - "FAANG" - Advanced, algorithmic, system design (Google, Meta, Amazon, Microsoft)
+        
+        **Consider:**
+        1. **Question Complexity**: Basic questions → Startup/MidSize, Advanced → MNC/FAANG
+        2. **Practical Focus**: Hands-on coding → Startup, Theory → MNC/FAANG
+        3. **Industry Focus**: Real-world problems → Startup/MidSize, Academic → FAANG
+        4. **Experience Level**: Entry-level → Startup/MidSize, Senior → MNC/FAANG
+        5. **Company Culture**: Fast-paced → Startup, Structured → MNC
+        
+        Return ONLY the company types as a JSON array: ["Startup", "MidSize", "MNC", "FAANG"]
+        Choose 1-3 most relevant types. NEVER return an empty array.
+        """
+        
+        try:
+            response = self._generate_with_prompt(company_types_prompt)
+            
+            # Parse the response to extract company types
+            response = response.strip().lower()
+            
+            company_types = []
+            
+            # Check for each company type in the response
+            if "startup" in response:
+                company_types.append("Startup")
+            if "midsize" in response or "mid-size" in response or "mid size" in response:
+                company_types.append("MidSize")
+            if "mnc" in response or "multinational" in response or "enterprise" in response:
+                company_types.append("MNC")
+            if "faang" in response or "google" in response or "meta" in response or "amazon" in response:
+                company_types.append("FAANG")
+            
+            # If no types detected, use intelligent fallback
+            if not company_types:
+                # Analyze question complexity for fallback
+                text = (title + ' ' + question).lower()
+                if any(word in text for word in ['basic', 'fundamental', 'syntax', 'variable', 'function']):
+                    company_types = ["Startup", "MidSize"]
+                elif any(word in text for word in ['advanced', 'complex', 'algorithm', 'system design']):
+                    company_types = ["MNC", "FAANG"]
+                else:
+                    company_types = ["MidSize", "MNC"]
+            
+            return company_types
+                
+        except Exception as e:
+            self.logger.error(f"Error determining company types: {str(e)}")
+            return ["MidSize", "MNC"]  # Safe fallback
+    
+    def _ai_determine_priority(self, title: str, question: str, answer: str) -> str:
+        """Use AI to intelligently determine the priority level of this question."""
+        
+        priority_prompt = f"""
+        You are an expert interviewer with 20+ years of experience who has conducted 300+ interviews.
+        
+        Analyze this interview question and determine its priority level for interview preparation:
+        
+        **Question Title:** {title}
+        **Question Text:** {question}
+        **Answer Content:** {answer[:500]}...
+        
+        Based on your experience, classify this question's priority as:
+        
+        - "High" - Essential concepts that candidates MUST know to pass interviews
+        - "Medium" - Important concepts that are commonly asked but not critical
+        - "Low" - Nice-to-know concepts that are rarely asked or advanced topics
+        
+        **Consider:**
+        1. **Fundamental Knowledge**: Core concepts are High priority
+        2. **Interview Frequency**: Frequently asked questions are High/Medium priority
+        3. **Career Impact**: Questions that affect hiring decisions are High priority
+        4. **Experience Level**: Entry-level questions are High priority, Senior-level are Medium/Low
+        5. **Industry Standards**: Standard practices are High priority, advanced topics are Medium/Low
+        
+        Return ONLY the priority: "High", "Medium", or "Low"
+        """
+        
+        try:
+            response = self._generate_with_prompt(priority_prompt)
+            # Clean the response to get just the priority
+            response = response.strip().lower()
+            
+            if "high" in response:
+                return "High"
+            elif "low" in response:
+                return "Low"
+            else:
+                return "Medium"  # Default fallback
+                
+        except Exception as e:
+            self.logger.error(f"Error determining priority: {str(e)}")
+            return "Medium"  # Safe fallback
     
     def _determine_roadmap(self, topic: str) -> str:
         """Determine the roadmap category based on the topic."""
@@ -363,3 +566,44 @@ class InterviewAgent(BaseAgent):
         """Get current timestamp as string."""
         from datetime import datetime
         return datetime.now().isoformat()
+    
+    def validate_sheet_for_publication(self, sheet_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate if sheet data can be published to database.
+        
+        Args:
+            sheet_data: Sheet data to validate
+            
+        Returns:
+            Publication readiness status
+        """
+        return InterviewQuestionValidator.can_publish_to_db(sheet_data)
+    
+    def ensure_proper_data_format(self, questions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Ensure all questions have proper data format.
+        
+        Args:
+            questions: List of questions to validate
+            
+        Returns:
+            List of validated questions
+        """
+        validated_questions = []
+        
+        for question in questions:
+            validation_result = InterviewQuestionValidator.validate_question_data(question)
+            if validation_result["is_valid"]:
+                validated_questions.append(validation_result["data"])
+            else:
+                self.logger.error(f"Question validation failed: {validation_result['errors']}")
+                # Create a fallback question with proper format
+                fallback_question = {
+                    "title": question.get("title", "Sample Question"),
+                    "question": question.get("question", "What are the key concepts?"),
+                    "answer": question.get("answer", "Sample answer content"),
+                    "frequency": "Asked Frequently",
+                    "companyTypes": ["MidSize", "MNC"],
+                    "priority": "Medium"
+                }
+                validated_questions.append(fallback_question)
+        
+        return validated_questions
