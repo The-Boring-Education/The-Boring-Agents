@@ -28,13 +28,13 @@ class AnswerEnhancementAgent(BaseAgent):
             
             Create a WORLD-CLASS answer that will help Indian students ACE their interviews and justify the ₹49 they're paying.
             
-            #### 🎯 Quick Answer
+            ##### 🎯 Quick Answer
             
             
             Give a concise, confident answer they can say in the first 30 seconds.
             
             
-            #### 📚 Introduction
+            ##### 📚 Introduction
             
             
             **What is it?**
@@ -53,31 +53,31 @@ class AnswerEnhancementAgent(BaseAgent):
             - Performance considerations
             
             
-            #### 💻 Code Example
+            ##### 💻 Code Example
             
             
             Provide a clear, working code example with comments explaining each part.
             
             
-            #### ❌ Bad Code Example
+            ##### ❌ Bad Code Example
             
             
             Show a common mistake or anti-pattern and explain what NOT to do.
             
             
-            #### ✅ Good Code Example
+            ##### ✅ Good Code Example
             
             
             Show the best practice and proper implementation.
             
             
-            #### 🤔 Why This Concept Matters
+            ##### 🤔 Why This Concept Matters
             
             
             Real-world importance, industry relevance, and why it matters for your career.
             
             
-            #### 🎭 Different Ways Interviewers Ask This
+            ##### 🎭 Different Ways Interviewers Ask This
             
             
             1. [First variation of how this question might be framed]
@@ -85,19 +85,19 @@ class AnswerEnhancementAgent(BaseAgent):
             3. [Third variation of how this question might be framed]
             
             
-            #### 😄 How will you remember it?
+            ##### 😄 How will you remember it?
             
             
             Create a funny, memorable analogy using Indian context (e.g., Mumbai local trains, masala dabba, street food stall).
             
             
-            #### 💡 Tip
+            ##### 💡 Tip
             
             
             Share one practical, actionable tip that will make a real difference for this concept.
             
             
-            #### 💼 Interview Pro Tips
+            ##### 💼 Interview Pro Tips
             
             
             **What interviewers want to hear:**
@@ -113,21 +113,21 @@ class AnswerEnhancementAgent(BaseAgent):
             3. Mistakes freshers typically make
             
             
-            #### 🧠 Practice Problems
+            ##### 🧠 Practice Problems
             
             
             1. [First problem to solve for practice with brief description]
             2. [Second problem to solve for practice with brief description]
             
             
-            #### 🤖 Ask AI these questions
+            ##### 🤖 Ask AI these questions
             
             
             1. [First deeper or related problem the student can ask an AI]
             2. [Second deeper or related problem the student can ask an AI]
             
             
-            #### 🏢 Companies That Ask This
+            ##### 🏢 Companies That Ask This
             
             
             **Definitely:** [List 3-4 companies that definitely ask this]
@@ -170,17 +170,17 @@ class AnswerEnhancementAgent(BaseAgent):
             
             Create a WORLD-CLASS answer with this EXACT structure and formatting:
             
-            #### 🎯 Quick Answer
+            ##### 🎯 Quick Answer
             
             [Concise, confident answer they can say immediately]
             
             
-            #### 📖 Introduction
+            ##### 📖 Introduction
             
             [What this concept is, why it matters, and the problem it solves]
             
             
-            #### 💻 Code Example
+            ##### 💻 Code Example
             
             ```javascript
             // Clear, working code example
@@ -188,7 +188,7 @@ class AnswerEnhancementAgent(BaseAgent):
             ```
             
             
-            #### ❌ Bad Code Example
+            ##### ❌ Bad Code Example
             
             ```javascript
             // Common mistakes and anti-patterns
@@ -196,7 +196,7 @@ class AnswerEnhancementAgent(BaseAgent):
             ```
             
             
-            #### ✅ Good Code Example
+            ##### ✅ Good Code Example
             
             ```javascript
             // Best practices and proper implementation
@@ -204,29 +204,29 @@ class AnswerEnhancementAgent(BaseAgent):
             ```
             
             
-            #### 🤔 Why This Concept Matters
+            ##### 🤔 Why This Concept Matters
             
             [Real-world importance, industry relevance, and why it matters for your career]
             
             
-            #### 🎭 Different Ways Interviewers Ask This
+            ##### 🎭 Different Ways Interviewers Ask This
             
             1. [First variation of how this question might be framed]
             2. [Second variation of how this question might be framed]
             3. [Third variation of how this question might be framed]
             
             
-            #### 😄 How will you remember it?
+            ##### 😄 How will you remember it?
             
             [Funny Indian analogy to remember this concept - make it memorable and relatable]
             
             
-            #### 💡 Tip
+            ##### 💡 Tip
             
             [Share ONE specific, actionable tip that will make a real difference - be very practical and specific]
             
             
-            #### 💼 Interview Pro Tips
+            ##### 💼 Interview Pro Tips
             
             **What interviewers want to hear:**
             1. [First key point they want to hear]
@@ -239,20 +239,20 @@ class AnswerEnhancementAgent(BaseAgent):
             3. [Third thing to avoid saying]
             
             
-            #### 🧠 Practice Problems
+            ##### 🧠 Practice Problems
             
             1. [First problem description - be specific and actionable]
             2. [Second problem description - be specific and actionable]
             3. [Third problem description - be specific and actionable]
             
             
-            #### 🤖 Ask AI these questions
+            ##### 🤖 Ask AI these questions
             
             1. [First deeper or related problem]
             2. [Second deeper or related problem]
             
             
-            #### 🏢 Companies That Ask This
+            ##### 🏢 Companies That Ask This
             
             **Definitely:** [List 3-4 companies that definitely ask this]
             
@@ -269,6 +269,7 @@ class AnswerEnhancementAgent(BaseAgent):
             5. Think "This ₹49 was totally worth it!"
             
             Remember: Quality over quantity. Each section should be substantial and valuable.
+            Make sure It's highly readable and engaging.
             """
         )
         

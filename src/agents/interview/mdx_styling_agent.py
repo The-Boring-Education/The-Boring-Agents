@@ -190,18 +190,21 @@ class MDXStylingAgent(BaseAgent):
         fixed_lines = []
         
         for line in lines:
-            # Convert any header level to H4 for consistency
+            # Convert any header level to H5 for consistency (lighter headings)
             if line.startswith('# '):
-                # Convert H1 to H4
-                line = line.replace('# ', '#### ')
+                # Convert H1 to H5
+                line = line.replace('# ', '##### ')
             elif line.startswith('## '):
-                # Convert H2 to H4
-                line = line.replace('## ', '#### ')
+                # Convert H2 to H5
+                line = line.replace('## ', '##### ')
             elif line.startswith('### '):
-                # Convert H3 to H4
-                line = line.replace('### ', '#### ')
+                # Convert H3 to H5
+                line = line.replace('### ', '##### ')
             elif line.startswith('#### '):
-                # Already H4, keep as is
+                # Convert H4 to H5
+                line = line.replace('#### ', '##### ')
+            elif line.startswith('##### '):
+                # Already H5, keep as is
                 pass
             
             fixed_lines.append(line)

@@ -190,7 +190,7 @@ class InterviewQuestionValidator:
         # Ensure all sections are present
         for section in sections:
             if section not in answer:
-                answer += f"\n\n#### {section}\n\n[Content for {section}]"
+                answer += f"\n\n##### {section}\n\n[Content for {section}]"
         
         return answer
     
