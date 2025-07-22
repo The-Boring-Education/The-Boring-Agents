@@ -66,6 +66,7 @@ Format each question as:
 - Difficulty: [Beginner/Intermediate/Advanced]
 - Frequency: [Most Asked/Asked Frequently/Asked Sometimes]
 - Priority: [High/Medium/Low]
+- CompanyTypes: [Startup, MidSize, MNC, FAANG] (select 2-3 most relevant)
 
 Generate exactly {target_count} high-quality questions.
 """
@@ -320,7 +321,7 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
             
             # Verify sheet exists first
             console.print(f"[blue]Step 1: Verifying sheet exists...[/blue]")
-            
+            print(f"{config.api_v1_url}/interview-prep/{sheet_id}")
             sheet_response = requests.get(
                 f"{config.api_v1_url}/interview-prep/{sheet_id}",
                 headers={
@@ -409,20 +410,43 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
         current_question = {}
         for line in lines:
             line = line.strip()
-            if line.startswith('- Question:'):
+            
+            # Handle numbered format (1. Question: ...)
+            if line.startswith('- Question:') or (line and line[0].isdigit() and '. Question:' in line):
                 if current_question:
                     questions.append(current_question)
-                current_question = {'question': line.replace('- Question:', '').strip()}
-            elif line.startswith('- Category:'):
-                current_question['category'] = line.replace('- Category:', '').strip()
-            elif line.startswith('- Difficulty:'):
-                current_question['difficulty'] = line.replace('- Difficulty:', '').strip()
-            elif line.startswith('- Frequency:'):
-                current_question['frequency'] = line.replace('- Frequency:', '').strip()
-            elif line.startswith('- Priority:'):
-                current_question['priority'] = line.replace('- Priority:', '').strip()
-            elif line.startswith('- CompanyTypes:'):
-                company_types = line.replace('- CompanyTypes:', '').strip()
+                # Extract question text, handling both formats
+                if line.startswith('- Question:'):
+                    question_text = line.replace('- Question:', '').strip()
+                else:
+                    # Handle numbered format: "1. Question: What is..."
+                    question_text = line.split('. Question:', 1)[1].strip()
+                current_question = {'question': question_text}
+            elif line.startswith('- Category:') or (line and 'Category:' in line):
+                if line.startswith('- Category:'):
+                    current_question['category'] = line.replace('- Category:', '').strip()
+                else:
+                    current_question['category'] = line.split('Category:', 1)[1].strip()
+            elif line.startswith('- Difficulty:') or (line and 'Difficulty:' in line):
+                if line.startswith('- Difficulty:'):
+                    current_question['difficulty'] = line.replace('- Difficulty:', '').strip()
+                else:
+                    current_question['difficulty'] = line.split('Difficulty:', 1)[1].strip()
+            elif line.startswith('- Frequency:') or (line and 'Frequency:' in line):
+                if line.startswith('- Frequency:'):
+                    current_question['frequency'] = line.replace('- Frequency:', '').strip()
+                else:
+                    current_question['frequency'] = line.split('Frequency:', 1)[1].strip()
+            elif line.startswith('- Priority:') or (line and 'Priority:' in line):
+                if line.startswith('- Priority:'):
+                    current_question['priority'] = line.replace('- Priority:', '').strip()
+                else:
+                    current_question['priority'] = line.split('Priority:', 1)[1].strip()
+            elif line.startswith('- CompanyTypes:') or (line and 'CompanyTypes:' in line):
+                if line.startswith('- CompanyTypes:'):
+                    company_types = line.replace('- CompanyTypes:', '').strip()
+                else:
+                    company_types = line.split('CompanyTypes:', 1)[1].strip()
                 current_question['companyTypes'] = [ct.strip() for ct in company_types.split(',')]
         
         if current_question:
