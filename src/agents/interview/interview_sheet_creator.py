@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 from langchain.prompts import PromptTemplate
 from rich.console import Console
+import click
 
 from src.core.base_agent import BaseAgent
 from src.core.config import config
@@ -300,23 +301,106 @@ Run: python main.py interview generate-answers --mdx-file {mdx_filepath}
             "validation": validation_result
         }
     
-    def publish_to_database(self, sheet_filepath: str) -> Dict[str, Any]:
-        """Phase 5: Publish sheet to database."""
-        console.print(f"[green]Publishing sheet to database: {sheet_filepath}[/green]")
+    def publish_to_database(self, sheet_filepath: str, sheet_id: str = None) -> Dict[str, Any]:
+        """Phase 5: Add questions to existing interview sheet."""
+        console.print(f"[green]Adding questions to interview sheet: {sheet_filepath}[/green]")
         
         # Load final sheet
         sheet_data = load_json_file(sheet_filepath)
         
-        # TODO: Implement actual API call to database
-        # For now, return success response
-        console.print(f"[yellow]API call to {config.api_base_url} would be made here[/yellow]")
-        
-        return {
-            "status": "success",
-            "message": "Sheet ready for database publication",
-            "sheet_id": "MongoDB will generate this",
-            "api_url": f"{config.api_base_url}/interview-prep/[MongoDB_ID]"
-        }
+        try:
+            import requests
+            
+            # Get sheet ID from parameter or prompt user
+            if not sheet_id:
+                sheet_id = click.prompt(
+                    "Enter the interview sheet ID (e.g., 67345538bdf619907a005031)",
+                    type=str
+                )
+            
+            console.print(f"[blue]Using sheet ID: {sheet_id}[/blue]")
+            
+            # Verify sheet exists first
+            console.print(f"[blue]Step 1: Verifying sheet exists...[/blue]")
+            
+            sheet_response = requests.get(
+                f"{config.api_base_url}/interview-prep/{sheet_id}",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-admin-secret": "TBEAdmin"
+                }
+            )
+            
+            if sheet_response.status_code != 200:
+                console.print(f"[red]❌ Sheet not found: {sheet_response.status_code}[/red]")
+                console.print(f"[red]Response: {sheet_response.text}[/red]")
+                return {
+                    "status": "error",
+                    "message": f"Sheet not found: {sheet_response.status_code}. Please create the sheet first."
+                }
+            
+            console.print(f"[green]✅ Sheet verified: {sheet_data['name']}[/green]")
+            
+            # Step 2: Add questions one by one
+            console.print(f"[blue]Step 2: Adding {len(sheet_data['questions'])} questions...[/blue]")
+            
+            successful_questions = 0
+            failed_questions = 0
+            
+            for i, question in enumerate(sheet_data["questions"]):
+                console.print(f"[yellow]Adding question {i+1}/{len(sheet_data['questions'])}: {question['question'][:50]}...[/yellow]")
+                
+                question_payload = {
+                    "title": question["question"],
+                    "question": question["question"],
+                    "answer": question["answer"],
+                    "frequency": question["frequency"]
+                }
+                
+                # Add question API call
+                question_response = requests.post(
+                    f"{config.api_base_url}/interview-prep/{sheet_id}/question",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-admin-secret": "TBEAdmin"
+                    },
+                    json=question_payload
+                )
+                
+                if question_response.status_code == 201:
+                    successful_questions += 1
+                    console.print(f"[green]✅ Question {i+1} added successfully[/green]")
+                else:
+                    failed_questions += 1
+                    console.print(f"[red]❌ Failed to add question {i+1}: {question_response.status_code}[/red]")
+                    console.print(f"[red]Response: {question_response.text}[/red]")
+            
+            console.print(f"\n[bold]📊 Publication Summary:[/bold]")
+            console.print(f"[green]✅ Successful questions: {successful_questions}[/green]")
+            if failed_questions > 0:
+                console.print(f"[red]❌ Failed questions: {failed_questions}[/red]")
+            
+            return {
+                "status": "success",
+                "message": f"Questions added successfully to sheet with {successful_questions} questions",
+                "sheet_id": sheet_id,
+                "api_url": f"{config.api_base_url}/interview-prep/{sheet_id}",
+                "successful_questions": successful_questions,
+                "failed_questions": failed_questions
+            }
+            
+        except requests.exceptions.RequestException as e:
+            console.print(f"[red]❌ Network error: {str(e)}[/red]")
+            return {
+                "status": "error",
+                "message": f"Network error: {str(e)}"
+            }
+        except Exception as e:
+            console.print(f"[red]❌ Error adding questions to database: {str(e)}[/red]")
+            return {
+                "status": "error",
+                "message": f"Error adding questions to database: {str(e)}"
+            }
     
     def _parse_questions_from_mdx(self, mdx_content: str) -> List[Dict[str, Any]]:
         """Parse questions from MDX content."""

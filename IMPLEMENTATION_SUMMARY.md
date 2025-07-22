@@ -58,8 +58,8 @@ python main.py interview generate-answers --mdx-file ./output/questions_javascri
 # Phase 4: Validate sheet
 python main.py interview validate-sheet --sheet-file ./output/complete_sheet_javascript-interview-questions.json
 
-# Phase 5: Publish to database
-python main.py interview publish-sheet --sheet-file ./output/final_sheet_javascript-interview-questions.json
+# Phase 5: Add questions to existing sheet
+python main.py interview publish-sheet --sheet-file ./output/final_sheet_javascript-interview-questions.json --sheet-id 67345538bdf619907a005031
 ```
 
 ## 🔧 Configuration
@@ -103,6 +103,30 @@ output/
     "meta": "This section contains the interview questions on MongoDB, MySQL, and Postgres fundamentals."
 }
 ```
+
+## 🔄 API Flow (Phase 5)
+
+### Step 1: Verify Sheet Exists
+
+```bash
+GET /api/v1/interview-prep/{sheet_id}
+Headers: x-admin-secret: TBEAdmin
+```
+
+### Step 2: Add Questions One by One
+
+```bash
+POST /api/v1/interview-prep/{sheet_id}/question
+Headers: x-admin-secret: TBEAdmin
+Body: {
+    "title": "What is the difference between list and tuple?",
+    "question": "What is the difference between list and tuple?",
+    "answer": "Detailed answer with examples...",
+    "frequency": "Most Asked"
+}
+```
+
+**Note:** The interview sheet must be created manually in the database first. This tool only adds questions to existing sheets.
 
 ## 🔍 Quality Control Features
 
