@@ -17,7 +17,7 @@ from src.agents import (
     ShikshaOrchestrator, EnhancedShikshaOrchestrator
 )
 from src.agents.project import ProjectOrchestratorAgent
-from src.agents.interview import InterviewSheetManager
+from src.agents.interview import InterviewSheetManager, DatabaseIntegrationAgent
 from src.utils import setup_logging, generate_filename
 
 console = Console()
@@ -275,8 +275,28 @@ def publish_sheet(sheet_file, sheet_id, save):
         console.print(f"[yellow]⚠️  This will update the database. Continue?[/yellow]")
         
         if click.confirm("Proceed with publication?"):
-            console.print(f"[green]✅ Sheet published successfully![/green]")
-            console.print(f"[blue]📊 Sheet ID: {sheet_id}[/blue]")
+            # Create an instance of DatabaseIntegrationAgent
+            db_agent = DatabaseIntegrationAgent()
+            
+            # Validate sheet data first
+            validation_result = db_agent.validate_sheet_data(sheet_data)
+            if not validation_result.get("valid", False):
+                console.print(f"[red]❌ Sheet validation failed: {validation_result.get('message', 'Unknown error')}[/red]")
+                if validation_result.get("errors"):
+                    for error in validation_result["errors"]:
+                        console.print(f"[red]  - {error}[/red]")
+                raise click.Abort()
+            
+            # Add questions to the existing sheet
+            result = db_agent.add_questions_to_sheet(sheet_id, sheet_data.get("questions", []))
+            
+            if result["status"] == "success":
+                console.print(f"[green]✅ Sheet published successfully![/green]")
+                console.print(f"[blue]📊 Sheet ID: {sheet_id}[/blue]")
+                console.print(f"[blue]📊 Questions added: {result.get('added_questions', 0)}[/blue]")
+                console.print(f"[blue]📊 Total questions: {result.get('total_questions', 0)}[/blue]")
+            else:
+                console.print(f"[red]❌ Error publishing sheet: {result.get('message', 'Unknown error')}[/red]")
         else:
             console.print(f"[yellow]⚠️  Publication cancelled[/yellow]")
         

@@ -6,6 +6,7 @@ from .answer_creator import AnswerCreator
 from .reviewer import Reviewer
 from .sheet_researcher import SheetResearcher
 from .mdx_styling_agent import MDXStylingAgent
+from .database_integration_agent import DatabaseIntegrationAgent
 
 __all__ = [
     "InterviewSheetManager",
@@ -13,5 +14,6 @@ __all__ = [
     "AnswerCreator",
     "Reviewer",
     "SheetResearcher",
-    "MDXStylingAgent"
+    "MDXStylingAgent",
+    "DatabaseIntegrationAgent"
 ] 
