@@ -19,6 +19,7 @@ from src.agents import (
 )
 from src.agents.project import ProjectOrchestratorAgent
 from src.agents.interview.interview_sheet_creator import InterviewSheetCreator
+from src.agents.interview.intelligent_interview_orchestrator import IntelligentInterviewOrchestrator
 from src.utils import setup_logging, generate_filename
 
 console = Console()
@@ -480,6 +481,90 @@ def publish_sheet(sheet_file, sheet_id, save):
     except Exception as e:
         console.print(f"[red]❌ Error adding questions: {str(e)}[/red]")
         raise click.Abort()
+
+
+# Intelligent Interview Commands (New Adaptive System)
+@interview.command()
+@click.option('--mdx-file', required=True, help='Path to MDX file containing interview requirements and context')
+@click.option('--save', is_flag=True, help='Save output to file')
+def create_sheet_from_mdx(mdx_file, save):
+    """Step 1: Create sheet JSON from MDX file for database creation."""
+    console.print(f"[green]🤖 Step 1: Creating sheet JSON from MDX...[/green]")
+    
+    try:
+        orchestrator = IntelligentInterviewOrchestrator()
+        result = orchestrator.create_sheet_from_mdx(mdx_file)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Sheet JSON created successfully![/green]")
+            console.print(f"[blue]📁 Sheet file: {result['sheet_filepath']}[/blue]")
+            
+            console.print(f"\n[yellow]🎯 Next step: Generate questions from MDX[/yellow]")
+            console.print(f"[green]Run: python main.py interview generate-questions-from-mdx --mdx-file {mdx_file} --count 50[/green]")
+            
+        else:
+            console.print(f"[red]❌ Error creating sheet: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error creating sheet: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--mdx-file', required=True, help='Path to MDX file containing interview requirements')
+@click.option('--count', default=50, help='Number of questions to generate')
+@click.option('--save', is_flag=True, help='Save output to file')
+def generate_questions_from_mdx(mdx_file, count, save):
+    """Step 2: Generate questions list in MDX file based on MDX requirements."""
+    console.print(f"[green]🤖 Step 2: Generating {count} questions from MDX...[/green]")
+    
+    try:
+        orchestrator = IntelligentInterviewOrchestrator()
+        result = orchestrator.generate_questions_from_mdx(mdx_file, count)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Questions generated successfully![/green]")
+            console.print(f"[blue]📁 Questions file: {result['mdx_filepath']}[/blue]")
+            
+            console.print(f"\n[yellow]⚠️  Review and edit the questions in the MDX file[/yellow]")
+            console.print(f"[green]Then run: python main.py interview generate-answers-from-mdx --mdx-file {result['mdx_filepath']}[/green]")
+            
+        else:
+            console.print(f"[red]❌ Error generating questions: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error generating questions: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--mdx-file', required=True, help='Path to MDX file containing questions')
+@click.option('--save', is_flag=True, help='Save output to file')
+def generate_answers_from_mdx(mdx_file, save):
+    """Step 3: Generate answers for questions from MDX file."""
+    console.print(f"[green]🤖 Step 3: Generating answers from MDX questions...[/green]")
+    
+    try:
+        orchestrator = IntelligentInterviewOrchestrator()
+        result = orchestrator.generate_answers_from_mdx(mdx_file)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Answers generated successfully![/green]")
+            console.print(f"[blue]📁 Complete sheet: {result['filepath']}[/blue]")
+            console.print(f"[blue]📊 Questions processed: {result['questions_count']}[/blue]")
+            
+            console.print(f"\n[yellow]🎯 Ready for database publication![/yellow]")
+            console.print(f"[green]Run: python main.py interview publish-sheet --sheet-file {result['filepath']} --sheet-id your_sheet_id[/green]")
+            
+        else:
+            console.print(f"[red]❌ Error generating answers: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error generating answers: {str(e)}[/red]")
+        raise click.Abort()
+
+
+
 
 
 @cli.group()

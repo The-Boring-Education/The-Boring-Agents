@@ -2,6 +2,7 @@
 
 from .interview_agent import InterviewAgent
 from .interview_sheet_orchestrator import InterviewSheetOrchestrator
+from .intelligent_interview_orchestrator import IntelligentInterviewOrchestrator
 from .database_integration_agent import DatabaseIntegrationAgent
 from .answer_enhancement_agent import AnswerEnhancementAgent
 from .frequency_analysis_agent import FrequencyAnalysisAgent
@@ -12,7 +13,8 @@ from .mdx_styling_agent import MDXStylingAgent
 
 __all__ = [
     "InterviewAgent",
-    "InterviewSheetOrchestrator", 
+    "InterviewSheetOrchestrator",
+    "IntelligentInterviewOrchestrator",
     "DatabaseIntegrationAgent",
     "AnswerEnhancementAgent",
     "FrequencyAnalysisAgent",
