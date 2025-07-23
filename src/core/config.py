@@ -21,9 +21,9 @@ class Config(BaseSettings):
     temp_dir: str = Field(default="./temp", env="TEMP_DIR")
     
     # Content Generation Settings
-    default_model: str = Field(default="gpt-3.5-turbo", env="DEFAULT_MODEL")
-    max_tokens: int = Field(default=2000, env="MAX_TOKENS")
-    temperature: float = Field(default=0.7, env="TEMPERATURE")
+    default_model: str = Field(default="gpt-4o-mini", env="DEFAULT_MODEL")
+    max_tokens: int = Field(default=4000, env="MAX_TOKENS")
+    temperature: float = Field(default=0.8, env="TEMPERATURE")
     max_context_length: int = Field(default=16000, env="MAX_CONTEXT_LENGTH")
     
     # API Configuration

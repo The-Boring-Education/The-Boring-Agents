@@ -10,7 +10,6 @@ from langchain.schema import BaseOutputParser
 
 from .config import config
 
-
 class BaseAgent(ABC):
     """Abstract base class for all content generation agents."""
     

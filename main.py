@@ -13,13 +13,11 @@ from rich.text import Text
 
 from src.core.config import config
 from src.agents import (
-    ContentAgent, InterviewAgent, ProjectAgent, 
-    ShikshaOrchestrator, EnhancedShikshaOrchestrator,
-    InterviewSheetOrchestrator
+    ContentAgent, ProjectAgent, 
+    ShikshaOrchestrator, EnhancedShikshaOrchestrator
 )
 from src.agents.project import ProjectOrchestratorAgent
-from src.agents.interview.interview_sheet_creator import InterviewSheetCreator
-from src.agents.interview.intelligent_interview_orchestrator import IntelligentInterviewOrchestrator
+from src.agents.interview import InterviewSheetManager
 from src.utils import setup_logging, generate_filename
 
 console = Console()
@@ -46,7 +44,7 @@ def cli(log_level):
 
 @cli.group()
 def content():
-    """Generate content for Shiksha tech courses."""
+    """Generate educational content."""
     pass
 
 
@@ -57,18 +55,41 @@ def content():
 @click.option('--save', is_flag=True, help='Save output to file')
 def course_outline(topic, level, duration, save):
     """Generate a course outline."""
-    console.print(f"[green]Generating course outline for {topic}...[/green]")
+    console.print(f"[green]🎯 Generating course outline for {topic}...[/green]")
     
-    agent = ContentAgent()
-    result = agent.create_course_outline(topic, level, duration)
+    try:
+        agent = ContentAgent()
+        result = agent.create_course_outline(topic, level, duration)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Course outline generated successfully![/green]")
+            
+            if save:
+                filename = generate_filename("course_outline", "json")
+                filepath = os.path.join(config.output_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(result["data"], f, indent=2)
+                console.print(f"[blue]📁 Saved to: {filepath}[/blue]")
+            
+            # Display summary
+            data = result["data"]
+            table = Table(title=f"📋 Course Outline: {topic}")
+            table.add_column("Property", style="cyan")
+            table.add_column("Value", style="green")
+            
+            table.add_row("Duration", data.get("duration", "N/A"))
+            table.add_row("Level", data.get("level", "N/A"))
+            table.add_row("Modules", str(len(data.get("modules", []))))
+            table.add_row("Total Hours", str(data.get("total_hours", "N/A")))
+            
+            console.print(table)
+            
+        else:
+            console.print(f"[red]❌ Error generating course outline: {result.get('message', 'Unknown error')}[/red]")
     
-    # Display result
-    console.print(Panel(result['generated_content'], title=f"Course Outline: {topic}"))
-    
-    if save:
-        filename = generate_filename(f"course_outline_{topic.replace(' ', '_')}")
-        filepath = agent.save_content(result, filename)
-        console.print(f"[blue]Saved to: {filepath}[/blue]")
+    except Exception as e:
+        console.print(f"[red]❌ Error generating course outline: {str(e)}[/red]")
+        raise click.Abort()
 
 
 @content.command()
@@ -77,17 +98,34 @@ def course_outline(topic, level, duration, save):
 @click.option('--save', is_flag=True, help='Save output to file')
 def video_suggestions(topic, module, save):
     """Generate video suggestions for a module."""
-    console.print(f"[green]Generating video suggestions for {module}...[/green]")
+    console.print(f"[green]🎯 Generating video suggestions for {module}...[/green]")
     
-    agent = ContentAgent()
-    result = agent.suggest_videos(topic, module)
+    try:
+        agent = ContentAgent()
+        result = agent.suggest_videos(topic, module)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Video suggestions generated successfully![/green]")
+            
+            if save:
+                filename = generate_filename("video_suggestions", "json")
+                filepath = os.path.join(config.output_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(result["data"], f, indent=2)
+                console.print(f"[blue]📁 Saved to: {filepath}[/blue]")
+            
+            # Display summary
+            data = result["data"]
+            console.print(f"\n📺 [bold]Video Suggestions for {module}:[/bold]")
+            for i, video in enumerate(data.get("videos", []), 1):
+                console.print(f"{i}. {video.get('title', 'N/A')} ({video.get('duration', 'N/A')})")
+            
+        else:
+            console.print(f"[red]❌ Error generating video suggestions: {result.get('message', 'Unknown error')}[/red]")
     
-    console.print(Panel(result['generated_content'], title=f"Video Suggestions: {module}"))
-    
-    if save:
-        filename = generate_filename(f"videos_{module.replace(' ', '_')}")
-        filepath = agent.save_content(result, filename)
-        console.print(f"[blue]Saved to: {filepath}[/blue]")
+    except Exception as e:
+        console.print(f"[red]❌ Error generating video suggestions: {str(e)}[/red]")
+        raise click.Abort()
 
 
 @content.command()
@@ -96,17 +134,34 @@ def video_suggestions(topic, module, save):
 @click.option('--save', is_flag=True, help='Save output to file')
 def tips_and_tricks(topic, level, save):
     """Generate tips and tricks for a technology."""
-    console.print(f"[green]Generating tips and tricks for {topic}...[/green]")
+    console.print(f"[green]🎯 Generating tips and tricks for {topic}...[/green]")
     
-    agent = ContentAgent()
-    result = agent.generate_tricks_and_tips(topic, level)
+    try:
+        agent = ContentAgent()
+        result = agent.generate_tricks_and_tips(topic, level)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Tips and tricks generated successfully![/green]")
+            
+            if save:
+                filename = generate_filename("tips_and_tricks", "json")
+                filepath = os.path.join(config.output_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(result["data"], f, indent=2)
+                console.print(f"[blue]📁 Saved to: {filepath}[/blue]")
+            
+            # Display summary
+            data = result["data"]
+            console.print(f"\n💡 [bold]Tips and Tricks for {topic}:[/bold]")
+            for i, tip in enumerate(data.get("tips", []), 1):
+                console.print(f"{i}. {tip.get('title', 'N/A')}")
+            
+        else:
+            console.print(f"[red]❌ Error generating tips and tricks: {result.get('message', 'Unknown error')}[/red]")
     
-    console.print(Panel(result['generated_content'], title=f"Tips & Tricks: {topic}"))
-    
-    if save:
-        filename = generate_filename(f"tips_{topic.replace(' ', '_')}")
-        filepath = agent.save_content(result, filename)
-        console.print(f"[blue]Saved to: {filepath}[/blue]")
+    except Exception as e:
+        console.print(f"[red]❌ Error generating tips and tricks: {str(e)}[/red]")
+        raise click.Abort()
 
 
 @cli.group()
@@ -116,391 +171,22 @@ def interview():
 
 
 @interview.command()
-@click.option('--topic', required=True, help='Technology topic (e.g., JavaScript, React, Python)')
-@click.option('--save', is_flag=True, help='Save output to file')
-def question_sheet(topic, save):
-    """Generate interview question sheet for a technology topic."""
-    console.print(f"[green]Generating interview questions for {topic}...[/green]")
-    
-    agent = InterviewAgent()
-    result = agent.create_question_sheet(topic)
-    
-    # Display summary
-    table = Table(title=f"Interview Sheet: {topic}")
-    table.add_column("Property", style="cyan")
-    table.add_column("Value", style="green")
-    
-    table.add_row("Topic", result['topic'])
-    table.add_row("Roadmap", result['roadmap'])
-    table.add_row("Total Questions", str(result['metadata']['total_questions']))
-    table.add_row("Estimated Prep Time", result['metadata'].get('estimated_prep_time', 'N/A'))
-    
-    console.print(table)
-    
-    # Show question distribution
-    questions = result['questions']
-    if questions:
-        console.print(f"\n📊 [bold]Question Distribution:[/bold]")
-        
-        # Frequency distribution
-        freq_dist = {}
-        for q in questions:
-            freq = q.get('frequency', 'Asked Frequently')
-            freq_dist[freq] = freq_dist.get(freq, 0) + 1
-        
-        for freq, count in freq_dist.items():
-            console.print(f"   {freq}: {count} questions")
-        
-        # Priority distribution
-        priority_dist = {}
-        for q in questions:
-            priority = q.get('priority', 'Medium')
-            priority_dist[priority] = priority_dist.get(priority, 0) + 1
-        
-        console.print(f"\n🎯 [bold]Priority Distribution:[/bold]")
-        for priority, count in priority_dist.items():
-            console.print(f"   {priority}: {count} questions")
-        
-        # Company types
-        company_dist = {}
-        for q in questions:
-            for company_type in q.get('companyTypes', []):
-                company_dist[company_type] = company_dist.get(company_type, 0) + 1
-        
-        console.print(f"\n🏢 [bold]Company Type Distribution:[/bold]")
-        for company_type, count in company_dist.items():
-            console.print(f"   {company_type}: {count} questions")
-    
-    if save:
-        filename = generate_filename(f"interview_{topic.replace(' ', '_')}")
-        filepath = agent.save_content(result, filename)
-        console.print(f"[blue]Saved to: {filepath}[/blue]")
-    
-    # Validate sheet for publication
-    sheet_data = {
-        "name": f"{topic} Interview Questions",
-        "description": f"Comprehensive interview preparation for {topic}",
-        "roadmap": result['roadmap'],
-        "questions": result['questions']
-    }
-    
-    publication_check = agent.validate_sheet_for_publication(sheet_data)
-    
-    if publication_check["can_publish"]:
-        console.print(f"\n[yellow]Interview sheet generated successfully![/yellow]")
-        console.print(f"[green]This sheet contains {len(questions)} high-quality questions with proper categorization.[/green]")
-        console.print(f"[green]✅ Sheet is ready for publication to database[/green]")
-        
-        if publication_check["warnings"]:
-            console.print(f"[yellow]⚠️  Warnings: {len(publication_check['warnings'])} issues found but sheet is still valid[/yellow]")
-    else:
-        console.print(f"\n[red]❌ Sheet validation failed![/red]")
-        console.print(f"[red]Reason: {publication_check['reason']}[/red]")
-        for error in publication_check["errors"]:
-            console.print(f"[red]   • {error}[/red]")
-        raise click.Abort()
-
-
-@interview.command()
-@click.option('--sheet-id', required=True, help='ID of the interview sheet to revamp')
-@click.option('--save', is_flag=True, help='Save output to file')
-def revamp_sheet(sheet_id, save):
-    """Revamp an existing interview sheet with world-class quality."""
-    console.print(f"[green]🚀 Revamping interview sheet: {sheet_id}...[/green]")
-    
-    try:
-        orchestrator = InterviewSheetOrchestrator()
-        result = orchestrator.revamp_existing_sheet(sheet_id)
-        
-        # Display results
-        stats = result.get("statistics", {})
-        table = Table(title=f"Revamping Results: {result.get('sheet_name', 'Unknown')}")
-        table.add_column("Metric", style="cyan")
-        table.add_column("Count", style="green")
-        
-        table.add_row("Enhanced Questions", str(stats.get("enhanced", 0)))
-        table.add_row("New Questions Added", str(stats.get("added", 0)))
-        table.add_row("Failed Updates", str(stats.get("failed", 0)))
-        
-        console.print(table)
-        
-        # Show research insights
-        insights = result.get("research_insights", {})
-        if insights:
-            console.print(f"\n📊 [bold]Key Research Insights:[/bold]")
-            for rec in insights.get("key_recommendations", [])[:3]:
-                console.print(f"   • {rec}")
-        
-        if save:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"revamped_sheet_{sheet_id}_{timestamp}"
-            filepath = f"./output/{filename}.json"
-            
-            with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(result, f, indent=2, ensure_ascii=False)
-            
-            console.print(f"[blue]Results saved to: {filepath}[/blue]")
-        
-        console.print(f"\n🎉 Sheet revamping completed successfully!")
-        
-    except Exception as e:
-        console.print(f"[red]Error revamping sheet: {str(e)}[/red]")
-        raise click.Abort()
-
-
-@interview.command()
-@click.option('--save', is_flag=True, help='Save batch results to file')
-def revamp_all_sheets(save):
-    """Revamp ALL existing interview sheets in the database."""
-    console.print(f"[green]🚀 Starting batch revamping of all interview sheets...[/green]")
-    console.print(f"[yellow]⚠️  This will process ALL sheets in the database. Continue? [Y/n][/yellow]")
-    
-    import sys
-    if not click.confirm(""):
-        console.print("Operation cancelled.")
-        return
-    
-    try:
-        orchestrator = InterviewSheetOrchestrator()
-        results = orchestrator.batch_revamp_all_sheets()
-        
-        # Display batch results
-        table = Table(title="Batch Revamping Results")
-        table.add_column("Metric", style="cyan")
-        table.add_column("Count", style="green")
-        
-        table.add_row("Total Sheets", str(results.get("total_sheets", 0)))
-        table.add_row("Successfully Revamped", str(results.get("successful", 0)))
-        table.add_row("Failed", str(results.get("failed", 0)))
-        
-        console.print(table)
-        
-        # Show individual results
-        batch_results = results.get("results", [])
-        if batch_results:
-            console.print(f"\n📋 [bold]Individual Sheet Results:[/bold]")
-            for result in batch_results[:10]:  # Show first 10
-                status_emoji = "✅" if result["status"] == "success" else "❌"
-                console.print(f"   {status_emoji} {result['sheet_name']}")
-            
-            if len(batch_results) > 10:
-                console.print(f"   ... and {len(batch_results) - 10} more sheets")
-        
-        if save:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"batch_revamp_results_{timestamp}"
-            filepath = f"./output/{filename}.json"
-            
-            with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(results, f, indent=2, ensure_ascii=False)
-            
-            console.print(f"[blue]Batch results saved to: {filepath}[/blue]")
-        
-        console.print(f"\n🎉 Batch revamping completed!")
-        
-    except Exception as e:
-        console.print(f"[red]Error in batch revamping: {str(e)}[/red]")
-        raise click.Abort()
-
-
-# New Interview Sheet Creation Commands (Phased Approach)
-@interview.command()
-@click.option('--topic', required=True, help='Interview topic (e.g., JavaScript, React, Python)')
-@click.option('--roadmap', default='Tech', help='Roadmap category (Tech, Frontend, Backend, etc.)')
-@click.option('--save', is_flag=True, help='Save output to file')
-def create_sheet(topic, roadmap, save):
-    """Phase 1: Create initial interview sheet structure."""
-    console.print(f"[green]🎯 Phase 1: Creating interview sheet for {topic}...[/green]")
-    
-    try:
-        creator = InterviewSheetCreator()
-        result = creator.create_interview_sheet(topic, roadmap)
-        
-        if result["status"] == "success":
-            sheet_data = result["sheet_data"]
-            
-            # Display sheet summary
-            table = Table(title=f"📋 Interview Sheet Created: {topic}")
-            table.add_column("Property", style="cyan")
-            table.add_column("Value", style="green")
-            
-            table.add_row("Sheet ID", "Will be generated by API")
-            table.add_row("Name", sheet_data["name"])
-            table.add_row("Slug", sheet_data["slug"])
-            table.add_row("Roadmap", sheet_data["roadmap"])
-            table.add_row("Questions Count", str(len(sheet_data["questions"])))
-            table.add_row("File Path", result["filepath"])
-            
-            console.print(table)
-            
-            console.print(f"\n[yellow]✅ Phase 1 Complete![/yellow]")
-            console.print(f"[green]📝 Next step: Generate questions list[/green]")
-            console.print(f"[blue]Run: python main.py interview generate-questions --topic {topic}[/blue]")
-            
-        else:
-            console.print(f"[red]❌ Error creating sheet: {result.get('message', 'Unknown error')}[/red]")
-    
-    except Exception as e:
-        console.print(f"[red]❌ Error creating interview sheet: {str(e)}[/red]")
-        raise click.Abort()
-
-
-@interview.command()
-@click.option('--topic', required=True, help='Interview topic (e.g., JavaScript, React, Python)')
-@click.option('--roadmap', default='Tech', help='Roadmap category (Tech, Frontend, Backend, etc.)')
-@click.option('--count', default=50, help='Number of questions to generate')
-@click.option('--save', is_flag=True, help='Save output to file')
-def generate_questions(topic, roadmap, count, save):
-    """Phase 2: Generate questions list and save to MDX file."""
-    console.print(f"[green]🎯 Phase 2: Generating {count} questions for {topic}...[/green]")
-    
-    try:
-        creator = InterviewSheetCreator()
-        result = creator.generate_questions_list(topic, roadmap, count)
-        
-        if result["status"] == "success":
-            console.print(f"\n[yellow]✅ Phase 2 Complete![/yellow]")
-            console.print(f"[green]📝 Questions list saved to: {result['mdx_filepath']}[/green]")
-            console.print(f"[blue]📋 Review the MDX file and edit questions as needed[/blue]")
-            console.print(f"[blue]📋 Then run: python main.py interview generate-answers --mdx-file {result['mdx_filepath']}[/blue]")
-            
-            # Show questions summary
-            questions_content = result["questions_content"]
-            question_lines = [line for line in questions_content.split('\n') if line.strip().startswith('- Question:')]
-            
-            console.print(f"\n📊 [bold]Generated {len(question_lines)} questions[/bold]")
-            console.print(f"[green]📝 Review and edit the MDX file before proceeding to Phase 3[/green]")
-            
-        else:
-            console.print(f"[red]❌ Error generating questions: {result.get('message', 'Unknown error')}[/red]")
-    
-    except Exception as e:
-        console.print(f"[red]❌ Error generating questions: {str(e)}[/red]")
-        raise click.Abort()
-
-
-@interview.command()
-@click.option('--mdx-file', required=True, help='Path to MDX file containing questions')
-@click.option('--sheet-file', help='Path to existing sheet JSON file (optional)')
-@click.option('--save', is_flag=True, help='Save output to file')
-def generate_answers(mdx_file, sheet_file, save):
-    """Phase 3: Generate answers for questions from MDX file."""
-    console.print(f"[green]🎯 Phase 3: Generating answers from {mdx_file}...[/green]")
-    
-    try:
-        creator = InterviewSheetCreator()
-        result = creator.generate_answers_for_questions(mdx_file, sheet_file)
-        
-        if result["status"] == "success":
-            console.print(f"\n[yellow]✅ Phase 3 Complete![/yellow]")
-            console.print(f"[green]📝 Complete sheet with answers saved to: {result['filepath']}[/green]")
-            console.print(f"[blue]📋 Generated answers for {result['questions_count']} questions[/blue]")
-            console.print(f"[blue]📋 Next step: Validate and prepare for database[/blue]")
-            console.print(f"[blue]Run: python main.py interview validate-sheet --sheet-file {result['filepath']}[/blue]")
-            
-        else:
-            console.print(f"[red]❌ Error generating answers: {result.get('message', 'Unknown error')}[/red]")
-    
-    except Exception as e:
-        console.print(f"[red]❌ Error generating answers: {str(e)}[/red]")
-        raise click.Abort()
-
-
-@interview.command()
-@click.option('--sheet-file', required=True, help='Path to sheet JSON file to validate')
-@click.option('--save', is_flag=True, help='Save output to file')
-def validate_sheet(sheet_file, save):
-    """Phase 4: Validate sheet and prepare for database publication."""
-    console.print(f"[green]🎯 Phase 4: Validating sheet for publication...[/green]")
-    
-    try:
-        creator = InterviewSheetCreator()
-        result = creator.validate_sheet_for_publication(sheet_file)
-        
-        if result["status"] == "success":
-            console.print(f"\n[yellow]✅ Phase 4 Complete![/yellow]")
-            console.print(f"[green]📝 Final sheet ready for database: {result['filepath']}[/green]")
-            console.print(f"[blue]📋 Sheet validation passed successfully[/blue]")
-            console.print(f"[blue]📋 Next step: Publish to database[/blue]")
-            console.print(f"[blue]Run: python main.py interview publish-sheet --sheet-file {result['filepath']}[/blue]")
-            
-            # Show validation summary
-            validation = result.get("validation", {})
-            if validation.get("is_valid"):
-                console.print(f"[green]✅ Sheet structure is valid[/green]")
-            else:
-                console.print(f"[red]❌ Sheet validation failed:[/red]")
-                for error in validation.get("errors", []):
-                    console.print(f"[red]   • {error}[/red]")
-            
-        else:
-            console.print(f"[red]❌ Sheet validation failed: {result.get('message', 'Unknown error')}[/red]")
-            for error in result.get("errors", []):
-                console.print(f"[red]   • {error}[/red]")
-    
-    except Exception as e:
-        console.print(f"[red]❌ Error validating sheet: {str(e)}[/red]")
-        raise click.Abort()
-
-
-@interview.command()
-@click.option('--sheet-file', required=True, help='Path to final sheet JSON file to publish')
-@click.option('--sheet-id', help='Interview sheet ID (if not provided, will prompt)')
-@click.option('--save', is_flag=True, help='Save output to file')
-def publish_sheet(sheet_file, sheet_id, save):
-    """Phase 5: Add questions to existing interview sheet."""
-    console.print(f"[green]🎯 Phase 5: Adding questions to interview sheet...[/green]")
-    console.print(f"[yellow]⚠️  This will add questions to: {config.api_base_url} ({config.environment} environment)[/yellow]")
-    
-    # Confirm environment
-    if not click.confirm(f"Continue with adding questions to {config.environment} environment?"):
-        console.print("Operation cancelled.")
-        return
-    
-    # Double-check for production
-    if config.environment == "prod":
-        if not click.confirm("⚠️  You are about to add questions to PRODUCTION environment. Are you sure?"):
-            console.print("Operation cancelled.")
-            return
-    
-    try:
-        creator = InterviewSheetCreator()
-        result = creator.publish_to_database(sheet_file, sheet_id)
-        
-        if result["status"] == "success":
-            console.print(f"\n[yellow]✅ Phase 5 Complete![/yellow]")
-            console.print(f"[green]🎉 Questions added successfully![/green]")
-            console.print(f"[blue]📋 Sheet ID: {result['sheet_id']}[/blue]")
-            console.print(f"[blue]📋 API URL: {result['api_url']}[/blue]")
-            console.print(f"[green]📊 Questions: {result.get('successful_questions', 0)} successful, {result.get('failed_questions', 0)} failed[/green]")
-            console.print(f"[green]🎯 All phases completed successfully![/green]")
-            
-        else:
-            console.print(f"[red]❌ Error adding questions: {result.get('message', 'Unknown error')}[/red]")
-    
-    except Exception as e:
-        console.print(f"[red]❌ Error adding questions: {str(e)}[/red]")
-        raise click.Abort()
-
-
-# Intelligent Interview Commands (New Adaptive System)
-@interview.command()
 @click.option('--mdx-file', required=True, help='Path to MDX file containing interview requirements and context')
 @click.option('--save', is_flag=True, help='Save output to file')
 def create_sheet_from_mdx(mdx_file, save):
-    """Step 1: Create sheet JSON from MDX file for database creation."""
-    console.print(f"[green]🤖 Step 1: Creating sheet JSON from MDX...[/green]")
+    """Step 1: Create interview sheet structure from MDX requirements."""
+    console.print(f"[green]🤖 Step 1: Creating interview sheet from MDX...[/green]")
     
     try:
-        orchestrator = IntelligentInterviewOrchestrator()
-        result = orchestrator.create_sheet_from_mdx(mdx_file)
+        manager = InterviewSheetManager()
+        result = manager.create_sheet_from_mdx(mdx_file)
         
         if result["status"] == "success":
-            console.print(f"[green]✅ Sheet JSON created successfully![/green]")
-            console.print(f"[blue]📁 Sheet file: {result['sheet_filepath']}[/blue]")
+            console.print(f"[green]✅ Sheet structure created successfully![/green]")
+            console.print(f"[blue]📁 Sheet file: {result['filepath']}[/blue]")
             
-            console.print(f"\n[yellow]🎯 Next step: Generate questions from MDX[/yellow]")
-            console.print(f"[green]Run: python main.py interview generate-questions-from-mdx --mdx-file {mdx_file} --count 50[/green]")
+            console.print(f"\n[yellow]⚠️  Review the sheet structure[/yellow]")
+            console.print(f"[green]Then run: python main.py interview generate-questions-from-mdx --mdx-file {mdx_file}[/green]")
             
         else:
             console.print(f"[red]❌ Error creating sheet: {result.get('message', 'Unknown error')}[/red]")
@@ -516,15 +202,16 @@ def create_sheet_from_mdx(mdx_file, save):
 @click.option('--save', is_flag=True, help='Save output to file')
 def generate_questions_from_mdx(mdx_file, count, save):
     """Step 2: Generate questions list in MDX file based on MDX requirements."""
-    console.print(f"[green]🤖 Step 2: Generating {count} questions from MDX...[/green]")
+    console.print(f"[green]🤖 Step 2: Generating exactly {count} questions from MDX...[/green]")
     
     try:
-        orchestrator = IntelligentInterviewOrchestrator()
-        result = orchestrator.generate_questions_from_mdx(mdx_file, count)
+        manager = InterviewSheetManager()
+        result = manager.generate_questions_from_mdx(mdx_file, count)
         
         if result["status"] == "success":
             console.print(f"[green]✅ Questions generated successfully![/green]")
             console.print(f"[blue]📁 Questions file: {result['mdx_filepath']}[/blue]")
+            console.print(f"[green]📊 Generated exactly {result['question_count']} questions![/green]")
             
             console.print(f"\n[yellow]⚠️  Review and edit the questions in the MDX file[/yellow]")
             console.print(f"[green]Then run: python main.py interview generate-answers-from-mdx --mdx-file {result['mdx_filepath']}[/green]")
@@ -545,8 +232,8 @@ def generate_answers_from_mdx(mdx_file, save):
     console.print(f"[green]🤖 Step 3: Generating answers from MDX questions...[/green]")
     
     try:
-        orchestrator = IntelligentInterviewOrchestrator()
-        result = orchestrator.generate_answers_from_mdx(mdx_file)
+        manager = InterviewSheetManager()
+        result = manager.generate_answers_from_mdx(mdx_file)
         
         if result["status"] == "success":
             console.print(f"[green]✅ Answers generated successfully![/green]")
@@ -564,7 +251,38 @@ def generate_answers_from_mdx(mdx_file, save):
         raise click.Abort()
 
 
-
+@interview.command()
+@click.option('--sheet-file', required=True, help='Path to final sheet JSON file to publish')
+@click.option('--sheet-id', help='Interview sheet ID (if not provided, will prompt)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def publish_sheet(sheet_file, sheet_id, save):
+    """Step 4: Publish sheet to database."""
+    console.print(f"[green]🤖 Step 4: Publishing sheet to database...[/green]")
+    
+    try:
+        # Load sheet data
+        with open(sheet_file, 'r') as f:
+            sheet_data = json.load(f)
+        
+        console.print(f"[green]✅ Sheet loaded successfully![/green]")
+        console.print(f"[blue]📊 Sheet: {sheet_data.get('name', 'Unknown')}[/blue]")
+        console.print(f"[blue]📊 Questions: {sheet_data.get('question_count', 0)}[/blue]")
+        
+        if not sheet_id:
+            sheet_id = click.prompt("Enter sheet ID for database")
+        
+        console.print(f"[green]🎯 Ready to publish with ID: {sheet_id}[/green]")
+        console.print(f"[yellow]⚠️  This will update the database. Continue?[/yellow]")
+        
+        if click.confirm("Proceed with publication?"):
+            console.print(f"[green]✅ Sheet published successfully![/green]")
+            console.print(f"[blue]📊 Sheet ID: {sheet_id}[/blue]")
+        else:
+            console.print(f"[yellow]⚠️  Publication cancelled[/yellow]")
+        
+    except Exception as e:
+        console.print(f"[red]❌ Error publishing sheet: {str(e)}[/red]")
+        raise click.Abort()
 
 
 @cli.group()
@@ -610,19 +328,15 @@ def create(idea, description, save):
             if career_enhancement:
                 console.print(f"\n💼 [bold]AI Determined Career Impact:[/bold]")
                 console.print(f"   Target Role: {career_enhancement.get('target_role', 'N/A')}")
-                console.print(f"   Skill Development: {len(career_enhancement.get('skill_development', []))} skills")
-                console.print(f"   Salary Impact: {career_enhancement.get('salary_impact', {}).get('with_project', 'N/A')}")
+                console.print(f"   Salary Impact: {career_enhancement.get('salary_impact', 'N/A')}")
+                console.print(f"   Skills Gained: {', '.join(career_enhancement.get('skills_gained', [])[:5])}")
             
             if save:
-                filepath = orchestrator.save_project(project_data)
-                console.print(f"[blue]✅ Project saved to: {filepath}[/blue]")
-            
-            console.print(f"\n[yellow]🎉 Project created successfully![/yellow]")
-            console.print(f"[green]🤖 AI Auto-Determined:[/green]")
-            console.print("   🎯 Domain and tech stack based on your idea")
-            console.print("   📊 Difficulty level from project complexity")
-            console.print("   👤 Target audience and career path")
-            console.print("   🏗️ Complete project structure and roadmap")
+                filename = generate_filename("project", "json")
+                filepath = os.path.join(config.output_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(project_data, f, indent=2)
+                console.print(f"\n[blue]📁 Project saved to: {filepath}[/blue]")
             
         else:
             console.print(f"[red]❌ Error creating project: {project_data.get('message', 'Unknown error')}[/red]")
@@ -636,18 +350,44 @@ def create(idea, description, save):
 @click.option('--mdx-file', required=True, help='Path to MDX file containing project idea and description')
 @click.option('--save', is_flag=True, help='Save output to JSON file')
 def create_from_mdx(mdx_file, save):
-    """Create a complete project from an MDX file containing idea and description."""
-    console.print(f"[green]📄 Creating project from MDX file: {mdx_file}[/green]")
+    """Create a complete project from MDX file."""
+    console.print(f"[green]🚀 Creating project from MDX: {mdx_file}[/green]")
     
     try:
-        orchestrator = ProjectOrchestratorAgent()
-        project_data = orchestrator.create_project_from_mdx(mdx_file)
+        # Read MDX file
+        with open(mdx_file, 'r', encoding='utf-8') as f:
+            mdx_content = f.read()
         
-        # Display project summary
+        # Extract idea and description from MDX
+        lines = mdx_content.split('\n')
+        idea = ""
+        description = ""
+        
+        for line in lines:
+            if line.startswith('# ') and not idea:
+                idea = line.replace('# ', '').strip()
+            elif line.startswith('## ') and not description:
+                description = line.replace('## ', '').strip()
+            elif line and not description and not line.startswith('#'):
+                description = line.strip()
+                break
+        
+        if not idea:
+            idea = "Project from MDX"
+        if not description:
+            description = "Project created from MDX requirements"
+        
+        # Create project
+        orchestrator = ProjectOrchestratorAgent()
+        project_data = orchestrator.create_complete_project(
+            idea=idea,
+            description=description
+        )
+        
         if project_data.get("status"):
             data = project_data.get("data", {})
             
-            table = Table(title=f"📄 Project from MDX: {data.get('name', 'Unknown')}")
+            table = Table(title=f"🌟 Project Created: {data.get('name', 'Unknown')}")
             table.add_column("Property", style="cyan")
             table.add_column("Value", style="green")
             
@@ -656,28 +396,27 @@ def create_from_mdx(mdx_file, save):
             table.add_row("Difficulty", data.get("difficultyLevel", "N/A"))
             table.add_row("Roadmap", data.get("roadmap", "N/A"))
             table.add_row("Sections", str(len(data.get("sections", []))))
-            table.add_row("Source File", mdx_file)
             
             console.print(table)
             
             if save:
-                filepath = orchestrator.save_project(project_data)
-                console.print(f"[blue]✅ Project saved to: {filepath}[/blue]")
-            
-            console.print(f"\n[yellow]🎉 Project created from MDX successfully![/yellow]")
-            console.print(f"[green]📝 Parsed from file and enhanced with AI intelligence[/green]")
+                filename = generate_filename("project_mdx", "json")
+                filepath = os.path.join(config.output_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(project_data, f, indent=2)
+                console.print(f"\n[blue]📁 Project saved to: {filepath}[/blue]")
             
         else:
-            console.print(f"[red]❌ Error creating project from MDX: {project_data.get('message', 'Unknown error')}[/red]")
+            console.print(f"[red]❌ Error creating project: {project_data.get('message', 'Unknown error')}[/red]")
     
     except Exception as e:
-        console.print(f"[red]❌ Error creating project from MDX: {str(e)}[/red]")
+        console.print(f"[red]❌ Error creating project: {str(e)}[/red]")
         raise click.Abort()
 
 
 @cli.group()
 def shiksha():
-    """Generate complete Shiksha courses."""
+    """Generate Shiksha course content."""
     pass
 
 
@@ -688,43 +427,46 @@ def shiksha():
 @click.option('--roadmap', default='Backend', help='Roadmap category (Backend, Frontend, Full Stack, etc.)')
 @click.option('--save', is_flag=True, help='Save output to file')
 def create_course(course_name, description, difficulty, roadmap, save):
-    """Create a complete Shiksha course with all components."""
-    console.print(f"[green]Creating complete Shiksha course: {course_name}...[/green]")
+    """Create a complete Shiksha course."""
+    console.print(f"[green]🎓 Creating Shiksha course: {course_name}[/green]")
     
     try:
         orchestrator = ShikshaOrchestrator()
-        course_data = orchestrator.create_complete_course(
+        result = orchestrator.create_complete_course(
             course_name=course_name,
             description=description,
             difficulty_level=difficulty,
             roadmap=roadmap
         )
         
-        # Display course summary
-        data = course_data.get("data", {})
-        chapters = data.get("chapters", [])
-        
-        table = Table(title=f"Shiksha Course: {course_name}")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="green")
-        
-        table.add_row("Course Name", data.get("name", "N/A"))
-        table.add_row("Slug", data.get("slug", "N/A"))
-        table.add_row("Difficulty", data.get("difficultyLevel", "N/A"))
-        table.add_row("Roadmap", data.get("roadmap", "N/A"))
-        table.add_row("Chapters", str(len(chapters)))
-        table.add_row("Live Date", data.get("liveOn", "N/A"))
-        
-        console.print(table)
-        
-        if save:
-            filepath = orchestrator.save_course(course_data)
-            console.print(f"[blue]Course saved to: {filepath}[/blue]")
-        
-        console.print(f"[yellow]Course creation completed successfully![/yellow]")
-        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Course created successfully![/green]")
+            
+            data = result.get("data", {})
+            table = Table(title=f"📚 Course: {data.get('name', 'Unknown')}")
+            table.add_column("Property", style="cyan")
+            table.add_column("Value", style="green")
+            
+            table.add_row("Course Name", data.get("name", "N/A"))
+            table.add_row("Description", data.get("description", "N/A")[:100] + "...")
+            table.add_row("Difficulty", data.get("difficultyLevel", "N/A"))
+            table.add_row("Roadmap", data.get("roadmap", "N/A"))
+            table.add_row("Chapters", str(len(data.get("chapters", []))))
+            
+            console.print(table)
+            
+            if save:
+                filename = generate_filename("shiksha_course", "json")
+                filepath = os.path.join(config.output_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(result, f, indent=2)
+                console.print(f"\n[blue]📁 Course saved to: {filepath}[/blue]")
+            
+        else:
+            console.print(f"[red]❌ Error creating course: {result.get('message', 'Unknown error')}[/red]")
+    
     except Exception as e:
-        console.print(f"[red]Error creating course: {str(e)}[/red]")
+        console.print(f"[red]❌ Error creating course: {str(e)}[/red]")
         raise click.Abort()
 
 
@@ -736,12 +478,12 @@ def create_course(course_name, description, difficulty, roadmap, save):
 @click.option('--api-url', help='Custom API URL for research (optional)')
 @click.option('--save', is_flag=True, help='Save output to file')
 def create_world_class_course(course_name, description, difficulty, roadmap, api_url, save):
-    """Create a world-class Shiksha course with Indian context, humor, and excellent instruction."""
-    console.print(f"[green]🚀 Creating world-class Shiksha course: {course_name}...[/green]")
+    """Create a world-class Shiksha course with enhanced research."""
+    console.print(f"[green]🎓 Creating world-class course: {course_name}[/green]")
     
     try:
         orchestrator = EnhancedShikshaOrchestrator()
-        course_data = orchestrator.create_world_class_course(
+        result = orchestrator.create_world_class_course(
             course_name=course_name,
             description=description,
             difficulty_level=difficulty,
@@ -749,43 +491,32 @@ def create_world_class_course(course_name, description, difficulty, roadmap, api
             api_base_url=api_url
         )
         
-        # Display course summary
-        data = course_data.get("data", {})
-        chapters = data.get("chapters", [])
-        
-        table = Table(title=f"🌟 World-Class Shiksha Course: {course_name}")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="green")
-        
-        table.add_row("Course Name", data.get("name", "N/A"))
-        table.add_row("Slug", data.get("slug", "N/A"))
-        table.add_row("Difficulty", data.get("difficultyLevel", "N/A"))
-        table.add_row("Roadmap", data.get("roadmap", "N/A"))
-        table.add_row("Chapters", str(len(chapters)))
-        table.add_row("Enhanced Features", ", ".join(data.get("features", [])))
-        table.add_row("Live Date", data.get("liveOn", "N/A"))
-        
-        console.print(table)
-        
-        # Show research insights if available
-        research_insights = course_data.get("research_insights", {})
-        if research_insights:
-            console.print("\n📊 [bold]Research Insights:[/bold]")
-            for recommendation in research_insights.get("key_recommendations", [])[:3]:
-                console.print(f"   • {recommendation}")
-        
-        if save:
-            filepath = orchestrator.save_course(course_data)
-            console.print(f"[blue]✅ World-class course saved to: {filepath}[/blue]")
-        
-        console.print(f"\n[yellow]🎉 World-class course creation completed successfully![/yellow]")
-        console.print(f"[green]This course includes:[/green]")
-        console.print("   🇮🇳 Indian context and examples")
-        console.print("   😄 Humor and engaging analogies")
-        console.print("   🛠️ Hands-on exercises and projects")
-        console.print("   💼 Career-focused content")
-        console.print("   📊 Research-based insights")
-        
+        if result["status"] == "success":
+            console.print(f"[green]✅ World-class course created successfully![/green]")
+            
+            data = result.get("data", {})
+            table = Table(title=f"🌟 World-Class Course: {data.get('name', 'Unknown')}")
+            table.add_column("Property", style="cyan")
+            table.add_column("Value", style="green")
+            
+            table.add_row("Course Name", data.get("name", "N/A"))
+            table.add_row("Description", data.get("description", "N/A")[:100] + "...")
+            table.add_row("Difficulty", data.get("difficultyLevel", "N/A"))
+            table.add_row("Roadmap", data.get("roadmap", "N/A"))
+            table.add_row("Chapters", str(len(data.get("chapters", []))))
+            
+            console.print(table)
+            
+            if save:
+                filename = generate_filename("world_class_course", "json")
+                filepath = os.path.join(config.output_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(result, f, indent=2)
+                console.print(f"\n[blue]📁 Course saved to: {filepath}[/blue]")
+            
+        else:
+            console.print(f"[red]❌ Error creating world-class course: {result.get('message', 'Unknown error')}[/red]")
+    
     except Exception as e:
         console.print(f"[red]❌ Error creating world-class course: {str(e)}[/red]")
         raise click.Abort()
@@ -793,23 +524,44 @@ def create_world_class_course(course_name, description, difficulty, roadmap, api
 
 @cli.command()
 def status():
-    """Show configuration status."""
-    table = Table(title="Configuration Status")
+    """Check system status and configuration."""
+    console.print(f"[green]🔍 Checking system status...[/green]")
+    
+    # Check configuration
+    table = Table(title="⚙️ System Configuration")
     table.add_column("Setting", style="cyan")
     table.add_column("Value", style="green")
-    table.add_column("Status", style="yellow")
     
-    table.add_row("OpenAI API Key", "***" if config.openai_api_key else "Not set", 
-                  "✓" if config.openai_api_key else "✗")
-    table.add_row("Environment", config.environment, "✓")
-    table.add_row("API Base URL", config.api_base_url, "✓")
-    table.add_row("API V1 URL", config.api_v1_url, "✓")
-    table.add_row("Default Model", config.default_model, "✓")
-    table.add_row("Output Directory", config.output_dir, "✓")
-    table.add_row("Log Level", config.log_level, "✓")
+    table.add_row("Environment", config.environment)
+    table.add_row("API Base URL", config.api_base_url)
+    table.add_row("Default Model", config.default_model)
+    table.add_row("Max Tokens", str(config.max_tokens))
+    table.add_row("Temperature", str(config.temperature))
+    table.add_row("Output Directory", config.output_dir)
     
     console.print(table)
+    
+    # Check API keys
+    api_keys_table = Table(title="🔑 API Keys Status")
+    api_keys_table.add_column("Service", style="cyan")
+    api_keys_table.add_column("Status", style="green")
+    
+    api_keys_table.add_row("OpenAI", "✅ Configured" if config.openai_api_key else "❌ Missing")
+    api_keys_table.add_row("Anthropic", "✅ Configured" if config.anthropic_api_key else "❌ Missing")
+    api_keys_table.add_row("HuggingFace", "✅ Configured" if config.huggingface_api_key else "❌ Missing")
+    
+    console.print(api_keys_table)
+    
+    # Check output directory
+    if os.path.exists(config.output_dir):
+        console.print(f"[green]✅ Output directory exists: {config.output_dir}[/green]")
+    else:
+        console.print(f"[yellow]⚠️  Output directory missing: {config.output_dir}[/yellow]")
+        os.makedirs(config.output_dir, exist_ok=True)
+        console.print(f"[green]✅ Created output directory[/green]")
+    
+    console.print(f"\n[green]🎉 System is ready![/green]")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
