@@ -209,13 +209,22 @@ Analyze based on:
     
     def _analyze_single_question(self, question: str, topic: str, context: str) -> Dict[str, Any]:
         """Analyze a single question and return metadata."""
+        # Extract difficulty from question if it has stars
+        difficulty_from_stars = self._extract_difficulty_from_stars(question)
+        
         prompt = self._format_prompt("analyze_question", 
                                    question=question,
                                    topic=topic,
                                    context=context)
         result = self._generate_with_prompt(prompt)
         
-        return self._parse_metadata_result(result)
+        metadata = self._parse_metadata_result(result)
+        
+        # Override difficulty if we found stars in the question
+        if difficulty_from_stars:
+            metadata["difficulty"] = difficulty_from_stars
+        
+        return metadata
     
     def _parse_metadata_result(self, result: str) -> Dict[str, Any]:
         """Parse metadata from AI response."""
@@ -275,14 +284,54 @@ Analyze based on:
             r'- Question:\s*(.+)',
             r'\d+\.\s*(.+\?)',
             r'###\s*(.+\?)',
-            r'\*\*Question:\*\*\s*(.+)'
+            r'\*\*Question:\*\*\s*(.+)',
+            # New patterns for DSA format
+            r'\d+\.\s*★+\s*(.+)',  # Questions with difficulty stars
+            r'\d+\.\s*(.+)',  # Simple numbered questions
+            r'★+\s*(.+)',  # Questions starting with difficulty stars
+            # More specific DSA patterns
+            r'\d+\.\s*★+\s*([^★\n]+)',  # Questions with stars followed by text
+            r'\d+\.\s*([^★\n]+)',  # Questions without stars
         ]
         
         for pattern in patterns:
             matches = re.findall(pattern, mdx_content, re.MULTILINE)
             questions.extend([q.strip() for q in matches if q.strip()])
         
-        return list(set(questions))  # Remove duplicates
+        # Remove duplicates and filter out non-questions
+        unique_questions = []
+        for q in questions:
+            # Clean the question text
+            q = q.strip()
+            
+            # Skip if it's just a number or section header
+            if (len(q) < 10 or 
+                q.isdigit() or 
+                q.startswith('Phase') or 
+                q.startswith('📘') or 
+                q.startswith('📗') or 
+                q.startswith('📙') or 
+                q.startswith('📕') or
+                q.startswith('🎯') or
+                q.startswith('⸻') or
+                q.startswith('📘') or
+                q.startswith('📗') or
+                q.startswith('📙') or
+                q.startswith('📕') or
+                'Target Audience' in q or
+                'College students' in q or
+                'DSA beginners' in q or
+                'Entry-level' in q or
+                'Working professionals' in q):
+                continue
+            
+            # Skip if it's just a section number
+            if re.match(r'^\d+\.\s*$', q):
+                continue
+                
+            unique_questions.append(q)
+        
+        return unique_questions
     
     def _create_enhanced_mdx(self, original_mdx: str, enhanced_questions: List[Dict[str, Any]]) -> str:
         """Create enhanced MDX with metadata."""
@@ -309,4 +358,15 @@ Analyze based on:
             # Append new section
             enhanced_mdx = original_mdx + enhanced_section
         
-        return enhanced_mdx 
+        return enhanced_mdx
+    
+    def _extract_difficulty_from_stars(self, question: str) -> Optional[str]:
+        """Extract difficulty level from star indicators in the question."""
+        star_count = question.count('★')
+        if star_count == 1:
+            return "Easy"
+        elif star_count == 2:
+            return "Medium"
+        elif star_count == 3:
+            return "Hard"
+        return None 
