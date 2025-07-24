@@ -257,6 +257,133 @@ def generate_answers_from_mdx(mdx_file, agent_type, save):
 
 
 @interview.command()
+@click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent to use')
+def list_sessions(agent_type):
+    """List all active generation sessions."""
+    console.print(f"[green]🔍 Listing active {agent_type} generation sessions...[/green]")
+    
+    try:
+        agent_enum = AnswerAgentType(agent_type)
+        manager = InterviewSheetManager(agent_type=agent_enum)
+        result = manager.list_active_sessions()
+        
+        if result["status"] == "success":
+            sessions = result["sessions"]
+            
+            if not sessions:
+                console.print(f"[yellow]📋 No active sessions found[/yellow]")
+                return
+            
+            # Filter sessions by agent type
+            filtered_sessions = [s for s in sessions if s["agent_type"] == agent_type]
+            
+            if not filtered_sessions:
+                console.print(f"[yellow]📋 No active {agent_type} sessions found[/yellow]")
+                return
+            
+            # Display sessions in a table
+            from rich.table import Table
+            table = Table(title=f"Active {agent_type.title()} Generation Sessions")
+            table.add_column("Topic", style="cyan")
+            table.add_column("Progress", style="green")
+            table.add_column("Status", style="yellow")
+            table.add_column("Last Updated", style="blue")
+            table.add_column("Session ID", style="dim")
+            
+            for session in filtered_sessions:
+                table.add_row(
+                    session["topic"],
+                    session["progress"],
+                    session["status"],
+                    session["last_updated"][:19] if session["last_updated"] != "unknown" else "unknown",
+                    session["session_id"][:8] + "..." if session["session_id"] != "unknown" else "unknown"
+                )
+            
+            console.print(table)
+            
+            console.print(f"\n[yellow]💡 To resume a session:[/yellow]")
+            console.print(f"[green]python main.py interview resume-session --session-id <session_id> --agent-type {agent_type}[/green]")
+            
+        else:
+            console.print(f"[red]❌ Error listing sessions: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error listing sessions: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--session-id', help='Session ID to resume (if not provided, will show list)')
+@click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent to use')
+def resume_session(session_id, agent_type):
+    """Resume an interrupted generation session."""
+    console.print(f"[green]🔄 Resuming {agent_type} generation session...[/green]")
+    
+    try:
+        agent_enum = AnswerAgentType(agent_type)
+        manager = InterviewSheetManager(agent_type=agent_enum)
+        
+        if not session_id:
+            # Show available sessions and let user choose
+            result = manager.list_active_sessions()
+            if result["status"] == "success":
+                sessions = [s for s in result["sessions"] if s["agent_type"] == agent_type]
+                
+                if not sessions:
+                    console.print(f"[yellow]📋 No active {agent_type} sessions found[/yellow]")
+                    return
+                
+                console.print(f"[yellow]📋 Available {agent_type} sessions:[/yellow]")
+                for i, session in enumerate(sessions, 1):
+                    console.print(f"{i}. {session['topic']} ({session['progress']}) - {session['session_id'][:8]}...")
+                
+                choice = click.prompt("Select session number", type=int)
+                if 1 <= choice <= len(sessions):
+                    selected_session = sessions[choice - 1]
+                    session_filepath = selected_session["filepath"]
+                else:
+                    console.print(f"[red]❌ Invalid choice[/red]")
+                    return
+            else:
+                console.print(f"[red]❌ Error listing sessions: {result.get('message', 'Unknown error')}[/red]")
+                return
+        else:
+            # Find session by ID
+            result = manager.list_active_sessions()
+            if result["status"] == "success":
+                sessions = result["sessions"]
+                matching_session = None
+                
+                for session in sessions:
+                    if session["session_id"].startswith(session_id) and session["agent_type"] == agent_type:
+                        matching_session = session
+                        break
+                
+                if not matching_session:
+                    console.print(f"[red]❌ Session not found: {session_id}[/red]")
+                    return
+                
+                session_filepath = matching_session["filepath"]
+            else:
+                console.print(f"[red]❌ Error finding session: {result.get('message', 'Unknown error')}[/red]")
+                return
+        
+        # Resume the session
+        result = manager.resume_session(session_filepath)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Session resumed and completed successfully![/green]")
+            console.print(f"[blue]📁 Final sheet: {result['filepath']}[/blue]")
+            console.print(f"[blue]📊 Questions processed: {result['questions_count']}[/blue]")
+        else:
+            console.print(f"[red]❌ Error resuming session: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error resuming session: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
 @click.option('--sheet-file', required=True, help='Path to final sheet JSON file to publish')
 @click.option('--sheet-id', help='Interview sheet ID (if not provided, will prompt)')
 @click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent that was used')

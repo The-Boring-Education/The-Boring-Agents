@@ -120,9 +120,34 @@ python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-pre
 ```
 
 -   Generates detailed answers for each question
+-   **Progressive Saving**: Each answer is saved immediately after generation
+-   **Resume Capability**: Can resume from interruptions (laptop sleep, network issues)
 -   DSA agent includes code examples, complexity analysis, and optimization tips
 -   Generic agent provides general interview guidance
 -   Output: `./output/sheet_*_complete.json`
+
+#### Progressive Saving Features
+
+🛡️ **Interruption Protection**: Your progress is never lost!
+
+-   **Real-time Saving**: Each question is saved immediately after generation
+-   **Progress Tracking**: Visual progress bar with current question info
+-   **Auto-Resume**: System detects interrupted sessions and offers to resume
+-   **Error Recovery**: Continue from the last successful question even after errors
+-   **Session Management**: Multiple concurrent sessions supported
+
+#### Resume Interrupted Sessions
+
+```bash
+# List all active sessions
+python3 main.py interview list-sessions --agent-type dsa
+
+# Resume a specific session
+python3 main.py interview resume-session --session-id abc123 --agent-type dsa
+
+# Resume without specifying session (shows interactive list)
+python3 main.py interview resume-session --agent-type dsa
+```
 
 ### Step 4: Publish to Database
 
@@ -157,6 +182,19 @@ python3 main.py projects create --idea "E-commerce Platform" --description "Buil
 
 # Create project from MDX
 python3 main.py projects create-from-mdx --mdx-file lab/project/project.mdx
+```
+
+### Session Management
+
+```bash
+# List active generation sessions
+python3 main.py interview list-sessions --agent-type dsa
+
+# Resume interrupted session
+python3 main.py interview resume-session --session-id abc123 --agent-type dsa
+
+# Resume with interactive session selection
+python3 main.py interview resume-session --agent-type dsa
 ```
 
 ### Course Creation (Shiksha)
@@ -200,13 +238,17 @@ python3 main.py shiksha create-world-class-course --course-name "Advanced React"
 
 ## 🚨 Important Notes
 
-1. **Sheet Publishing**: The `publish-sheet` command only adds questions to existing sheets. If the sheet doesn't exist, it will throw an error.
+1. **Progressive Saving**: Answer generation now saves progress after each question. You can safely interrupt and resume sessions.
 
-2. **File Paths**: All interview files should be placed in `lab/interview-prep/` directory.
+2. **Sheet Publishing**: The `publish-sheet` command only adds questions to existing sheets. If the sheet doesn't exist, it will throw an error.
 
-3. **Processing Time**: Large question sets (50+ questions) may take significant time to process.
+3. **File Paths**: All interview files should be placed in `lab/interview-prep/` directory.
 
-4. **API Limits**: Monitor your API usage, especially for large question sets.
+4. **Processing Time**: Large question sets (50+ questions) may take significant time to process, but progress is saved continuously.
+
+5. **API Limits**: Monitor your API usage, especially for large question sets.
+
+6. **Session Recovery**: Progress files are stored in `./temp/` directory and automatically cleaned up after successful completion.
 
 ## 🧪 Testing
 
