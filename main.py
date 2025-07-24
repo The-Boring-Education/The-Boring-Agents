@@ -384,12 +384,86 @@ def resume_session(session_id, agent_type):
 
 
 @interview.command()
+@click.option('--json-file', required=True, help='Path to JSON file with generated answers')
+@click.option('--output-file', help='Output file path (optional)')
+def fix_mdx_formatting(json_file, output_file):
+    """Fix MDX formatting issues in generated answers."""
+    console.print(f"[green]🔧 Fixing MDX formatting in answers...[/green]")
+    
+    try:
+        import subprocess
+        import sys
+        
+        # Build command
+        cmd = [sys.executable, "scripts/fix_mdx_formatting.py", json_file]
+        if output_file:
+            cmd.append(output_file)
+        
+        # Run the script
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            console.print(f"[green]✅ MDX formatting fixed successfully![/green]")
+            console.print(result.stdout)
+        else:
+            console.print(f"[red]❌ Error fixing MDX formatting:[/red]")
+            console.print(result.stderr)
+            
+    except Exception as e:
+        console.print(f"[red]❌ Error running fix script: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
+@click.option('--json-file', required=True, help='Path to JSON file with questions to push')
+@click.option('--sheet-id', required=True, help='Interview sheet ID in database')
+@click.option('--api-url', default='http://localhost:3000', help='API base URL')
+@click.option('--admin-secret', default='TBEAdmin', help='Admin secret for authentication')
+def push_to_database(json_file, sheet_id, api_url, admin_secret):
+    """Push questions to database using the new reliable script."""
+    console.print(f"[green]🚀 Pushing questions to database...[/green]")
+    
+    try:
+        import subprocess
+        import sys
+        
+        # Build command
+        cmd = [
+            sys.executable, "scripts/push_to_database.py",
+            json_file, sheet_id,
+            "--api-url", api_url,
+            "--admin-secret", admin_secret
+        ]
+        
+        # Run the script interactively
+        result = subprocess.run(cmd)
+        
+        if result.returncode == 0:
+            console.print(f"[green]✅ Database push completed successfully![/green]")
+        else:
+            console.print(f"[red]❌ Database push failed or partially failed.[/red]")
+            
+    except Exception as e:
+        console.print(f"[red]❌ Error running database push script: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
 @click.option('--sheet-file', required=True, help='Path to final sheet JSON file to publish')
 @click.option('--sheet-id', help='Interview sheet ID (if not provided, will prompt)')
 @click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent that was used')
 @click.option('--save', is_flag=True, help='Save output to file')
 def publish_sheet(sheet_file, sheet_id, agent_type, save):
-    """Step 4: Publish sheet to database."""
+    """Step 4: Publish sheet to database (DEPRECATED - use push-to-database instead)."""
+    console.print(f"[yellow]⚠️  DEPRECATED: This command is deprecated. Use 'fix-mdx-formatting' then 'push-to-database' instead.[/yellow]")
+    console.print(f"[blue]New workflow:[/blue]")
+    console.print(f"  1. python3 main.py interview fix-mdx-formatting --json-file {sheet_file}")
+    console.print(f"  2. python3 main.py interview push-to-database --json-file {sheet_file} --sheet-id YOUR_SHEET_ID")
+    
+    if not click.confirm("Continue with deprecated method?"):
+        console.print(f"[yellow]Operation cancelled. Use the new workflow above.[/yellow]")
+        return
+    
     console.print(f"[green]🤖 Step 4: Publishing sheet to database (created with {agent_type} agent)...[/green]")
     
     try:

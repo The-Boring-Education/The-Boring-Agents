@@ -149,15 +149,119 @@ python3 main.py interview resume-session --session-id abc123 --agent-type dsa
 python3 main.py interview resume-session --agent-type dsa
 ```
 
-### Step 4: Publish to Database
+### Step 4: Fix MDX Formatting (New!)
 
 ```bash
+# Fix MDX formatting issues in answers
+python3 scripts/fix_mdx_formatting.py output/complete_sheet_general-tech.json
+
+# Or specify output file
+python3 scripts/fix_mdx_formatting.py output/complete_sheet_general-tech.json output/fixed_sheet.json
+```
+
+-   Removes `\`\`\`mdx\n`prefix and`\n\`\`\`` suffix from all answers
+-   Creates automatic backup of original file
+-   Ensures proper UI display without MDX formatting artifacts
+-   **Run this before pushing to database!**
+
+### Step 5: Push to Database (New!)
+
+```bash
+# Push questions to database using the new script
+python3 scripts/push_to_database.py output/complete_sheet_general-tech.json 67345538bdf619907a005031
+
+# With custom API URL and admin secret
+python3 scripts/push_to_database.py output/complete_sheet_general-tech.json 67345538bdf619907a005031 --api-url http://localhost:3000 --admin-secret TBEAdmin
+```
+
+-   **Professional DB Script**: Replaces the old database agent
+-   **Loop & Push**: Iterates through all questions with proper error handling
+-   **Progress Logging**: Real-time progress tracking with success/failure counts
+-   **Error Recovery**: Continues processing even if individual questions fail
+-   **Validation**: Checks question data before pushing
+-   **Rate Limiting**: Includes delays to avoid overwhelming the server
+
+### ~~Step 4: Publish to Database~~ (Deprecated)
+
+```bash
+# Old method (not recommended)
 python3 main.py interview publish-sheet --sheet-file ./output/sheet_*_complete.json --sheet-id your_sheet_id --agent-type dsa
 ```
 
--   Validates and publishes sheet to database
--   Adds questions to existing sheet (doesn't create new sheet)
--   Requires sheet ID to exist in database
+❌ **Use the new database push script instead** (Step 5 above)
+
+## 🔧 Utility Scripts
+
+### Fix MDX Formatting
+
+**Problem Solved**: Generated answers contain `\`\`\`mdx\n` prefixes that break UI formatting.
+
+```bash
+# Fix formatting in-place (creates backup)
+python3 scripts/fix_mdx_formatting.py output/complete_sheet_general-tech.json
+
+# Create new fixed file
+python3 scripts/fix_mdx_formatting.py input.json output/fixed.json
+```
+
+**Features**:
+
+-   ✅ Removes MDX code block markers
+-   ✅ Creates automatic timestamped backups
+-   ✅ Progress tracking with Rich UI
+-   ✅ Preserves original file structure
+-   ✅ Handles large files efficiently
+
+### Database Push
+
+**Problem Solved**: The DB agent wasn't working properly. This is a simple, reliable script.
+
+```bash
+# Basic usage
+python3 scripts/push_to_database.py output/complete_sheet_general-tech.json YOUR_SHEET_ID
+
+# Full configuration
+python3 scripts/push_to_database.py \
+  output/complete_sheet_general-tech.json \
+  67345538bdf619907a005031 \
+  --api-url http://localhost:3000 \
+  --admin-secret TBEAdmin
+
+# Dry run (validate without pushing)
+python3 scripts/push_to_database.py output/file.json SHEET_ID --dry-run
+```
+
+**Features**:
+
+-   ✅ Professional error handling and recovery
+-   ✅ Real-time progress tracking
+-   ✅ Detailed success/failure logging
+-   ✅ Rate limiting to protect server
+-   ✅ Data validation before pushing
+-   ✅ Confirmation prompts for safety
+-   ✅ Comprehensive results summary
+
+**API Compatibility**:
+
+-   Uses the exact cURL format provided
+-   Headers: `x-admin-secret`, `Content-Type: application/json`
+-   Endpoint: `/api/v1/interview-prep/{sheet_id}/question`
+-   Supports both HTTP 200 and 201 responses
+
+### Complete Workflow Example
+
+```bash
+# 1. Generate answers (existing workflow)
+python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/dsa_questions_with_metadata.mdx --agent-type dsa
+
+# 2. Fix MDX formatting
+python3 scripts/fix_mdx_formatting.py output/complete_sheet_general-tech.json
+
+# 3. Push to database
+python3 scripts/push_to_database.py output/complete_sheet_general-tech.json 67345538bdf619907a005031 --api-url http://localhost:3000
+
+# Done! 🎉
+```
 
 ## 🛠️ Available Commands
 
