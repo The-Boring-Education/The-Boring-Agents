@@ -75,7 +75,7 @@ class DatabasePusher:
             "difficulty": question['difficulty'],
             "frequency": question['frequency'],
             "priority": question['priority'],
-            "company_types": question['company_types']
+            "companyTypes": question['company_types']
         }
         
         return True, api_data, None
