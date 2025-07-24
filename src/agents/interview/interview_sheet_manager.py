@@ -305,6 +305,7 @@ Provide your analysis in a structured format.
                     # Create completed question entry
                     completed_question = {
                         **question_data,
+                        "title": question_data['question'][:100],  # Add title field (max 100 chars)
                         "answer": styled_answer,
                         "created_at": datetime.now(timezone.utc).isoformat(),
                         "question_index": i
@@ -383,6 +384,7 @@ Provide your analysis in a structured format.
                     # Create completed question entry
                     completed_question = {
                         **question_data,
+                        "title": question_data['question'][:100],  # Add title field (max 100 chars)
                         "answer": styled_answer,
                         "created_at": datetime.now(timezone.utc).isoformat(),
                         "question_index": i
