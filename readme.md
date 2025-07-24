@@ -60,12 +60,35 @@ The-Boring-Agents/
 
 ## 🎯 Interview Preparation Workflow
 
-The interview preparation system follows a 4-step process:
+The interview preparation system follows a 4-step process with support for different agent types:
+
+### Available Agent Types
+
+-   **`generic`** (default): General-purpose interview questions
+-   **`dsa`**: Data Structures & Algorithms questions with detailed complexity analysis
+-   **`tech`**: Technology-specific questions (coming soon)
+-   **`system_design`**: System design questions (coming soon)
+
+### DSA Agent Advantages
+
+When using `--agent-type dsa`, you get:
+
+-   **Enhanced Code Examples**: Multiple language implementations (Python, Java, C++)
+-   **Detailed Complexity Analysis**: Time and space complexity with explanations
+-   **Optimization Strategies**: Multiple approaches from brute force to optimal solutions
+-   **Indian Context**: Examples relevant to Indian tech interviews
+-   **Performance Tips**: Memory optimization and debugging strategies
+-   **Real-world Applications**: Practical use cases for each algorithm
+-   **Interview-specific Guidance**: Common mistakes and how to avoid them
 
 ### Step 1: Create Sheet Structure
 
 ```bash
+# Generic agent (default)
 python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/dsa_requirements.mdx
+
+# DSA-specific agent
+python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/dsa_requirements.mdx --agent-type dsa
 ```
 
 -   Creates interview sheet structure from requirements
@@ -75,7 +98,11 @@ python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/ds
 ### Step 2: Add Metadata to Questions
 
 ```bash
+# Generic agent
 python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/dsa_questions.mdx
+
+# DSA-specific agent
+python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/dsa_questions.mdx --agent-type dsa
 ```
 
 -   Adds difficulty, frequency, priority, and company type metadata
@@ -85,17 +112,22 @@ python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/dsa_
 ### Step 3: Generate Answers
 
 ```bash
+# Generic agent
 python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/dsa_questions_with_metadata.mdx
+
+# DSA-specific agent (recommended for DSA questions)
+python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/dsa_questions_with_metadata.mdx --agent-type dsa
 ```
 
 -   Generates detailed answers for each question
--   Includes code examples, explanations, and best practices
+-   DSA agent includes code examples, complexity analysis, and optimization tips
+-   Generic agent provides general interview guidance
 -   Output: `./output/sheet_*_complete.json`
 
 ### Step 4: Publish to Database
 
 ```bash
-python3 main.py interview publish-sheet --sheet-file ./output/sheet_*_complete.json --sheet-id your_sheet_id
+python3 main.py interview publish-sheet --sheet-file ./output/sheet_*_complete.json --sheet-id your_sheet_id --agent-type dsa
 ```
 
 -   Validates and publishes sheet to database

@@ -17,7 +17,7 @@ from src.agents import (
     ShikshaOrchestrator, EnhancedShikshaOrchestrator
 )
 from src.agents.project import ProjectOrchestratorAgent
-from src.agents.interview import InterviewSheetManager, DatabaseIntegrationAgent
+from src.agents.interview import InterviewSheetManager, DatabaseIntegrationAgent, AnswerAgentType
 from src.utils import setup_logging, generate_filename
 
 console = Console()
@@ -172,13 +172,15 @@ def interview():
 
 @interview.command()
 @click.option('--mdx-file', required=True, help='Path to MDX file containing interview requirements and context')
+@click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent to use')
 @click.option('--save', is_flag=True, help='Save output to file')
-def create_sheet_from_mdx(mdx_file, save):
+def create_sheet_from_mdx(mdx_file, agent_type, save):
     """Step 1: Create interview sheet structure from MDX requirements."""
-    console.print(f"[green]🤖 Step 1: Creating interview sheet from MDX...[/green]")
+    console.print(f"[green]🤖 Step 1: Creating interview sheet from MDX using {agent_type} agent...[/green]")
     
     try:
-        manager = InterviewSheetManager()
+        agent_enum = AnswerAgentType(agent_type)
+        manager = InterviewSheetManager(agent_type=agent_enum)
         result = manager.create_sheet_from_mdx(mdx_file)
         
         if result["status"] == "success":
@@ -198,13 +200,15 @@ def create_sheet_from_mdx(mdx_file, save):
 
 @interview.command()
 @click.option('--mdx-file', required=True, help='Path to MDX file containing questions')
+@click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent to use')
 @click.option('--save', is_flag=True, help='Save output to file')
-def add_metadata_to_mdx(mdx_file, save):
+def add_metadata_to_mdx(mdx_file, agent_type, save):
     """Step 2: Add metadata to questions in MDX file."""
-    console.print(f"[green]🤖 Step 2: Adding metadata to questions in MDX...[/green]")
+    console.print(f"[green]🤖 Step 2: Adding metadata to questions in MDX using {agent_type} agent...[/green]")
     
     try:
-        manager = InterviewSheetManager()
+        agent_enum = AnswerAgentType(agent_type)
+        manager = InterviewSheetManager(agent_type=agent_enum)
         result = manager.add_metadata_to_mdx(mdx_file)
         
         if result["status"] == "success":
@@ -225,13 +229,15 @@ def add_metadata_to_mdx(mdx_file, save):
 
 @interview.command()
 @click.option('--mdx-file', required=True, help='Path to MDX file containing questions')
+@click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent to use')
 @click.option('--save', is_flag=True, help='Save output to file')
-def generate_answers_from_mdx(mdx_file, save):
+def generate_answers_from_mdx(mdx_file, agent_type, save):
     """Step 3: Generate answers for questions from MDX file."""
-    console.print(f"[green]🤖 Step 3: Generating answers from MDX questions...[/green]")
+    console.print(f"[green]🤖 Step 3: Generating answers from MDX questions using {agent_type} agent...[/green]")
     
     try:
-        manager = InterviewSheetManager()
+        agent_enum = AnswerAgentType(agent_type)
+        manager = InterviewSheetManager(agent_type=agent_enum)
         result = manager.generate_answers_from_mdx(mdx_file)
         
         if result["status"] == "success":
@@ -253,10 +259,11 @@ def generate_answers_from_mdx(mdx_file, save):
 @interview.command()
 @click.option('--sheet-file', required=True, help='Path to final sheet JSON file to publish')
 @click.option('--sheet-id', help='Interview sheet ID (if not provided, will prompt)')
+@click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent that was used')
 @click.option('--save', is_flag=True, help='Save output to file')
-def publish_sheet(sheet_file, sheet_id, save):
+def publish_sheet(sheet_file, sheet_id, agent_type, save):
     """Step 4: Publish sheet to database."""
-    console.print(f"[green]🤖 Step 4: Publishing sheet to database...[/green]")
+    console.print(f"[green]🤖 Step 4: Publishing sheet to database (created with {agent_type} agent)...[/green]")
     
     try:
         # Load sheet data

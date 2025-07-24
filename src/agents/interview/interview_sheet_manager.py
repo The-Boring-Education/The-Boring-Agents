@@ -12,8 +12,10 @@ from ...core.config import config
 from ...utils.helpers import generate_filename, save_json_file, load_json_file
 from ...utils.validation import InterviewQuestionValidator
 from .answer_creator import AnswerCreator
+from .dsa_answer_creator import DSAAnswerCreator
 from .metadata_agent import MetadataAgent
 from .mdx_styling_agent import MDXStylingAgent
+from .types import AnswerAgentType
 
 console = Console()
 
@@ -21,16 +23,48 @@ console = Console()
 class InterviewSheetManager(BaseAgent):
     """Main manager for interview sheet lifecycle - creation, generation, review, and publication."""
     
-    def __init__(self, **kwargs):
-        """Initialize the sheet manager with streamlined agents."""
+    def __init__(self, agent_type: AnswerAgentType = AnswerAgentType.GENERIC, **kwargs):
+        """Initialize the sheet manager with streamlined agents.
+        
+        Args:
+            agent_type: Type of answer creator agent to use
+            **kwargs: Additional arguments passed to parent class
+        """
         super().__init__(**kwargs)
         
         # Initialize only essential agents for quality
-        self.answer_creator = AnswerCreator(**kwargs)
+        self.agent_type = agent_type
+        self.answer_creator = self._create_answer_creator(agent_type, **kwargs)
         self.metadata_agent = MetadataAgent(**kwargs)
         self.mdx_styler = MDXStylingAgent(**kwargs)
         
-        self.logger.info("Interview Sheet Manager initialized with streamlined agents")
+        self.logger.info(f"Interview Sheet Manager initialized with {agent_type.value} answer creator")
+    
+    def _create_answer_creator(self, agent_type: AnswerAgentType, **kwargs):
+        """Create the appropriate answer creator based on agent type.
+        
+        Args:
+            agent_type: Type of answer creator to create
+            **kwargs: Additional arguments passed to the creator
+            
+        Returns:
+            Appropriate answer creator instance
+        """
+        if agent_type == AnswerAgentType.DSA:
+            return DSAAnswerCreator(**kwargs)
+        elif agent_type == AnswerAgentType.GENERIC:
+            return AnswerCreator(**kwargs)
+        elif agent_type == AnswerAgentType.TECH:
+            # Future implementation - for now, use generic
+            self.logger.warning("Tech agent not implemented yet, using generic answer creator")
+            return AnswerCreator(**kwargs)
+        elif agent_type == AnswerAgentType.SYSTEM_DESIGN:
+            # Future implementation - for now, use generic
+            self.logger.warning("System Design agent not implemented yet, using generic answer creator")
+            return AnswerCreator(**kwargs)
+        else:
+            self.logger.warning(f"Unknown agent type {agent_type}, using generic answer creator")
+            return AnswerCreator(**kwargs)
     
     def _get_prompt_templates(self) -> Dict[str, PromptTemplate]:
         """Get prompt templates for sheet management."""
