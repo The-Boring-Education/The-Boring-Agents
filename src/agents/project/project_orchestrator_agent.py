@@ -707,6 +707,9 @@ class ProjectOrchestratorAgent(BaseAgent):
 
     def _extract_target_users_from_params(self, params: Dict[str, Any]) -> str:
         """Extract target users from the determined project parameters."""
+        if not isinstance(params, dict):
+            return "Indian users seeking better solutions"
+        
         user_profile = params.get("user_profile")
         if user_profile:
             return user_profile

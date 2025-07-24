@@ -2,316 +2,205 @@
 
 AI-powered content generation for The Boring Education platform.
 
-## 🎯 Overview
+## 🚀 Quick Start
 
-The Boring Agents is an intelligent system that generates high-quality educational content, interview preparation materials, and project ideas. It features a **streamlined interview system** that focuses on quality control and human review at every step.
+### Prerequisites
 
-## 🚀 Key Features
+1. **Python 3.8+** installed
+2. **API Keys** configured in `.env` file:
+    ```bash
+    OPENAI_API_KEY=your_openai_key
+    ANTHROPIC_API_KEY=your_anthropic_key
+    HUGGINGFACE_API_KEY=your_huggingface_key
+    ```
 
-### 1. **Streamlined Interview System**
+### Installation
 
--   **MDX-based workflow** - Write your questions in MDX files
--   **Quality-focused generation** - You create questions, AI adds metadata and generates answers
--   **Human review integration** - Review and edit at each step
--   **World-class quality** - 20+ years of FAANG experience perspective
+1. **Clone and setup**:
 
-### 2. **Content Generation**
+    ```bash
+    git clone <repository-url>
+    cd The-Boring-Agents
+    pip install -r requirements.txt
+    ```
 
--   **Shiksha courses** - Complete course structures with Indian context
--   **Interview preparation** - Comprehensive question sheets
--   **Project ideas** - Real-world project suggestions with implementation guides
+2. **Configure environment**:
 
-### 3. **Quality-Focused Intelligence**
+    ```bash
+    cp .env.example .env
+    # Edit .env with your API keys
+    ```
 
--   **Metadata Analysis**: AI analyzes your questions for frequency, priority, company types
--   **Answer Generation**: High-quality answers with code examples and best practices
--   **Human Control**: You create questions, AI enhances them with metadata and answers
--   **Streamlined Process**: Simple 4-step workflow with quality checks
+3. **Test the system**:
+    ```bash
+    python3 main.py status
+    ```
 
-## 📋 Streamlined Interview Workflow
+## 📁 File Structure
 
-### Simple 4-Step Process
+```
+The-Boring-Agents/
+├── lab/
+│   └── interview-prep/          # Interview preparation files
+│       ├── dsa_requirements.mdx     # Requirements for DSA interviews
+│       ├── dsa_questions.mdx        # DSA questions list
+│       ├── dsa_questions_with_metadata.mdx  # Questions with metadata
+│       └── test_questions.mdx       # Test file for quick testing
+├── src/
+│   ├── agents/                 # AI agents for different tasks
+│   │   ├── interview/          # Interview preparation agents
+│   │   ├── project/           # Project generation agents
+│   │   └── shiksha/           # Course creation agents
+│   ├── core/                  # Core functionality
+│   └── utils/                 # Utility functions
+├── output/                    # Generated content output
+├── main.py                    # CLI entry point
+└── requirements.txt           # Python dependencies
+```
 
-#### **Step 1: Create Sheet JSON**
+## 🎯 Interview Preparation Workflow
+
+The interview preparation system follows a 4-step process:
+
+### Step 1: Create Sheet Structure
 
 ```bash
-python main.py interview create-sheet-from-mdx --mdx-file your_requirements.mdx
+python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/dsa_requirements.mdx
 ```
 
--   Analyzes your MDX file requirements
--   Creates sheet JSON for database creation
--   Extracts topic and requirements automatically
+-   Creates interview sheet structure from requirements
+-   Generates metadata and topic analysis
+-   Output: `./output/sheet_*.json`
 
-#### **Step 2: Add Metadata to Questions**
+### Step 2: Add Metadata to Questions
 
 ```bash
-python main.py interview add-metadata-to-mdx --mdx-file your_questions.mdx
+python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/dsa_questions.mdx
 ```
 
--   Adds metadata to your manually created questions
--   Analyzes frequency, priority, company types, difficulty
--   Creates enhanced MDX file for review
+-   Adds difficulty, frequency, priority, and company type metadata
+-   Processes each question individually
+-   Output: `lab/interview-prep/dsa_questions_with_metadata.mdx`
 
-#### **Step 3: Generate Answers**
+### Step 3: Generate Answers
 
 ```bash
-python main.py interview generate-answers-from-mdx --mdx-file ./output/questions_topic_with_metadata.mdx
+python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/dsa_questions_with_metadata.mdx
 ```
 
--   Generates comprehensive answers for all questions
--   Applies MDX styling for readability
--   Creates complete sheet ready for database
+-   Generates detailed answers for each question
+-   Includes code examples, explanations, and best practices
+-   Output: `./output/sheet_*_complete.json`
 
-#### **Step 4: Publish to Database**
+### Step 4: Publish to Database
 
 ```bash
-python main.py interview publish-sheet --sheet-file ./output/complete_sheet_topic.json --sheet-id your_sheet_id
+python3 main.py interview publish-sheet --sheet-file ./output/sheet_*_complete.json --sheet-id your_sheet_id
 ```
 
--   Publishes to database using existing workflow
--   Maintains all validation and quality checks
+-   Validates and publishes sheet to database
+-   Adds questions to existing sheet (doesn't create new sheet)
+-   Requires sheet ID to exist in database
 
-## 📝 MDX File Format
+## 🛠️ Available Commands
 
-### Example: DSA Interview Requirements
-
-```mdx
-# DSA Interview Questions
-
-## My Requirements and Experience
-
-I want to create a comprehensive DSA interview preparation guide for college students.
-The questions should explain concepts like teaching a 10-year-old - simple, clear, and memorable.
-
-### Target Audience
-
--   College students preparing for placements
--   Beginners learning DSA concepts
--   Working professionals looking to refresh skills
-
-### Content Style
-
--   Explain concepts with real-world analogies
--   Use simple language, avoid jargon
--   Include memory tricks and mnemonics
--   Focus on understanding over memorization
-
-### Question Categories Needed
-
--   Array and String manipulation
--   Linked Lists and Trees
--   Dynamic Programming basics
--   Graph algorithms
--   Time and Space complexity analysis
-
-### Special Requirements
-
--   Include coding examples in multiple languages
--   Add visual diagrams where helpful
--   Provide step-by-step problem-solving approach
--   Include common mistakes and how to avoid them
-```
-
-### Example: Questions MDX File
-
-```mdx
-# Python Interview Questions
-
-## 📋 Questions List
-
-1. Question: What is the difference between Python 2 and Python 3? How would you handle code migration from Python 2 to Python 3?
-
-2. Question: Explain the concept of decorators in Python. Provide examples of common use cases.
-
-3. Question: What are generators in Python? How do they differ from regular functions?
-
-4. Question: Explain the Global Interpreter Lock (GIL) in Python. What are its implications?
-
-5. Question: How does Python handle memory management? Explain garbage collection.
-
-## 📝 Instructions for Answer Generation
-
--   Provide detailed explanations with code examples
--   Include best practices and common pitfalls
--   Add real-world scenarios and use cases
--   Focus on practical implementation
-```
-
-## 🎨 Content Adaptation Examples
-
-### DSA Questions
-
--   **Style**: Explain like teaching a 10-year-old
--   **Headings**: Quick Answer, Understanding Concept, Step-by-Step Solution, Memory Tricks
--   **Content**: Real-world analogies, visual explanations, memory tricks
-
-### Python Questions
-
--   **Style**: Technical depth with practical examples
--   **Headings**: Quick Answer, Technical Deep Dive, Code Examples, Best Practices
--   **Content**: Code snippets, real-world scenarios, performance considerations
-
-### System Design Questions
-
--   **Style**: Architecture thinking with scalability focus
--   **Headings**: Quick Answer, Architecture Overview, Scalability Considerations
--   **Content**: High-level thinking, trade-off analysis, real-world examples
-
-## 🔧 Setup
-
-### 1. Install Dependencies
+### Content Generation
 
 ```bash
-pip install -r requirements.txt
+# Course outlines
+python3 main.py content course-outline --topic "React Development" --level intermediate
+
+# Video suggestions
+python3 main.py content video-suggestions --topic "React" --module "State Management"
+
+# Tips and tricks
+python3 main.py content tips-and-tricks --topic "JavaScript" --level advanced
 ```
 
-### 2. Configure Environment
-
-Create a `.env` file:
-
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-ENVIRONMENT=local  # local, dev, or prod
-```
-
-### 3. Verify Setup
+### Project Generation
 
 ```bash
-python main.py status
+# Create project from idea
+python3 main.py projects create --idea "E-commerce Platform" --description "Build a full-stack e-commerce solution"
+
+# Create project from MDX
+python3 main.py projects create-from-mdx --mdx-file lab/project/project.mdx
 ```
 
-## 🚀 Usage Examples
-
-### Create DSA Interview Sheet
+### Course Creation (Shiksha)
 
 ```bash
-# 1. Create MDX file with DSA requirements
-# 2. Generate sheet JSON
-python main.py interview create-sheet-from-mdx --mdx-file dsa_requirements.mdx
+# Create basic course
+python3 main.py shiksha create-course --course-name "Python Backend" --description "Learn Python backend development"
 
-# 3. Add metadata to your questions
-python main.py interview add-metadata-to-mdx --mdx-file dsa_questions.mdx
-
-# 4. Review and edit the enhanced MDX file
-# 5. Generate answers
-python main.py interview generate-answers-from-mdx --mdx-file ./output/dsa_questions_with_metadata.mdx
-
-# 6. Publish to database
-python main.py interview publish-sheet --sheet-file ./output/complete_sheet_dsa.json --sheet-id your_sheet_id
+# Create world-class course with research
+python3 main.py shiksha create-world-class-course --course-name "Advanced React" --description "Master React patterns"
 ```
 
-### Create Python Interview Sheet
+## 🔧 Configuration
+
+### Environment Variables
+
+-   `ENVIRONMENT`: `local`, `dev`, or `prod`
+-   `DEFAULT_MODEL`: AI model to use (default: `gpt-4o-mini`)
+-   `MAX_TOKENS`: Maximum tokens per request (default: `4000`)
+-   `TEMPERATURE`: AI creativity level (default: `1.0`)
+
+### API URLs
+
+-   **Local**: `http://localhost:3000`
+-   **Development**: `https://tbe-dev-git-development-tbe.vercel.app`
+-   **Production**: `https://www.theboringeducation.com`
+
+## 📝 File Formats
+
+### MDX Files
+
+-   **Requirements**: Define interview context, difficulty, target audience
+-   **Questions**: List of interview questions (numbered)
+-   **Questions with Metadata**: Questions + difficulty, frequency, priority, company types
+
+### JSON Output
+
+-   **Sheet Structure**: Interview sheet metadata and structure
+-   **Complete Sheet**: Full sheet with questions and answers
+-   **Project Data**: Complete project specifications and content
+
+## 🚨 Important Notes
+
+1. **Sheet Publishing**: The `publish-sheet` command only adds questions to existing sheets. If the sheet doesn't exist, it will throw an error.
+
+2. **File Paths**: All interview files should be placed in `lab/interview-prep/` directory.
+
+3. **Processing Time**: Large question sets (50+ questions) may take significant time to process.
+
+4. **API Limits**: Monitor your API usage, especially for large question sets.
+
+## 🧪 Testing
+
+Use the test file for quick verification:
 
 ```bash
-# 1. Create MDX file with Python requirements
-# 2. Generate sheet JSON
-python main.py interview create-sheet-from-mdx --mdx-file python_requirements.mdx
+# Test metadata addition
+python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/test_questions.mdx
 
-# 3. Add metadata to your questions
-python main.py interview add-metadata-to-mdx --mdx-file python_questions.mdx
-
-# 4. Review and edit the enhanced MDX file
-# 5. Generate answers
-python main.py interview generate-answers-from-mdx --mdx-file ./output/python_questions_with_metadata.mdx
-
-# 6. Publish to database
-python main.py interview publish-sheet --sheet-file ./output/complete_sheet_python.json --sheet-id your_sheet_id
+# Test answer generation
+python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/test_questions_with_metadata.mdx
 ```
-
-## 📊 Available Commands
-
-### Interview Commands
-
-```bash
-# Intelligent Interview System (New)
-python main.py interview create-sheet-from-mdx --mdx-file requirements.mdx
-python main.py interview add-metadata-to-mdx --mdx-file questions.mdx
-python main.py interview generate-answers-from-mdx --mdx-file questions_with_metadata.mdx
-python main.py interview publish-sheet --sheet-file sheet.json --sheet-id id
-
-# Traditional Interview System
-python main.py interview question-sheet --topic "JavaScript"
-python main.py interview revamp-sheet --sheet-id your_sheet_id
-python main.py interview revamp-all-sheets
-```
-
-### Content Commands
-
-```bash
-python main.py content course-outline --topic "React Development" --level intermediate
-python main.py content video-suggestions --topic "Node.js" --module "Authentication"
-python main.py content tips-and-tricks --topic "Python" --level advanced
-```
-
-### Project Commands
-
-```bash
-python main.py projects create --idea "E-commerce App" --description "Build a full-stack e-commerce platform"
-python main.py projects create-from-mdx --mdx-file project_idea.mdx
-```
-
-### Shiksha Commands
-
-```bash
-python main.py shiksha create-course --course-name "Python Backend" --description "Complete Python backend course"
-python main.py shiksha create-world-class-course --course-name "React Frontend" --description "Advanced React course"
-```
-
-## 🎯 Benefits
-
-### 1. **Human-First Approach**
-
--   You create high-quality questions
--   AI adds intelligent metadata
--   Human review at every step
-
-### 2. **Quality-Focused Intelligence**
-
--   AI analyzes your questions for metadata
--   Generates comprehensive answers
--   Maintains your original question quality
-
-### 3. **Streamlined Workflow**
-
--   Simple 4-step process
--   Fewer agents, better quality
--   Clear separation of concerns
-
-### 4. **World-Class Perspective**
-
--   20+ years of FAANG experience
--   Indian tech industry context
--   Real interview patterns and trends
-
-## 📁 Output Structure
-
-```
-output/
-├── sheet_[topic].json                    # Step 1: Sheet JSON for database
-├── questions_[topic].mdx                 # Step 2: Questions for review
-└── complete_sheet_[topic].json          # Step 3: Complete sheet with answers
-```
-
-## 🎉 Success Metrics
-
--   ✅ **Quality-Focused Generation** - You control question quality
--   ✅ **Streamlined Workflow** - Simple 4-step process
--   ✅ **Human Review Integration** - Quality control at each stage
--   ✅ **World-Class Quality** - Professional content standards
--   ✅ **Reduced Complexity** - Fewer agents, better results
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+1. Follow the existing code structure
+2. Add proper error handling
+3. Include logging for debugging
+4. Test with small datasets first
+5. Update documentation for new features
 
-## 📄 License
+## 📞 Support
 
-This project is licensed under the MIT License.
+For issues or questions:
 
----
-
-**The Boring Agents** - Making content generation intelligent, adaptive, and human-friendly! 🚀
+1. Check the system status: `python3 main.py status`
+2. Verify API keys are configured
+3. Test with the provided test files
+4. Review logs for detailed error messages
