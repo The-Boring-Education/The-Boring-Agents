@@ -11,10 +11,8 @@ from ...core.base_agent import BaseAgent
 from ...core.config import config
 from ...utils.helpers import generate_filename, save_json_file, load_json_file
 from ...utils.validation import InterviewQuestionValidator
-from .question_creator import QuestionCreator
 from .answer_creator import AnswerCreator
-from .reviewer import Reviewer
-from .sheet_researcher import SheetResearcher
+from .metadata_agent import MetadataAgent
 from .mdx_styling_agent import MDXStylingAgent
 
 console = Console()
@@ -24,17 +22,15 @@ class InterviewSheetManager(BaseAgent):
     """Main manager for interview sheet lifecycle - creation, generation, review, and publication."""
     
     def __init__(self, **kwargs):
-        """Initialize the sheet manager with all specialized agents."""
+        """Initialize the sheet manager with streamlined agents."""
         super().__init__(**kwargs)
         
-        # Initialize specialized agents
-        self.question_creator = QuestionCreator(**kwargs)
+        # Initialize only essential agents for quality
         self.answer_creator = AnswerCreator(**kwargs)
-        self.reviewer = Reviewer(**kwargs)
-        self.researcher = SheetResearcher(**kwargs)
+        self.metadata_agent = MetadataAgent(**kwargs)
         self.mdx_styler = MDXStylingAgent(**kwargs)
         
-        self.logger.info("Interview Sheet Manager initialized with all specialized agents")
+        self.logger.info("Interview Sheet Manager initialized with streamlined agents")
     
     def _get_prompt_templates(self) -> Dict[str, PromptTemplate]:
         """Get prompt templates for sheet management."""
@@ -86,10 +82,10 @@ Provide your analysis in a structured format.
         """Generate content based on type."""
         if content_type == "create_sheet_from_mdx":
             return self.create_sheet_from_mdx(kwargs.get("mdx_filepath"))
-        elif content_type == "generate_questions_from_mdx":
-            return self.generate_questions_from_mdx(
-                kwargs.get("mdx_filepath"), 
-                kwargs.get("target_count", 50)
+        elif content_type == "add_metadata_to_mdx":
+            return self.metadata_agent.add_metadata_to_mdx(
+                kwargs.get("mdx_filepath"),
+                kwargs.get("topic", "General Tech")
             )
         elif content_type == "generate_answers_from_mdx":
             return self.generate_answers_from_mdx(kwargs.get("mdx_filepath"))
@@ -160,68 +156,26 @@ Provide your analysis in a structured format.
                 "message": str(e)
             }
     
-    def generate_questions_from_mdx(self, mdx_filepath: str, target_count: int = 50) -> Dict[str, Any]:
-        """Generate questions from MDX requirements with strict count adherence."""
-        console.print(f"[green]🎯 Generating exactly {target_count} questions from MDX...[/green]")
+    def add_metadata_to_mdx(self, mdx_filepath: str) -> Dict[str, Any]:
+        """Add metadata to questions in MDX file."""
+        console.print(f"[green]🎯 Adding metadata to questions in MDX...[/green]")
         
         try:
-            # Load MDX content
-            with open(mdx_filepath, 'r', encoding='utf-8') as f:
-                mdx_content = f.read()
+            # Use the metadata agent to add metadata
+            result = self.metadata_agent.add_metadata_to_mdx(mdx_filepath)
             
-            # Analyze MDX requirements
-            analysis_prompt = self._format_prompt("analyze_mdx_requirements", mdx_content=mdx_content)
-            analysis_result = self._generate_with_prompt(analysis_prompt)
-            requirements = self._parse_analysis_result(analysis_result)
+            if result["status"] == "success":
+                console.print(f"[green]✅ Metadata added successfully![/green]")
+                console.print(f"[blue]📁 Enhanced MDX: {result['enhanced_filepath']}[/blue]")
+                console.print(f"[blue]📊 Questions processed: {result['questions_count']}[/blue]")
+                
+                console.print(f"\n[yellow]⚠️  Review the enhanced MDX file[/yellow]")
+                console.print(f"[green]Then run: python main.py interview generate-answers-from-mdx --mdx-file {result['enhanced_filepath']}[/green]")
             
-            # Extract topic from MDX
-            topic = self._extract_topic_from_mdx(mdx_content)
-            
-            # Generate questions with strict count
-            questions = self.question_creator.generate_questions(
-                topic=topic,
-                requirements=requirements,
-                target_count=target_count
-            )
-            
-            # Create questions MDX file
-            questions_filename = f"questions_{self._generate_slug(topic)}.mdx"
-            questions_filepath = os.path.join(config.output_dir, questions_filename)
-            
-            mdx_content = f"""# {topic} Interview Questions
-
-## 📋 Generated Questions List ({len(questions)} questions)
-
-{self._format_questions_for_mdx(questions)}
-
-## 📝 Instructions for Review
-1. **Review each question** for accuracy and relevance
-2. **Add or remove questions** as needed
-3. **Adjust difficulty levels** if required
-4. **Modify frequency, priority, and company types** as needed
-5. **Save this file** and run Step 3 to generate answers
-
-## 🚀 Next Step
-Run: python main.py interview generate-answers-from-mdx --mdx-file {questions_filepath}
-"""
-            
-            with open(questions_filepath, 'w', encoding='utf-8') as f:
-                f.write(mdx_content)
-            
-            console.print(f"[blue]📁 Questions saved to: {questions_filepath}[/blue]")
-            console.print(f"[green]✅ Generated exactly {len(questions)} questions![/green]")
-            
-            return {
-                "status": "success",
-                "questions": questions,
-                "mdx_filepath": questions_filepath,
-                "topic": topic,
-                "requirements": requirements,
-                "question_count": len(questions)
-            }
+            return result
             
         except Exception as e:
-            self.logger.error(f"Error generating questions: {str(e)}")
+            self.logger.error(f"Error adding metadata: {str(e)}")
             return {
                 "status": "error",
                 "message": str(e)

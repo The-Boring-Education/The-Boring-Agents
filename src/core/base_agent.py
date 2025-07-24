@@ -29,6 +29,17 @@ class BaseAgent(ABC):
         
         # Initialize prompt templates (to be overridden by subclasses)
         self.prompt_templates = self._get_prompt_templates()
+        
+        # Log agent initialization with model and temperature info
+        self.logger.info(f"🤖 {self.__class__.__name__} initialized with:")
+        self.logger.info(f"   Model: {self.model_name}")
+        self.logger.info(f"   Temperature: {config.temperature}")
+        self.logger.info(f"   Max Tokens: {config.max_tokens}")
+        
+        # Print to console for visibility
+        from rich.console import Console
+        console = Console()
+        console.print(f"[blue]🤖 {self.__class__.__name__} initialized - Model: {self.model_name}, Temperature: {config.temperature}[/blue]")
     
     @property
     def llm(self) -> LLM:

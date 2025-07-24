@@ -197,30 +197,29 @@ def create_sheet_from_mdx(mdx_file, save):
 
 
 @interview.command()
-@click.option('--mdx-file', required=True, help='Path to MDX file containing interview requirements')
-@click.option('--count', default=50, help='Number of questions to generate')
+@click.option('--mdx-file', required=True, help='Path to MDX file containing questions')
 @click.option('--save', is_flag=True, help='Save output to file')
-def generate_questions_from_mdx(mdx_file, count, save):
-    """Step 2: Generate questions list in MDX file based on MDX requirements."""
-    console.print(f"[green]🤖 Step 2: Generating exactly {count} questions from MDX...[/green]")
+def add_metadata_to_mdx(mdx_file, save):
+    """Step 2: Add metadata to questions in MDX file."""
+    console.print(f"[green]🤖 Step 2: Adding metadata to questions in MDX...[/green]")
     
     try:
         manager = InterviewSheetManager()
-        result = manager.generate_questions_from_mdx(mdx_file, count)
+        result = manager.add_metadata_to_mdx(mdx_file)
         
         if result["status"] == "success":
-            console.print(f"[green]✅ Questions generated successfully![/green]")
-            console.print(f"[blue]📁 Questions file: {result['mdx_filepath']}[/blue]")
-            console.print(f"[green]📊 Generated exactly {result['question_count']} questions![/green]")
+            console.print(f"[green]✅ Metadata added successfully![/green]")
+            console.print(f"[blue]📁 Enhanced MDX: {result['enhanced_filepath']}[/blue]")
+            console.print(f"[blue]📊 Questions processed: {result['questions_count']}[/blue]")
             
-            console.print(f"\n[yellow]⚠️  Review and edit the questions in the MDX file[/yellow]")
-            console.print(f"[green]Then run: python main.py interview generate-answers-from-mdx --mdx-file {result['mdx_filepath']}[/green]")
+            console.print(f"\n[yellow]⚠️  Review the enhanced MDX file[/yellow]")
+            console.print(f"[green]Then run: python main.py interview generate-answers-from-mdx --mdx-file {result['enhanced_filepath']}[/green]")
             
         else:
-            console.print(f"[red]❌ Error generating questions: {result.get('message', 'Unknown error')}[/red]")
+            console.print(f"[red]❌ Error adding metadata: {result.get('message', 'Unknown error')}[/red]")
     
     except Exception as e:
-        console.print(f"[red]❌ Error generating questions: {str(e)}[/red]")
+        console.print(f"[red]❌ Error adding metadata: {str(e)}[/red]")
         raise click.Abort()
 
 

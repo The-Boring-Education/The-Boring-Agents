@@ -4,14 +4,14 @@ AI-powered content generation for The Boring Education platform.
 
 ## 🎯 Overview
 
-The Boring Agents is an intelligent system that generates high-quality educational content, interview preparation materials, and project ideas. It features an **adaptive interview system** that can understand your requirements from MDX files and generate tailored content.
+The Boring Agents is an intelligent system that generates high-quality educational content, interview preparation materials, and project ideas. It features a **streamlined interview system** that focuses on quality control and human review at every step.
 
 ## 🚀 Key Features
 
-### 1. **Intelligent Interview System**
+### 1. **Streamlined Interview System**
 
--   **MDX-based workflow** - Write your requirements in MDX files
--   **Adaptive content generation** - Automatically adapts to different interview types (DSA, Python, Java, etc.)
+-   **MDX-based workflow** - Write your questions in MDX files
+-   **Quality-focused generation** - You create questions, AI adds metadata and generates answers
 -   **Human review integration** - Review and edit at each step
 -   **World-class quality** - 20+ years of FAANG experience perspective
 
@@ -21,14 +21,14 @@ The Boring Agents is an intelligent system that generates high-quality education
 -   **Interview preparation** - Comprehensive question sheets
 -   **Project ideas** - Real-world project suggestions with implementation guides
 
-### 3. **Adaptive Intelligence**
+### 3. **Quality-Focused Intelligence**
 
--   **DSA Questions**: Explain like teaching a 10-year-old with analogies
--   **Python/Java**: Technical depth with practical examples
--   **System Design**: Architecture thinking with scalability focus
--   **Aptitude**: Clear problem-solving with step-by-step methods
+-   **Metadata Analysis**: AI analyzes your questions for frequency, priority, company types
+-   **Answer Generation**: High-quality answers with code examples and best practices
+-   **Human Control**: You create questions, AI enhances them with metadata and answers
+-   **Streamlined Process**: Simple 4-step workflow with quality checks
 
-## 📋 Intelligent Interview Workflow
+## 📋 Streamlined Interview Workflow
 
 ### Simple 4-Step Process
 
@@ -42,20 +42,20 @@ python main.py interview create-sheet-from-mdx --mdx-file your_requirements.mdx
 -   Creates sheet JSON for database creation
 -   Extracts topic and requirements automatically
 
-#### **Step 2: Generate Questions**
+#### **Step 2: Add Metadata to Questions**
 
 ```bash
-python main.py interview generate-questions-from-mdx --mdx-file your_requirements.mdx --count 50
+python main.py interview add-metadata-to-mdx --mdx-file your_questions.mdx
 ```
 
--   Generates questions based on your MDX requirements
--   Saves to MDX file for your review and editing
--   Includes frequency, priority, company types
+-   Adds metadata to your manually created questions
+-   Analyzes frequency, priority, company types, difficulty
+-   Creates enhanced MDX file for review
 
 #### **Step 3: Generate Answers**
 
 ```bash
-python main.py interview generate-answers-from-mdx --mdx-file ./output/questions_topic.mdx
+python main.py interview generate-answers-from-mdx --mdx-file ./output/questions_topic_with_metadata.mdx
 ```
 
 -   Generates comprehensive answers for all questions
@@ -112,6 +112,31 @@ The questions should explain concepts like teaching a 10-year-old - simple, clea
 -   Include common mistakes and how to avoid them
 ```
 
+### Example: Questions MDX File
+
+```mdx
+# Python Interview Questions
+
+## 📋 Questions List
+
+1. Question: What is the difference between Python 2 and Python 3? How would you handle code migration from Python 2 to Python 3?
+
+2. Question: Explain the concept of decorators in Python. Provide examples of common use cases.
+
+3. Question: What are generators in Python? How do they differ from regular functions?
+
+4. Question: Explain the Global Interpreter Lock (GIL) in Python. What are its implications?
+
+5. Question: How does Python handle memory management? Explain garbage collection.
+
+## 📝 Instructions for Answer Generation
+
+-   Provide detailed explanations with code examples
+-   Include best practices and common pitfalls
+-   Add real-world scenarios and use cases
+-   Focus on practical implementation
+```
+
 ## 🎨 Content Adaptation Examples
 
 ### DSA Questions
@@ -164,12 +189,12 @@ python main.py status
 # 2. Generate sheet JSON
 python main.py interview create-sheet-from-mdx --mdx-file dsa_requirements.mdx
 
-# 3. Generate questions from MDX
-python main.py interview generate-questions-from-mdx --mdx-file dsa_requirements.mdx --count 40
+# 3. Add metadata to your questions
+python main.py interview add-metadata-to-mdx --mdx-file dsa_questions.mdx
 
-# 4. Review and edit questions in MDX file
+# 4. Review and edit the enhanced MDX file
 # 5. Generate answers
-python main.py interview generate-answers-from-mdx --mdx-file ./output/questions_dsa.mdx
+python main.py interview generate-answers-from-mdx --mdx-file ./output/dsa_questions_with_metadata.mdx
 
 # 6. Publish to database
 python main.py interview publish-sheet --sheet-file ./output/complete_sheet_dsa.json --sheet-id your_sheet_id
@@ -182,12 +207,12 @@ python main.py interview publish-sheet --sheet-file ./output/complete_sheet_dsa.
 # 2. Generate sheet JSON
 python main.py interview create-sheet-from-mdx --mdx-file python_requirements.mdx
 
-# 3. Generate questions
-python main.py interview generate-questions-from-mdx --mdx-file python_requirements.mdx --count 60
+# 3. Add metadata to your questions
+python main.py interview add-metadata-to-mdx --mdx-file python_questions.mdx
 
-# 4. Review and edit questions
+# 4. Review and edit the enhanced MDX file
 # 5. Generate answers
-python main.py interview generate-answers-from-mdx --mdx-file ./output/questions_python.mdx
+python main.py interview generate-answers-from-mdx --mdx-file ./output/python_questions_with_metadata.mdx
 
 # 6. Publish to database
 python main.py interview publish-sheet --sheet-file ./output/complete_sheet_python.json --sheet-id your_sheet_id
@@ -200,8 +225,8 @@ python main.py interview publish-sheet --sheet-file ./output/complete_sheet_pyth
 ```bash
 # Intelligent Interview System (New)
 python main.py interview create-sheet-from-mdx --mdx-file requirements.mdx
-python main.py interview generate-questions-from-mdx --mdx-file requirements.mdx --count 50
-python main.py interview generate-answers-from-mdx --mdx-file questions.mdx
+python main.py interview add-metadata-to-mdx --mdx-file questions.mdx
+python main.py interview generate-answers-from-mdx --mdx-file questions_with_metadata.mdx
 python main.py interview publish-sheet --sheet-file sheet.json --sheet-id id
 
 # Traditional Interview System
@@ -234,23 +259,23 @@ python main.py shiksha create-world-class-course --course-name "React Frontend" 
 
 ## 🎯 Benefits
 
-### 1. **MDX-First Approach**
+### 1. **Human-First Approach**
 
--   Write your heart about any interview requirements
--   Flexible and human-readable format
--   Easy to review and edit
+-   You create high-quality questions
+-   AI adds intelligent metadata
+-   Human review at every step
 
-### 2. **Adaptive Intelligence**
+### 2. **Quality-Focused Intelligence**
 
--   Automatically detects interview type
--   Adapts content style and tone
--   Generates appropriate question categories
+-   AI analyzes your questions for metadata
+-   Generates comprehensive answers
+-   Maintains your original question quality
 
-### 3. **Quality Assurance**
+### 3. **Streamlined Workflow**
 
--   Human review at each step
--   Intelligent validation
--   Professional content standards
+-   Simple 4-step process
+-   Fewer agents, better quality
+-   Clear separation of concerns
 
 ### 4. **World-Class Perspective**
 
@@ -269,11 +294,11 @@ output/
 
 ## 🎉 Success Metrics
 
--   ✅ **Adaptive Content Generation** - Content tailored to interview type
--   ✅ **MDX-Based Workflow** - Flexible input format
+-   ✅ **Quality-Focused Generation** - You control question quality
+-   ✅ **Streamlined Workflow** - Simple 4-step process
 -   ✅ **Human Review Integration** - Quality control at each stage
 -   ✅ **World-Class Quality** - Professional content standards
--   ✅ **Simplified Process** - Easy 4-step workflow
+-   ✅ **Reduced Complexity** - Fewer agents, better results
 
 ## 🤝 Contributing
 

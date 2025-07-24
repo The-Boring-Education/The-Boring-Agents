@@ -1,7 +1,7 @@
 """Agents module for The Boring Agents."""
 
 from .content_agent import ContentAgent
-from .interview import InterviewSheetManager, MDXStylingAgent, DatabaseIntegrationAgent
+from .interview import InterviewSheetManager, MetadataAgent, MDXStylingAgent, DatabaseIntegrationAgent
 from .project import ProjectAgent
 from .shiksha import (
     ShikshaCourseAgent,
@@ -18,6 +18,7 @@ from .shiksha import (
 __all__ = [
     "ContentAgent", 
     "InterviewSheetManager",
+    "MetadataAgent",
     "MDXStylingAgent",
     "DatabaseIntegrationAgent",
     "ProjectAgent",
