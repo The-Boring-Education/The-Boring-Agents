@@ -279,30 +279,53 @@ Analyze based on:
         """Extract questions from MDX content."""
         questions = []
         
-        # Look for question patterns
+        # Look for question patterns - more specific to avoid duplicates
         patterns = [
+            # Most specific patterns first
+            r'\d+\.\s*★+\s*([^★\n]+)',  # Questions with difficulty stars
+            r'\d+\.\s*([^★\n]+)',  # Questions without stars
+            # Fallback patterns
             r'- Question:\s*(.+)',
             r'\d+\.\s*(.+\?)',
             r'###\s*(.+\?)',
             r'\*\*Question:\*\*\s*(.+)',
-            # New patterns for DSA format
-            r'\d+\.\s*★+\s*(.+)',  # Questions with difficulty stars
-            r'\d+\.\s*(.+)',  # Simple numbered questions
-            r'★+\s*(.+)',  # Questions starting with difficulty stars
-            # More specific DSA patterns
-            r'\d+\.\s*★+\s*([^★\n]+)',  # Questions with stars followed by text
-            r'\d+\.\s*([^★\n]+)',  # Questions without stars
         ]
         
+        # Use a set to track processed line numbers to avoid duplicates
+        processed_lines = set()
+        
         for pattern in patterns:
-            matches = re.findall(pattern, mdx_content, re.MULTILINE)
-            questions.extend([q.strip() for q in matches if q.strip()])
+            matches = re.finditer(pattern, mdx_content, re.MULTILINE)
+            for match in matches:
+                # Get the line number to avoid duplicates
+                line_start = mdx_content.rfind('\n', 0, match.start()) + 1
+                line_end = mdx_content.find('\n', match.end())
+                if line_end == -1:
+                    line_end = len(mdx_content)
+                
+                line_number = mdx_content.count('\n', 0, line_start)
+                
+                # Skip if we've already processed this line
+                if line_number in processed_lines:
+                    continue
+                
+                question_text = match.group(1).strip()
+                if question_text and len(question_text) > 5:  # Basic validation
+                    questions.append(question_text)
+                    processed_lines.add(line_number)
         
         # Remove duplicates and filter out non-questions
         unique_questions = []
+        seen_questions = set()
+        
         for q in questions:
             # Clean the question text
             q = q.strip()
+            
+            # Skip if we've already seen this question
+            if q in seen_questions:
+                continue
+            seen_questions.add(q)
             
             # Skip if it's just a number or section header
             if (len(q) < 10 or 
@@ -322,7 +345,9 @@ Analyze based on:
                 'College students' in q or
                 'DSA beginners' in q or
                 'Entry-level' in q or
-                'Working professionals' in q):
+                'Working professionals' in q or
+                'Instructions for Answer Generation' in q or
+                'Provide detailed explanations' in q):
                 continue
             
             # Skip if it's just a section number
