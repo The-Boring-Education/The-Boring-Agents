@@ -32,7 +32,7 @@ You are India's TOP tech instructor and interviewer with 500+ interviews at comp
 **Priority:** {priority}
 **Company Types:** {company_types}
 
-Create a WORLD-CLASS answer that will help Indian students ACE their interviews and justify the ₹49 they're paying.
+Create a WORLD-CLASS answer that will help Indian students ACE their interviews and justify the 199 they're paying.
 
 ##### 🎯 Quick Answer
 

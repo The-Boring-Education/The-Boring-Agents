@@ -257,59 +257,10 @@ Return the formatted data as JSON."""
                 "difficulty": question.get("difficulty", "Medium"),
                 "frequency": question.get("frequency", "Medium"),
                 "priority": question.get("priority", "Medium"),
-                "companyTypes": question.get("company_types", ["Startup", "MNC"]),  # Transform field name
+                "companyTypes": question.get("company_types"),  # Transform field name
                 "roadmap": sheet_data.get("roadmap", "Tech")
             }
             transformed_questions.append(transformed_question)
         
         transformed_data["questions"] = transformed_questions
         return transformed_data
-    
-    def create_new_sheet(self, sheet_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new sheet in the database."""
-        try:
-            url = f"{self.api_base_url}/interview-prep"
-            headers = {
-                "Content-Type": "application/json"
-            }
-            
-            # Format sheet data for creation
-            formatted_sheet = {
-                "name": sheet_data.get("name", ""),
-                "description": sheet_data.get("description", ""),
-                "roadmap": sheet_data.get("roadmap", "Tech"),
-                "difficulty": sheet_data.get("difficulty", "Intermediate"),
-                "target_audience": sheet_data.get("target_audience", "Developers"),
-                "cover_image_url": sheet_data.get("cover_image_url", ""),
-                "meta_content": sheet_data.get("meta_content", ""),
-                "is_premium": False,
-                "price": 0,
-                "features": []
-            }
-            
-            response = requests.post(url, json=formatted_sheet, headers=headers, timeout=30)
-            
-            if response.status_code == 200 or response.status_code == 201:
-                result = response.json()
-                return {
-                    "status": "success",
-                    "message": "Sheet created successfully",
-                    "sheet_id": result.get("data", {}).get("_id", ""),
-                    "data": result
-                }
-            else:
-                return {
-                    "status": "error",
-                    "message": f"Failed to create sheet: {response.status_code} - {response.text}"
-                }
-        
-        except requests.exceptions.RequestException as e:
-            return {
-                "status": "error",
-                "message": f"Network error creating sheet: {str(e)}"
-            }
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": f"Error creating sheet: {str(e)}"
-            } 
