@@ -58,9 +58,109 @@ The-Boring-Agents/
 └── requirements.txt           # Python dependencies
 ```
 
-## 🎯 Interview Preparation Workflow
+## 🚀 Professional Automated Workflow (NEW!)
 
-The interview preparation system follows a 4-step process with support for different agent types:
+**🎯 One-Command Complete Automation** - No more manual steps!
+
+```bash
+# Run the professional automated workflow
+./interview-prep.sh
+```
+
+This launches our **production-grade workflow automation** that:
+
+### ✨ **What It Does Automatically:**
+
+-   🎯 **Interactive Setup** - Asks skill name, agent type, technology focus
+-   📁 **Auto Directory Creation** - Creates proper folder structure
+-   📝 **Requirements Template** - Generates customizable requirements file
+-   🤖 **AI Question Generation** - Creates 50-100 interview questions
+-   📊 **Metadata Addition** - Adds difficulty, frequency, company types
+-   💬 **Answer Generation** - Creates detailed answers with examples
+-   🎨 **Formatting Fix** - Cleans up MDX formatting issues
+-   🚀 **Database Publishing** - Optionally publishes to live database
+-   📋 **Progress Tracking** - Beautiful visual progress indicators
+-   📝 **Comprehensive Logging** - Detailed execution logs
+-   🔄 **Error Recovery** - Graceful failure handling and recovery options
+
+### 🛡️ **Professional Features:**
+
+-   **Error Handling** - Recovers from failures gracefully
+-   **Progress Visualization** - Real-time progress bars and status
+-   **Configuration Validation** - Checks system requirements
+-   **Logging System** - Detailed logs for debugging
+-   **Interactive Prompts** - User-friendly configuration
+-   **Resume Capability** - Can resume interrupted workflows
+
+### 📊 **Supported Workflows:**
+
+-   **DSA Sheets** - Data structures & algorithms with complexity analysis
+-   **Tech Sheets** - Python, Java, React, DevOps, Node.js, Angular, etc.
+-   **Generic Sheets** - General purpose interview questions
+-   **Custom Skills** - Any technology you specify
+
+### 🎯 **Example Usage:**
+
+```bash
+# Launch the workflow
+./interview-prep.sh
+
+# Follow the interactive prompts:
+# 1. Enter skill name (e.g., "Python", "React", "DevOps")
+# 2. Choose agent type (generic/dsa/tech)
+# 3. Set technology focus (for tech agent)
+# 4. Configure database publishing
+# 5. Sit back and watch it work!
+```
+
+### 📁 **Auto-Generated File Structure:**
+
+```
+lab/interview-prep/
+├── python/                           # Auto-created skill directory
+│   ├── python_requirements.mdx       # Generated requirements template
+│   ├── python_requirements_questions.mdx  # AI-generated questions
+│   ├── python_requirements_questions_with_metadata.mdx  # With metadata
+│   └── ...
+├── java/                             # Another skill directory
+├── react/                            # Frontend skill directory
+└── {your-skill}/                     # Your custom skill
+    ├── {skill}_requirements.mdx      # Requirements template
+    ├── {skill}_requirements_questions.mdx
+    └── {skill}_requirements_questions_with_metadata.mdx
+
+output/
+├── complete_sheet_{skill}.json       # Final generated sheet
+├── logs/                             # Execution logs
+└── ...
+```
+
+### 🔧 **Advanced Options:**
+
+```bash
+# Run just the workflow script directly (skip launcher)
+./scripts/interview_prep_workflow.sh
+
+# Manual override for specific steps
+python3 main.py interview --help
+
+# Check system status
+python3 main.py status
+```
+
+### 🚨 **Troubleshooting:**
+
+-   **Permission Issues**: Run `chmod +x interview-prep.sh` and `chmod +x scripts/interview_prep_workflow.sh`
+-   **Python Errors**: Ensure you're in the right directory and virtual environment is activated
+-   **API Issues**: Check your `.env` file has valid API keys
+-   **Interrupted Workflow**: Check the log files in `logs/` directory for detailed error information
+-   **Resume Failed Generation**: Use the individual commands from the manual workflow section
+
+---
+
+## 🎯 Manual Interview Preparation Workflow
+
+For advanced users who prefer manual control, the system also supports a 4-step manual process:
 
 ### Available Agent Types
 

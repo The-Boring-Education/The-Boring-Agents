@@ -141,3 +141,8 @@ Thumbs.db
 # Project specific
 logs/
 temp/
+*.log
+
+# Interview prep output
+output/
+!output/.gitkeep
