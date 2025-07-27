@@ -41,11 +41,12 @@ log() {
     echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
     
     case $level in
-        "ERROR") echo -e "${RED}❌ $message${NC}" ;;
-        "SUCCESS") echo -e "${GREEN}✅ $message${NC}" ;;
-        "INFO") echo -e "${BLUE}ℹ️  $message${NC}" ;;
-        "WARN") echo -e "${YELLOW}⚠️  $message${NC}" ;;
-        "PROGRESS") echo -e "${PURPLE}🔄 $message${NC}" ;;
+        "ERROR") echo -e "${RED}❌ $message${NC}" >&2 ;;
+        "SUCCESS") echo -e "${GREEN}✅ $message${NC}" >&2 ;;
+        "INFO") echo -e "${BLUE}ℹ️  $message${NC}" >&2 ;;
+        "WARN") echo -e "${YELLOW}⚠️  $message${NC}" >&2 ;;
+        "PROGRESS") echo -e "${PURPLE}🔄 $message${NC}" >&2 ;;
+        "DEBUG") echo -e "${CYAN}🔧 $message${NC}" >&2 ;;
     esac
 }
 
@@ -65,13 +66,13 @@ show_progress_bar() {
     local percentage=$((current * 100 / total))
     local completed=$((current * width / total))
     
-    printf "\r${CYAN}Progress: ["
-    printf "%${completed}s" | tr ' ' '█'
-    printf "%$((width - completed))s" | tr ' ' '░'
-    printf "] %d%% (%d/%d)${NC}" $percentage $current $total
+    printf "\r${CYAN}Progress: [" >&2
+    printf "%${completed}s" | tr ' ' '█' >&2
+    printf "%$((width - completed))s" | tr ' ' '░' >&2
+    printf "] %d%% (%d/%d)${NC}" $percentage $current $total >&2
     
     if [ $current -eq $total ]; then
-        echo ""
+        echo "" >&2
     fi
 }
 
@@ -254,6 +255,13 @@ setup_environment() {
         exit 1
     fi
     
+    # Test system status
+    log "DEBUG" "Testing system status..."
+    if ! python3 main.py status >/dev/null 2>&1; then
+        log "ERROR" "System check failed. Please ensure all dependencies are installed."
+        exit 1
+    fi
+    
     log "SUCCESS" "Environment setup complete"
 }
 
@@ -379,7 +387,7 @@ generate_requirements_file() {
     rm "$temp_template"
     
     log "SUCCESS" "Requirements file created: $requirements_file"
-    echo "$requirements_file"
+    printf "%s" "$requirements_file"  # Use printf instead of echo to avoid newlines
 }
 
 run_workflow_step() {
@@ -387,16 +395,44 @@ run_workflow_step() {
     local command=$2
     local step_num=$3
     local total_steps=$4
+    local output_file=$5
     
     log "PROGRESS" "Step $step_num/$total_steps: $step_name"
+    log "DEBUG" "Running command: $command"
     show_progress_bar $step_num $total_steps
     
-    if eval "$command" >> "$LOG_FILE" 2>&1; then
+    # Create a temporary log file for this step
+    local step_log="/tmp/step_${step_num}.log"
+    
+    echo "=== Step $step_num: $step_name ===" >> "$LOG_FILE"
+    echo "Command: $command" >> "$LOG_FILE"
+    echo "Started at: $(date)" >> "$LOG_FILE"
+    
+    if eval "$command" > "$step_log" 2>&1; then
+        cat "$step_log" >> "$LOG_FILE"
+        
+        # Check if expected output file was created
+        if [[ -n "$output_file" && ! -f "$output_file" ]]; then
+            log "WARN" "$step_name completed but expected file not found: $output_file"
+            log "DEBUG" "Step output:"
+            cat "$step_log"
+            rm -f "$step_log"
+            return 1
+        fi
+        
         log "SUCCESS" "$step_name completed"
+        rm -f "$step_log"
         return 0
     else
-        log "ERROR" "$step_name failed. Check log: $LOG_FILE"
-        return 1
+        local exit_code=$?
+        echo "Failed with exit code: $exit_code" >> "$LOG_FILE"
+        cat "$step_log" >> "$LOG_FILE"
+        
+        log "ERROR" "$step_name failed with exit code $exit_code"
+        echo -e "${RED}Command output:${NC}"
+        cat "$step_log"
+        rm -f "$step_log"
+        return $exit_code
     fi
 }
 
@@ -408,36 +444,61 @@ execute_main_workflow() {
     log "INFO" "Starting automated workflow..."
     echo ""
     
+    # Construct file paths
+    local base_name="${requirements_file%_requirements.mdx}"
+    local questions_file="${base_name}_requirements_questions.mdx"
+    local metadata_file="${base_name}_requirements_questions_with_metadata.mdx"
+    
+    # Build technology parameter
+    local tech_param=""
+    if [[ -n "$TECHNOLOGY" ]]; then
+        tech_param="--technology '$TECHNOLOGY'"
+    fi
+    
     # Step 1: Generate questions from requirements
-    local questions_file="${requirements_file%_requirements.mdx}_requirements_questions.mdx"
+    log "DEBUG" "Expected questions file: $questions_file"
     if run_workflow_step "Generating interview questions" \
-       "python3 main.py interview generate-questions-from-mdx --mdx-file '$requirements_file' --agent-type '$AGENT_TYPE' --technology '$TECHNOLOGY'" \
-       1 $total_steps; then
+       "python3 main.py interview generate-questions-from-mdx --mdx-file '$requirements_file' --agent-type '$AGENT_TYPE' $tech_param" \
+       1 $total_steps "$questions_file"; then
         
         # Step 2: Add metadata to questions
-        local metadata_file="${questions_file%_questions.mdx}_questions_with_metadata.mdx"
+        log "DEBUG" "Expected metadata file: $metadata_file"
         if run_workflow_step "Adding metadata to questions" \
-           "python3 main.py interview add-metadata-to-mdx --mdx-file '$questions_file' --agent-type '$AGENT_TYPE' --technology '$TECHNOLOGY'" \
-           2 $total_steps; then
+           "python3 main.py interview add-metadata-to-mdx --mdx-file '$questions_file' --agent-type '$AGENT_TYPE' $tech_param" \
+           2 $total_steps "$metadata_file"; then
             
             # Step 3: Generate answers
             if run_workflow_step "Generating detailed answers" \
-               "python3 main.py interview generate-answers-from-mdx --mdx-file '$metadata_file' --agent-type '$AGENT_TYPE' --technology '$TECHNOLOGY'" \
-               3 $total_steps; then
+               "python3 main.py interview generate-answers-from-mdx --mdx-file '$metadata_file' --agent-type '$AGENT_TYPE' $tech_param" \
+               3 $total_steps ""; then
                 
                 # Step 4: Fix formatting
                 local output_pattern="$OUTPUT_DIR/complete_sheet_${SKILL_LOWER}*.json"
                 local output_file=$(ls $output_pattern 2>/dev/null | head -1)
                 
                 if [ -n "$output_file" ]; then
+                    log "DEBUG" "Found output file: $output_file"
                     run_workflow_step "Fixing MDX formatting" \
                        "python3 main.py interview fix-mdx-formatting --json-file '$output_file'" \
-                       4 $total_steps
+                       4 $total_steps ""
                 else
                     log "WARN" "Output file not found matching pattern: $output_pattern"
+                    log "DEBUG" "Available files in output directory:"
+                    ls -la "$OUTPUT_DIR"/ >> "$LOG_FILE" 2>&1
+                    # Still mark as successful since this is optional
+                    show_progress_bar 4 $total_steps
                 fi
+            else
+                log "ERROR" "Failed to generate answers"
+                return 1
             fi
+        else
+            log "ERROR" "Failed to add metadata"
+            return 1
         fi
+    else
+        log "ERROR" "Failed to generate questions"
+        return 1
     fi
     
     show_progress_bar $total_steps $total_steps
@@ -450,11 +511,23 @@ show_results() {
     echo ""
     
     echo -e "${GREEN}📁 Generated Files:${NC}"
-    find "$SKILL_DIR" -name "*.mdx" -exec echo -e "${BLUE}   📄 {}${NC}" \;
+    if find "$SKILL_DIR" -name "*.mdx" -type f | head -10 | while read file; do
+        echo -e "${BLUE}   📄 $file${NC}"
+    done; then
+        :
+    else
+        echo -e "${YELLOW}   No MDX files found in $SKILL_DIR${NC}"
+    fi
     echo ""
     
     echo -e "${GREEN}📊 Output Files:${NC}"
-    find "$OUTPUT_DIR" -name "*${SKILL_LOWER}*" -exec echo -e "${BLUE}   📈 {}${NC}" \;
+    if find "$OUTPUT_DIR" -name "*${SKILL_LOWER}*" -type f | head -10 | while read file; do
+        echo -e "${BLUE}   📈 $file${NC}"
+    done; then
+        :
+    else
+        echo -e "${YELLOW}   No output files found matching pattern *${SKILL_LOWER}*${NC}"
+    fi
     echo ""
     
     echo -e "${GREEN}📝 Log File:${NC}"
@@ -463,6 +536,14 @@ show_results() {
     
     echo -e "${PURPLE}🚀 Your $SKILL_NAME interview prep sheet is ready!${NC}"
     echo -e "${CYAN}Use the generated files for comprehensive interview preparation.${NC}"
+    
+    # Show next steps
+    echo ""
+    echo -e "${GREEN}🎯 Next Steps:${NC}"
+    echo -e "${BLUE}   1. Review the generated questions in: $SKILL_DIR${NC}"
+    echo -e "${BLUE}   2. Check the complete sheet in: $OUTPUT_DIR${NC}"
+    echo -e "${BLUE}   3. Use the answers for interview preparation${NC}"
+    echo -e "${BLUE}   4. Customize questions based on your target companies${NC}"
 }
 
 # =============================================================================
@@ -470,18 +551,26 @@ show_results() {
 # =============================================================================
 
 main() {
-    trap 'log "ERROR" "Script interrupted"; exit 1' INT TERM
+    # Improved error handling
+    trap 'log "ERROR" "Script interrupted at line $LINENO"; exit 1' INT TERM
+    trap 'log "ERROR" "Script failed at line $LINENO with exit code $?"; exit 1' ERR
     
     setup_environment
     get_user_input
     create_directory_structure
     
     local requirements_file=$(generate_requirements_file)
-    execute_main_workflow "$requirements_file"
     
-    show_results
-    
-    log "SUCCESS" "Workflow completed successfully"
+    if execute_main_workflow "$requirements_file"; then
+        show_results
+        log "SUCCESS" "Workflow completed successfully"
+    else
+        log "ERROR" "Workflow failed. Check log file: $LOG_FILE"
+        echo ""
+        echo -e "${RED}❌ Workflow failed. Check the log file for details:${NC}"
+        echo -e "${BLUE}   📋 $LOG_FILE${NC}"
+        exit 1
+    fi
 }
 
 # Run main function
