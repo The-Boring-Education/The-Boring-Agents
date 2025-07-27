@@ -60,57 +60,62 @@ The-Boring-Agents/
 
 ## 🚀 Professional Automated Workflow (NEW!)
 
-**🎯 One-Command Complete Automation** - No more manual steps!
+**🎯 One-Command Complete Automation** - Just provide a skill name, we handle EVERYTHING!
 
 ```bash
 # Run the professional automated workflow
 ./interview-prep.sh
 ```
 
-This launches our **production-grade workflow automation** that:
+This launches our **production-grade workflow automation** that requires **ONLY** a skill name and automates everything else:
 
 ### ✨ **What It Does Automatically:**
 
--   🎯 **Interactive Setup** - Asks skill name, agent type, technology focus
--   📁 **Auto Directory Creation** - Creates proper folder structure
--   📝 **Requirements Template** - Generates customizable requirements file
--   🤖 **AI Question Generation** - Creates 50-100 interview questions
--   📊 **Metadata Addition** - Adds difficulty, frequency, company types
--   💬 **Answer Generation** - Creates detailed answers with examples
--   🎨 **Formatting Fix** - Cleans up MDX formatting issues
--   🚀 **Database Publishing** - Optionally publishes to live database
--   📋 **Progress Tracking** - Beautiful visual progress indicators
--   📝 **Comprehensive Logging** - Detailed execution logs
--   🔄 **Error Recovery** - Graceful failure handling and recovery options
+-   🎯 **Smart Setup** - Just enter skill name (e.g., "React", "Python", "DevOps")
+-   🤖 **Auto Agent Detection** - Intelligently selects the right agent type
+-   📁 **Directory Creation** - Creates organized folder structure automatically
+-   📝 **Requirements Generation** - Auto-generates comprehensive requirements MDX
+-   🤖 **AI Question Generation** - Creates 100 tailored interview questions
+-   📊 **Metadata Addition** - Adds difficulty, frequency, company types automatically
+-   💬 **Answer Generation** - Creates detailed answers with examples and code
+-   🎨 **Formatting Fix** - Cleans up MDX formatting issues automatically
+-   📈 **Visual Progress** - Beautiful progress bars and status updates
+-   🚨 **Error Handling** - Robust error recovery and detailed logging
+-   📝 **Complete Output** - Ready-to-use interview prep sheets
 
 ### 🛡️ **Professional Features:**
 
--   **Error Handling** - Recovers from failures gracefully
--   **Progress Visualization** - Real-time progress bars and status
--   **Configuration Validation** - Checks system requirements
--   **Logging System** - Detailed logs for debugging
--   **Interactive Prompts** - User-friendly configuration
--   **Resume Capability** - Can resume interrupted workflows
+-   **Zero Configuration** - No complex setup or parameter choices needed
+-   **Smart Detection** - Automatically detects if it's DSA, Tech, or Generic
+-   **Progress Visualization** - Real-time progress bars with percentages
+-   **Comprehensive Logging** - Detailed logs for debugging and tracking
+-   **Error Prevention** - Robust error handling prevents loops and failures
+-   **Production Ready** - Generates industry-standard interview materials
 
-### 📊 **Supported Workflows:**
+### 📊 **Supported Technologies (Auto-Detected):**
 
--   **DSA Sheets** - Data structures & algorithms with complexity analysis
--   **Tech Sheets** - Python, Java, React, DevOps, Node.js, Angular, etc.
--   **Generic Sheets** - General purpose interview questions
--   **Custom Skills** - Any technology you specify
+-   **DSA** - "DSA", "Algorithms", "Data Structures", "LeetCode"
+-   **Python** - "Python", auto-detects frameworks (Django, Flask, FastAPI)
+-   **JavaScript** - "JavaScript", "JS", "Node.js", "React", "Vue", "Angular"
+-   **Java** - "Java", auto-detects Spring, enterprise patterns
+-   **DevOps** - "DevOps", "Docker", "Kubernetes", "AWS", "Cloud"
+-   **Any Technology** - The system adapts to any skill you provide
 
-### 🎯 **Example Usage:**
+### 🎯 **Super Simple Usage:**
 
 ```bash
 # Launch the workflow
 ./interview-prep.sh
 
-# Follow the interactive prompts:
-# 1. Enter skill name (e.g., "Python", "React", "DevOps")
-# 2. Choose agent type (generic/dsa/tech)
-# 3. Set technology focus (for tech agent)
-# 4. Configure database publishing
-# 5. Sit back and watch it work!
+# Simply enter a skill name:
+# ✅ "Python" → Creates Python tech interview sheet
+# ✅ "React" → Creates React framework interview sheet
+# ✅ "DevOps" → Creates DevOps/infrastructure interview sheet
+# ✅ "DSA" → Creates data structures & algorithms sheet
+# ✅ "Java" → Creates Java tech interview sheet
+# ✅ "Node.js" → Creates Node.js backend interview sheet
+
+# That's it! Everything else is automated.
 ```
 
 ### 📁 **Auto-Generated File Structure:**
