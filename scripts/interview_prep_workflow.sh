@@ -263,9 +263,10 @@ get_user_input() {
     echo -e "${GREEN}🎯 Welcome to the Interview Prep Sheet Generator!${NC}"
     echo -e "${BLUE}I'll create a complete interview preparation sheet for any technology.${NC}"
     echo ""
-    echo -e "${CYAN}Examples: Python, Java, React, DevOps, Node.js, Angular, etc.${NC}"
+    echo -e "${CYAN}Examples: Python, Java, React, DevOps, Node.js, Angular, DSA, etc.${NC}"
     echo ""
     
+    # Get skill/technology name
     while true; do
         read -p "$(echo -e ${YELLOW}Enter the skill/technology name: ${NC})" SKILL_NAME
         
@@ -276,22 +277,83 @@ get_user_input() {
         fi
     done
     
-    # Auto-detect agent type and technology
-    AGENT_TYPE=$(detect_technology_type "$SKILL_NAME")
-    TECHNOLOGY="$SKILL_NAME"
+    echo ""
+    echo -e "${CYAN}📋 Available Agent Types:${NC}"
+    echo -e "${BLUE}   1. ${WHITE}generic${BLUE} - General interview questions (any topic)${NC}"
+    echo -e "${BLUE}   2. ${WHITE}dsa${BLUE} - Data Structures & Algorithms (with complexity analysis)${NC}"
+    echo -e "${BLUE}   3. ${WHITE}tech${BLUE} - Technology-specific (Python, Java, React, DevOps, etc.)${NC}"
+    echo ""
+    
+    # Get agent type
+    while true; do
+        read -p "$(echo -e ${YELLOW}Select agent type [1-3] or name [generic/dsa/tech]: ${NC})" agent_choice
+        
+        case $agent_choice in
+            1|generic) 
+                AGENT_TYPE="generic"
+                break
+                ;;
+            2|dsa) 
+                AGENT_TYPE="dsa"
+                break
+                ;;
+            3|tech) 
+                AGENT_TYPE="tech"
+                break
+                ;;
+            *) 
+                echo -e "${RED}Please enter 1, 2, 3 or agent name (generic/dsa/tech)${NC}"
+                ;;
+        esac
+    done
+    
+    # Set technology parameter
+    if [[ "$AGENT_TYPE" == "tech" ]]; then
+        TECHNOLOGY="$SKILL_NAME"
+        echo -e "${CYAN}💻 Technology focus set to: $TECHNOLOGY${NC}"
+    else
+        TECHNOLOGY=""
+    fi
     
     # Create normalized names
     SKILL_LOWER=$(echo "$SKILL_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
     SKILL_DIR="$LAB_DIR/$SKILL_LOWER"
     
     echo ""
-    echo -e "${GREEN}✅ Configuration:${NC}"
+    echo -e "${GREEN}✅ Configuration Summary:${NC}"
     echo -e "${BLUE}   📝 Skill: $SKILL_NAME${NC}"
     echo -e "${BLUE}   🤖 Agent Type: $AGENT_TYPE${NC}"
-    echo -e "${BLUE}   💻 Technology: $TECHNOLOGY${NC}"
+    if [[ -n "$TECHNOLOGY" ]]; then
+        echo -e "${BLUE}   💻 Technology: $TECHNOLOGY${NC}"
+    fi
     echo -e "${BLUE}   📁 Directory: $SKILL_DIR${NC}"
     echo ""
     
+    # Show what this configuration will generate
+    case $AGENT_TYPE in
+        "generic")
+            echo -e "${CYAN}📋 This will generate:${NC}"
+            echo -e "${BLUE}   • General-purpose interview questions${NC}"
+            echo -e "${BLUE}   • Broad coverage across multiple topics${NC}"
+            echo -e "${BLUE}   • Suitable for any skill level${NC}"
+            ;;
+        "dsa")
+            echo -e "${CYAN}📋 This will generate:${NC}"
+            echo -e "${BLUE}   • Data Structures & Algorithms questions${NC}"
+            echo -e "${BLUE}   • Detailed complexity analysis${NC}"
+            echo -e "${BLUE}   • Multiple language implementations${NC}"
+            echo -e "${BLUE}   • LeetCode-style problems${NC}"
+            ;;
+        "tech")
+            echo -e "${CYAN}📋 This will generate:${NC}"
+            echo -e "${BLUE}   • $TECHNOLOGY-specific interview questions${NC}"
+            echo -e "${BLUE}   • Framework and library coverage${NC}"
+            echo -e "${BLUE}   • Production-ready code examples${NC}"
+            echo -e "${BLUE}   • Real-world scenarios from Indian companies${NC}"
+            ;;
+    esac
+    
+    echo ""
     read -p "$(echo -e ${YELLOW}Proceed with this configuration? [Y/n]: ${NC})" confirm
     if [[ $confirm =~ ^[Nn]$ ]]; then
         log "INFO" "Workflow cancelled by user"

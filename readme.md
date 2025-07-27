@@ -71,8 +71,8 @@ This launches our **production-grade workflow automation** that requires **ONLY*
 
 ### ✨ **What It Does Automatically:**
 
--   🎯 **Smart Setup** - Just enter skill name (e.g., "React", "Python", "DevOps")
--   🤖 **Auto Agent Detection** - Intelligently selects the right agent type
+-   🎯 **Smart Setup** - Just enter skill name and choose agent type
+-   🤖 **Agent Selection** - Choose from generic, DSA, or tech-specific agents
 -   📁 **Directory Creation** - Creates organized folder structure automatically
 -   📝 **Requirements Generation** - Auto-generates comprehensive requirements MDX
 -   🤖 **AI Question Generation** - Creates 100 tailored interview questions
@@ -85,8 +85,8 @@ This launches our **production-grade workflow automation** that requires **ONLY*
 
 ### 🛡️ **Professional Features:**
 
--   **Zero Configuration** - No complex setup or parameter choices needed
--   **Smart Detection** - Automatically detects if it's DSA, Tech, or Generic
+-   **Simple Configuration** - Just 2 questions: skill name + agent type
+-   **Agent Control** - Choose the perfect agent (generic/dsa/tech) for your needs
 -   **Progress Visualization** - Real-time progress bars with percentages
 -   **Comprehensive Logging** - Detailed logs for debugging and tracking
 -   **Error Prevention** - Robust error handling prevents loops and failures
@@ -107,13 +107,19 @@ This launches our **production-grade workflow automation** that requires **ONLY*
 # Launch the workflow
 ./interview-prep.sh
 
-# Simply enter a skill name:
-# ✅ "Python" → Creates Python tech interview sheet
-# ✅ "React" → Creates React framework interview sheet
-# ✅ "DevOps" → Creates DevOps/infrastructure interview sheet
-# ✅ "DSA" → Creates data structures & algorithms sheet
-# ✅ "Java" → Creates Java tech interview sheet
-# ✅ "Node.js" → Creates Node.js backend interview sheet
+# You'll be asked 2 simple questions:
+# 1. Skill/Technology name: "Python", "React", "DSA", "Java", etc.
+# 2. Agent type:
+#    - generic (general questions)
+#    - dsa (data structures & algorithms)
+#    - tech (technology-specific)
+
+# Examples:
+# ✅ "Python" + tech agent → Python tech interview sheet
+# ✅ "React" + tech agent → React framework interview sheet
+# ✅ "DSA" + dsa agent → Data structures & algorithms sheet
+# ✅ "Java" + tech agent → Java tech interview sheet
+# ✅ "System Design" + generic agent → General system design sheet
 
 # That's it! Everything else is automated.
 ```
