@@ -399,7 +399,15 @@ run_workflow_step() {
     
     log "PROGRESS" "Step $step_num/$total_steps: $step_name"
     log "DEBUG" "Running command: $command"
-    show_progress_bar $step_num $total_steps
+    
+    # Show initial progress bar
+    printf "\r${CYAN}Overall Progress: [" >&2
+    local overall_width=50
+    local overall_completed=$(((step_num - 1) * overall_width / total_steps))
+    printf "%${overall_completed}s" | tr ' ' '█' >&2
+    printf "%$((overall_width - overall_completed))s" | tr ' ' '░' >&2
+    printf "] %d%% (Step %d/%d)${NC}" $(((step_num - 1) * 100 / total_steps)) $step_num $total_steps >&2
+    echo "" >&2
     
     # Create a temporary log file for this step
     local step_log="/tmp/step_${step_num}.log"
@@ -408,29 +416,41 @@ run_workflow_step() {
     echo "Command: $command" >> "$LOG_FILE"
     echo "Started at: $(date)" >> "$LOG_FILE"
     
-    if eval "$command" > "$step_log" 2>&1; then
+    # Run command with real-time output using tee
+    echo -e "${BLUE}📋 $step_name Details:${NC}" >&2
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────────────────┐${NC}" >&2
+    
+    if eval "$command" 2>&1 | tee "$step_log"; then
+        echo -e "${CYAN}└─────────────────────────────────────────────────────────────────────────────┘${NC}" >&2
+        
+        # Append to main log
         cat "$step_log" >> "$LOG_FILE"
         
         # Check if expected output file was created
         if [[ -n "$output_file" && ! -f "$output_file" ]]; then
             log "WARN" "$step_name completed but expected file not found: $output_file"
-            log "DEBUG" "Step output:"
-            cat "$step_log"
             rm -f "$step_log"
             return 1
         fi
+        
+        # Show completion progress bar
+        printf "\r${CYAN}Overall Progress: [" >&2
+        local overall_completed=$((step_num * overall_width / total_steps))
+        printf "%${overall_completed}s" | tr ' ' '█' >&2
+        printf "%$((overall_width - overall_completed))s" | tr ' ' '░' >&2
+        printf "] %d%% (Step %d/%d)${NC}" $((step_num * 100 / total_steps)) $step_num $total_steps >&2
+        echo "" >&2
         
         log "SUCCESS" "$step_name completed"
         rm -f "$step_log"
         return 0
     else
         local exit_code=$?
+        echo -e "${CYAN}└─────────────────────────────────────────────────────────────────────────────┘${NC}" >&2
         echo "Failed with exit code: $exit_code" >> "$LOG_FILE"
         cat "$step_log" >> "$LOG_FILE"
         
         log "ERROR" "$step_name failed with exit code $exit_code"
-        echo -e "${RED}Command output:${NC}"
-        cat "$step_log"
         rm -f "$step_log"
         return $exit_code
     fi
@@ -486,7 +506,10 @@ execute_main_workflow() {
                     log "DEBUG" "Available files in output directory:"
                     ls -la "$OUTPUT_DIR"/ >> "$LOG_FILE" 2>&1
                     # Still mark as successful since this is optional
-                    show_progress_bar 4 $total_steps
+                    printf "\r${CYAN}Overall Progress: [" >&2
+                    printf "%50s" | tr ' ' '█' >&2
+                    printf "] 100%% (Step 4/4)${NC}" >&2
+                    echo "" >&2
                 fi
             else
                 log "ERROR" "Failed to generate answers"
@@ -501,8 +524,11 @@ execute_main_workflow() {
         return 1
     fi
     
-    show_progress_bar $total_steps $total_steps
-    echo ""
+    # Final progress bar
+    printf "\r${GREEN}Overall Progress: [" >&2
+    printf "%50s" | tr ' ' '█' >&2
+    printf "] 100%% (Completed!)${NC}" >&2
+    echo "" >&2
 }
 
 show_results() {

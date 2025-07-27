@@ -1,0 +1,557 @@
+# Java Tech - AI Agent Instructions Interview Questions – The Boring Education
+
+📋 Questions List
+	1.	What is the difference between JDK, JRE, and JVM?
+	2.	Explain the concept of object-oriented programming (OOP) in Java.
+	3.	How do you handle exceptions in Java? Provide a simple example.
+	4.	What are the different types of loops in Java? Give examples.
+	5.	Explain the use of the `final` keyword in Java.
+	6.	What are the main differences between `ArrayList` and `LinkedList` in Java?
+	7.	Describe the process of method overloading and overriding with examples.
+	8.	Explain the concept of interfaces in Java. How are they different from abstract classes?
+	9.	How can we achieve thread safety in Java? Provide a code example.
+	10.	What is garbage collection in Java? Explain how it works.
+	11.	Describe how Java achieves platform independence. Provide code snippets to illustrate your explanation.
+	12.	Discuss the importance of the `equals()` and `hashCode()` methods. Why should they be overridden together?
+	13.	Explain how the Java collections framework handles sorting. Give an example with `Comparator`.
+	14.	What are lambda expressions, and how do they enhance Java programming?
+	15.	Explain the concept of multithreading and the problems it can solve. Provide a code demonstration.
+	16.	What is the Spring framework, and what are its main advantages?
+	17.	Describe the role of the `pom.xml` file in Maven.
+	18.	How do you configure a Spring Boot application?
+	19.	What are some common annotations used in Spring?
+	20.	Explain the concept of dependency injection.
+	21.	How can you integrate a REST API with Spring Boot? Provide a simple example.
+	22.	What are the differences between Spring MVC and Spring WebFlux?
+	23.	Explain the Repository pattern in the context of Spring Data JPA with an example.
+	24.	What is Hibernate, and how does it simplify database operations in Java?
+	25.	How can you perform A/B testing in a microservices architecture?
+	26.	Describe how to implement caching in Spring Boot and the considerations involved.
+	27.	How can you ensure transaction management while using Spring Framework? Provide an example.
+	28.	Discuss the various ways to secure a Spring Boot application.
+	29.	Explain how to handle exceptions globally in a Spring Boot application.
+	30.	How does Spring Boot's Actuator help in production environments?
+	31.	What is the Java Memory Model, and what are the main areas of memory?
+	32.	Explain the purpose and use of the `synchronized` keyword.
+	33.	What are the differences between `volatile` and `synchronized` in Java?
+	34.	Define a deadlock and how to prevent it in Java.
+	35.	Describe the benefits of using the Java Streams API.
+	36.	How do you implement a singleton class in Java? What are the potential pitfalls?
+	37.	Explain how Java handles concurrency. Provide an example using the `ExecutorService`.
+	38.	Discuss the role of the `ForkJoinPool` and its use cases.
+	39.	What are design patterns? Describe the Singleton and Factory design patterns with Java examples.
+	40.	Explain how Java handles security vulnerabilities. What are best practices?
+	41.	Describe how garbage collection works in detail in Java. What are different algorithms used?
+	42.	How do the `CompletableFuture` and `Future` interfaces differ in Java?
+	43.	Explain the internal working of an RMI (Remote Method Invocation) in Java.
+	44.	Discuss the concept of Java modules introduced in Java 9 and their benefits.
+	45.	What are the best practices for optimizing a Java application’s memory usage?
+	46.	What is RESTful API design, and how do you implement it in Java?
+	47.	Describe CRUD operations and how you can implement them in a Java application.
+	48.	Explain the concept of ORM and how JPA/Hibernate simplifies database operations.
+	49.	What is a microservices architecture? Describe its advantages.
+	50.	How can you integrate a message broker (like RabbitMQ) with a Java application?
+	51.	Discuss how to set up logging in a Java application. What libraries can be used?
+	52.	How do you improve the performance of a Java application during high load?
+	53.	Describe the differences between monolithic and microservices architecture and when to use each.
+	54.	What tools would you use to monitor a Java application in production?
+	55.	Discuss how to implement a design pattern like MVC in a Java web application.
+	56.	How would you design a high-availability system using Java? Describe the key components.
+	57.	Explain the steps for deploying a Java application in a cloud environment.
+	58.	Discuss how to handle versioning in REST APIs designed with Java.
+	59.	What security measures would you implement for a Java web application?
+	60.	Explain the concept of Service Mesh, and how can it be utilized in a Java application?
+
+⸻
+
+📝 Instructions for Answer Generation
+• Provide detailed explanations with practical code examples
+• Include best practices and common pitfalls
+• Add real-world scenarios from Indian tech companies
+• Focus on production-ready implementations and optimizations
+• Mention time and space complexities where applicable
+• Provide debugging tips and interview strategies
+
+
+## 📋 Questions with Metadata
+
+### Question 1
+
+- Question: What is the difference between JDK, JRE, and JVM?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 2
+
+- Question: Explain the concept of object-oriented programming (OOP) in Java.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 3
+
+- Question: How do you handle exceptions in Java? Provide a simple example.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 4
+
+- Question: What are the different types of loops in Java? Give examples.
+  - Difficulty: Easy
+  - Frequency: Asked Frequently
+  - Priority: Medium
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 5
+
+- Question: Explain the use of the `final` keyword in Java.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: Medium
+  - Company Types: MNC, FAANG
+
+### Question 6
+
+- Question: What are the main differences between `ArrayList` and `LinkedList` in Java?
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: Startup, MNC
+
+### Question 7
+
+- Question: Describe the process of method overloading and overriding with examples.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 8
+
+- Question: Explain the concept of interfaces in Java. How are they different from abstract classes?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 9
+
+- Question: How can we achieve thread safety in Java? Provide a code example.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 10
+
+- Question: What is garbage collection in Java? Explain how it works.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 11
+
+- Question: Describe how Java achieves platform independence. Provide code snippets to illustrate your explanation.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 12
+
+- Question: Discuss the importance of the `equals()` and `hashCode()` methods. Why should they be overridden together?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 13
+
+- Question: Explain how the Java collections framework handles sorting. Give an example with `Comparator`.
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: Startup, MNC
+
+### Question 14
+
+- Question: What are lambda expressions, and how do they enhance Java programming?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 15
+
+- Question: Explain the concept of multithreading and the problems it can solve. Provide a code demonstration.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 16
+
+- Question: What is the Spring framework, and what are its main advantages?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 17
+
+- Question: Describe the role of the `pom.xml` file in Maven.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: Medium
+  - Company Types: MidSize, MNC
+
+### Question 18
+
+- Question: How do you configure a Spring Boot application?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 19
+
+- Question: What are some common annotations used in Spring?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: Medium
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 20
+
+- Question: Explain the concept of dependency injection.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 21
+
+- Question: How can you integrate a REST API with Spring Boot? Provide a simple example.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 22
+
+- Question: What are the differences between Spring MVC and Spring WebFlux?
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: Startup, MNC
+
+### Question 23
+
+- Question: Explain the Repository pattern in the context of Spring Data JPA with an example.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 24
+
+- Question: What is Hibernate, and how does it simplify database operations in Java?
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: Startup, MNC
+
+### Question 25
+
+- Question: How can you perform A/B testing in a microservices architecture?
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: MidSize, MNC
+
+### Question 26
+
+- Question: Describe how to implement caching in Spring Boot and the considerations involved.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 27
+
+- Question: How can you ensure transaction management while using Spring Framework? Provide an example.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 28
+
+- Question: Discuss the various ways to secure a Spring Boot application.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 29
+
+- Question: Explain how to handle exceptions globally in a Spring Boot application.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 30
+
+- Question: How does Spring Boot's Actuator help in production environments?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 31
+
+- Question: What is the Java Memory Model, and what are the main areas of memory?
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: Startup, MNC
+
+### Question 32
+
+- Question: Explain the purpose and use of the `synchronized` keyword.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 33
+
+- Question: What are the differences between `volatile` and `synchronized` in Java?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 34
+
+- Question: Define a deadlock and how to prevent it in Java.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 35
+
+- Question: Describe the benefits of using the Java Streams API.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: Medium
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 36
+
+- Question: How do you implement a singleton class in Java? What are the potential pitfalls?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 37
+
+- Question: Explain how Java handles concurrency. Provide an example using the `ExecutorService`.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 38
+
+- Question: Discuss the role of the `ForkJoinPool` and its use cases.
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: Startup, MNC
+
+### Question 39
+
+- Question: What are design patterns? Describe the Singleton and Factory design patterns with Java examples.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 40
+
+- Question: Explain how Java handles security vulnerabilities. What are best practices?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 41
+
+- Question: Describe how garbage collection works in detail in Java. What are different algorithms used?
+  - Difficulty: Hard
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 42
+
+- Question: How do the `CompletableFuture` and `Future` interfaces differ in Java?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MNC, FAANG
+
+### Question 43
+
+- Question: Explain the internal working of an RMI (Remote Method Invocation) in Java.
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: MidSize, MNC
+
+### Question 44
+
+- Question: Discuss the concept of Java modules introduced in Java 9 and their benefits.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: Medium
+  - Company Types: MNC, FAANG
+
+### Question 45
+
+- Question: What are the best practices for optimizing a Java application’s memory usage?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 46
+
+- Question: What is RESTful API design, and how do you implement it in Java?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 47
+
+- Question: Describe CRUD operations and how you can implement them in a Java application.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC
+
+### Question 48
+
+- Question: Explain the concept of ORM and how JPA/Hibernate simplifies database operations.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 49
+
+- Question: What is a microservices architecture? Describe its advantages.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 50
+
+- Question: How can you integrate a message broker (like RabbitMQ) with a Java application?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: Medium
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 51
+
+- Question: Discuss how to set up logging in a Java application. What libraries can be used?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 52
+
+- Question: How do you improve the performance of a Java application during high load?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 53
+
+- Question: Describe the differences between monolithic and microservices architecture and when to use each.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 54
+
+- Question: What tools would you use to monitor a Java application in production?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 55
+
+- Question: Discuss how to implement a design pattern like MVC in a Java web application.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 56
+
+- Question: How would you design a high-availability system using Java? Describe the key components.
+  - Difficulty: Hard
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: MidSize, MNC, FAANG
+
+### Question 57
+
+- Question: Explain the steps for deploying a Java application in a cloud environment.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 58
+
+- Question: Discuss how to handle versioning in REST APIs designed with Java.
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 59
+
+- Question: What security measures would you implement for a Java web application?
+  - Difficulty: Medium
+  - Frequency: Asked Frequently
+  - Priority: High
+  - Company Types: Startup, MidSize, MNC, FAANG
+
+### Question 60
+
+- Question: Explain the concept of Service Mesh, and how can it be utilized in a Java application?
+  - Difficulty: Medium
+  - Frequency: Asked Sometimes
+  - Priority: Medium
+  - Company Types: Startup, MNC
+
