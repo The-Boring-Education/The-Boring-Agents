@@ -66,7 +66,7 @@ The interview preparation system follows a 4-step process with support for diffe
 
 -   **`generic`** (default): General-purpose interview questions
 -   **`dsa`**: Data Structures & Algorithms questions with detailed complexity analysis
--   **`tech`**: Technology-specific questions (coming soon)
+-   **`tech`**: Technology-specific questions (Python, React, Java, DevOps, etc.)
 -   **`system_design`**: System design questions (coming soon)
 
 ### DSA Agent Advantages
@@ -81,6 +81,53 @@ When using `--agent-type dsa`, you get:
 -   **Real-world Applications**: Practical use cases for each algorithm
 -   **Interview-specific Guidance**: Common mistakes and how to avoid them
 
+### Tech Agent Advantages
+
+When using `--agent-type tech`, you get:
+
+-   **Technology-Specific Expertise**: Focused on specific technologies (Python, React, Java, DevOps, etc.)
+-   **Production-Ready Examples**: Real-world code examples with best practices
+-   **Framework-Specific Patterns**: Technology-specific design patterns and conventions
+-   **Indian Tech Context**: Examples from Indian startups and companies (Flipkart, Paytm, Zomato)
+-   **Latest Features**: Coverage of modern features and ecosystem tools
+-   **Performance Optimization**: Technology-specific optimization techniques
+-   **Security Considerations**: Technology-specific security best practices
+-   **Deployment Strategies**: Production deployment and DevOps considerations
+
+### Supported Technologies for Tech Agent
+
+The tech agent supports the following technologies:
+
+**Programming Languages:**
+
+-   Python (Django, Flask, FastAPI, Pandas, NumPy)
+-   Java (Spring Boot, Maven, Gradle)
+-   JavaScript (Node.js, npm, yarn)
+-   TypeScript
+
+**Frontend Frameworks:**
+
+-   React / React.js (Hooks, Redux, Context API)
+-   Angular (RxJS, TypeScript)
+-   Vue.js (Vuex, Nuxt)
+
+**Backend Frameworks:**
+
+-   Node.js (Express.js, npm)
+-   Django (Python web framework)
+-   Flask (Python microframework)
+-   FastAPI (Modern Python API framework)
+-   Spring Boot (Java framework)
+
+**DevOps & Infrastructure:**
+
+-   DevOps (CI/CD, automation)
+-   Docker (containerization)
+-   Kubernetes (orchestration)
+-   AWS, Azure, GCP (cloud platforms)
+
+**Usage:** Specify technology using `--technology` parameter (e.g., `--technology Python`, `--technology "React.js"`, `--technology DevOps`)
+
 ### Step 1: Create Sheet Structure
 
 ```bash
@@ -89,6 +136,15 @@ python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/ds
 
 # DSA-specific agent
 python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/dsa_requirements.mdx --agent-type dsa
+
+# Tech-specific agent (specify technology)
+python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/python_requirements.mdx --agent-type tech --technology Python
+
+# Tech agent for React
+python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/react_tech_questions.mdx --agent-type tech --technology "React.js"
+
+# Tech agent for DevOps
+python3 main.py interview create-sheet-from-mdx --mdx-file lab/interview-prep/devops_tech_questions.mdx --agent-type tech --technology DevOps
 ```
 
 -   Creates interview sheet structure from requirements
@@ -103,6 +159,9 @@ python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/dsa_
 
 # DSA-specific agent
 python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/dsa_questions.mdx --agent-type dsa
+
+# Tech-specific agent
+python3 main.py interview add-metadata-to-mdx --mdx-file lab/interview-prep/python_tech_questions.mdx --agent-type tech --technology Python
 ```
 
 -   Adds difficulty, frequency, priority, and company type metadata
@@ -117,6 +176,12 @@ python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-pre
 
 # DSA-specific agent (recommended for DSA questions)
 python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/dsa_questions_with_metadata.mdx --agent-type dsa
+
+# Tech-specific agent (recommended for technology questions)
+python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/python_tech_questions_with_metadata.mdx --agent-type tech --technology Python
+
+# Tech agent for React questions
+python3 main.py interview generate-answers-from-mdx --mdx-file lab/interview-prep/react_tech_questions_with_metadata.mdx --agent-type tech --technology "React.js"
 ```
 
 -   Generates detailed answers for each question

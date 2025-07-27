@@ -14,6 +14,7 @@ from ...utils.helpers import generate_filename, save_json_file, load_json_file
 from ...utils.validation import InterviewQuestionValidator
 from .answer_creator import AnswerCreator
 from .dsa_answer_creator import DSAAnswerCreator
+from .tech_answer_creator import TechAnswerCreator
 from .metadata_agent import MetadataAgent
 from .mdx_styling_agent import MDXStylingAgent
 from .types import AnswerAgentType
@@ -31,11 +32,20 @@ class InterviewSheetManager(BaseAgent):
             agent_type: Type of answer creator agent to use
             **kwargs: Additional arguments passed to parent class
         """
+        # Extract technology parameter for tech agents only
+        technology = kwargs.pop('technology', None)
+        
         super().__init__(**kwargs)
         
         # Initialize only essential agents for quality
         self.agent_type = agent_type
-        self.answer_creator = self._create_answer_creator(agent_type, **kwargs)
+        
+        # Pass technology only to the answer creator for tech agents
+        answer_creator_kwargs = kwargs.copy()
+        if agent_type == AnswerAgentType.TECH and technology:
+            answer_creator_kwargs['technology'] = technology
+        
+        self.answer_creator = self._create_answer_creator(agent_type, **answer_creator_kwargs)
         self.metadata_agent = MetadataAgent(**kwargs)
         self.mdx_styler = MDXStylingAgent(**kwargs)
         
@@ -56,9 +66,7 @@ class InterviewSheetManager(BaseAgent):
         elif agent_type == AnswerAgentType.GENERIC:
             return AnswerCreator(**kwargs)
         elif agent_type == AnswerAgentType.TECH:
-            # Future implementation - for now, use generic
-            self.logger.warning("Tech agent not implemented yet, using generic answer creator")
-            return AnswerCreator(**kwargs)
+            return TechAnswerCreator(**kwargs)
         elif agent_type == AnswerAgentType.SYSTEM_DESIGN:
             # Future implementation - for now, use generic
             self.logger.warning("System Design agent not implemented yet, using generic answer creator")

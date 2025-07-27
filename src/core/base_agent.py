@@ -22,7 +22,13 @@ class BaseAgent(ABC):
         """
         self.model_name = model_name or config.default_model
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.model_kwargs = kwargs
+        
+        # Filter out custom parameters that shouldn't go to LLM
+        custom_params = {'technology'}
+        self.model_kwargs = {k: v for k, v in kwargs.items() if k not in custom_params}
+        
+        # Store custom parameters for agent use
+        self.custom_params = {k: v for k, v in kwargs.items() if k in custom_params}
         
         # Initialize LLM lazily (only when needed)
         self._llm = None
