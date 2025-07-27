@@ -2,6 +2,8 @@
 
 import json
 import os
+import re
+import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 from langchain.prompts import PromptTemplate
@@ -118,6 +120,39 @@ Please analyze and provide:
 
 Provide your analysis in a structured format.
 """
+            ),
+            "generate_questions_from_requirements": PromptTemplate(
+                input_variables=["requirements_content", "topic"],
+                template="""
+You are an expert interview question generator for The Boring Education. Generate comprehensive interview questions based on the following requirements.
+
+Topic: {topic}
+Requirements Content:
+{requirements_content}
+
+Based on the requirements, generate a comprehensive list of interview questions that:
+1. Cover all the topics mentioned in the requirements
+2. Follow the difficulty distribution specified (Easy/Medium/Hard)
+3. Are relevant for Indian tech companies and job market
+4. Include practical, real-world scenarios
+5. Test both conceptual understanding and implementation skills
+6. Are suitable for the target audience mentioned
+
+Please generate questions in a numbered list format:
+1. [Question 1]
+2. [Question 2]
+3. [Question 3]
+...and so on
+
+Generate 50-100 questions covering all the topics comprehensively. Make sure questions are:
+- Clear and specific
+- Interview-appropriate
+- Practical and job-relevant
+- Covering different difficulty levels
+- Technology-specific where applicable
+
+Questions:
+"""
             )
         }
     
@@ -194,6 +229,56 @@ Provide your analysis in a structured format.
             
         except Exception as e:
             self.logger.error(f"Error creating sheet from MDX: {str(e)}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def generate_questions_from_mdx(self, mdx_filepath: str) -> Dict[str, Any]:
+        """Generate interview questions from MDX requirements file."""
+        console.print(f"[green]🎯 Generating questions from requirements: {mdx_filepath}[/green]")
+        
+        try:
+            # Load MDX requirements content
+            with open(mdx_filepath, 'r', encoding='utf-8') as f:
+                mdx_content = f.read()
+            
+            # Extract topic from requirements
+            topic = self._extract_topic_from_mdx(mdx_content)
+            
+            # Generate questions using appropriate agent
+            questions_prompt = self._format_prompt("generate_questions_from_requirements", 
+                                                 requirements_content=mdx_content,
+                                                 topic=topic)
+            questions_result = self._generate_with_prompt(questions_prompt)
+            
+            # Parse generated questions
+            questions = self._parse_generated_questions(questions_result)
+            
+            # Create output filepath
+            base_name = os.path.splitext(os.path.basename(mdx_filepath))[0]
+            output_dir = os.path.dirname(mdx_filepath)
+            output_filename = f"{base_name}_questions.mdx"
+            output_filepath = os.path.join(output_dir, output_filename)
+            
+            # Format questions as MDX
+            questions_mdx = self._format_questions_as_mdx(questions, topic)
+            
+            # Save questions MDX file
+            with open(output_filepath, 'w', encoding='utf-8') as f:
+                f.write(questions_mdx)
+            
+            console.print(f"[green]✅ Generated {len(questions)} questions from requirements[/green]")
+            
+            return {
+                "status": "success",
+                "filepath": output_filepath,
+                "questions_count": len(questions),
+                "message": "Questions generated successfully"
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error generating questions from MDX: {str(e)}")
             return {
                 "status": "error",
                 "message": str(e)
@@ -675,4 +760,48 @@ Provide your analysis in a structured format.
     
     def _generate_cover_image_url(self, topic: str) -> str:
         """Generate cover image URL."""
-        return f"https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&h=400&fit=crop&crop=center" 
+        return f"https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&h=400&fit=crop&crop=center"
+    
+    def _parse_generated_questions(self, questions_text: str) -> List[str]:
+        """Parse generated questions from AI response."""
+        questions = []
+        lines = questions_text.strip().split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            # Look for numbered questions
+            if re.match(r'^\d+\.\s+', line):
+                question = re.sub(r'^\d+\.\s+', '', line).strip()
+                if question:
+                    questions.append(question)
+            # Look for bullet point questions
+            elif line.startswith('- ') or line.startswith('• '):
+                question = line[2:].strip()
+                if question:
+                    questions.append(question)
+            # Look for tab-indented questions
+            elif line.startswith('\t') and any(char.isalpha() for char in line):
+                question = line.strip()
+                if question:
+                    questions.append(question)
+        
+        return questions[:100]  # Limit to 100 questions
+    
+    def _format_questions_as_mdx(self, questions: List[str], topic: str) -> str:
+        """Format questions list as MDX content."""
+        mdx_content = f"# {topic} Interview Questions – The Boring Education\n\n"
+        mdx_content += f"📋 Questions List\n"
+        
+        for i, question in enumerate(questions, 1):
+            mdx_content += f"\t{i}.\t{question}\n"
+        
+        mdx_content += "\n⸻\n\n"
+        mdx_content += "📝 Instructions for Answer Generation\n"
+        mdx_content += "• Provide detailed explanations with practical code examples\n"
+        mdx_content += "• Include best practices and common pitfalls\n"
+        mdx_content += "• Add real-world scenarios from Indian tech companies\n"
+        mdx_content += "• Focus on production-ready implementations and optimizations\n"
+        mdx_content += "• Mention time and space complexities where applicable\n"
+        mdx_content += "• Provide debugging tips and interview strategies\n"
+        
+        return mdx_content 

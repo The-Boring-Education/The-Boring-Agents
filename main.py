@@ -171,6 +171,43 @@ def interview():
 
 
 @interview.command()
+@click.option('--mdx-file', required=True, help='Path to MDX file containing interview requirements')
+@click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent to use')
+@click.option('--technology', help='Technology focus for tech agent (e.g., Python, React, Java, DevOps)')
+@click.option('--save', is_flag=True, help='Save output to file')
+def generate_questions_from_mdx(mdx_file, agent_type, technology, save):
+    """Step 1: Generate interview questions from MDX requirements file."""
+    console.print(f"[green]🤖 Step 1: Generating questions from requirements using {agent_type} agent...[/green]")
+    
+    try:
+        agent_enum = AnswerAgentType(agent_type)
+        
+        # Pass technology parameter for tech agents
+        kwargs = {}
+        if agent_type == 'tech' and technology:
+            kwargs['technology'] = technology
+            console.print(f"[blue]🔧 Technology focus: {technology}[/blue]")
+        
+        manager = InterviewSheetManager(agent_type=agent_enum, **kwargs)
+        result = manager.generate_questions_from_mdx(mdx_file)
+        
+        if result["status"] == "success":
+            console.print(f"[green]✅ Questions generated successfully![/green]")
+            console.print(f"[blue]📁 Questions file: {result['filepath']}[/blue]")
+            console.print(f"[blue]📊 Questions generated: {result['questions_count']}[/blue]")
+            
+            console.print(f"\n[yellow]⚠️  Review the generated questions[/yellow]")
+            console.print(f"[green]Then run: python main.py interview add-metadata-to-mdx --mdx-file {result['filepath']} --agent-type {agent_type}{' --technology ' + technology if technology else ''}[/green]")
+            
+        else:
+            console.print(f"[red]❌ Error generating questions: {result.get('message', 'Unknown error')}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]❌ Error generating questions: {str(e)}[/red]")
+        raise click.Abort()
+
+
+@interview.command()
 @click.option('--mdx-file', required=True, help='Path to MDX file containing interview requirements and context')
 @click.option('--agent-type', type=click.Choice([e.value for e in AnswerAgentType]), default='generic', help='Type of answer creator agent to use')
 @click.option('--technology', help='Technology focus for tech agent (e.g., Python, React, Java, DevOps)')
