@@ -477,6 +477,22 @@ python3 main.py interview resume-session --session-id abc123 --agent-type dsa
 python3 main.py interview resume-session --agent-type dsa
 ```
 
+### Quiz Generation
+
+```bash
+# Generate complete quiz
+python3 main.py quiz generate --topic "React" --question-count 20 --target-audience developers --save
+
+# Validate quiz file
+python3 main.py quiz validate --quiz-file output/quiz_react_abc123.json
+
+# Upload quiz to database
+python3 main.py quiz upload --quiz-file output/quiz_react_abc123.json --api-url http://localhost:3000 --admin-secret TBEAdmin
+
+# Resume interrupted session
+python3 main.py quiz resume --session-id abc123
+```
+
 ### Course Creation (Shiksha)
 
 ```bash
@@ -485,6 +501,385 @@ python3 main.py shiksha create-course --course-name "Python Backend" --descripti
 
 # Create world-class course with research
 python3 main.py shiksha create-world-class-course --course-name "Advanced React" --description "Master React patterns"
+```
+
+## 🎯 Quiz Generation - Professional Workflow
+
+Create comprehensive, high-quality quizzes for any technology topic with our advanced AI-powered quiz generation system.
+
+### 🚀 **One-Command Automated Workflow (Recommended)**
+
+**🎯 Complete Quiz Generation** - Just provide a topic, we handle everything!
+
+```bash
+# Option 1: Simple launcher (recommended for beginners)
+./quiz-prep.sh
+
+# Option 2: Direct workflow script (advanced users)
+./scripts/quiz_generation_workflow.sh
+```
+
+This launches our **production-grade quiz workflow** that requires **ONLY** a topic name and automates everything else:
+
+### ✨ **What It Does Automatically:**
+
+-   🎯 **Smart Topic Analysis** - Researches the technology and its ecosystem
+-   🤖 **AI Question Generation** - Creates 10-50 tailored quiz questions
+-   📊 **Quality Assurance** - Includes detailed explanations and code examples
+-   🎨 **Professional Formatting** - Creates properly structured quiz data
+-   📈 **Visual Progress** - Beautiful progress bars and status updates
+-   🚨 **Error Handling** - Robust error recovery and detailed logging
+-   📁 **Auto Upload** - Optional database upload with connectivity testing
+-   📝 **Complete Output** - Ready-to-use quiz files
+
+### 🛡️ **Professional Features:**
+
+-   **Simple Configuration** - Just enter topic and question count
+-   **Target Audience Selection** - Choose from beginners, developers, or experts
+-   **Progress Visualization** - Real-time progress bars with percentages
+-   **Comprehensive Logging** - Detailed logs for debugging and tracking
+-   **Error Recovery** - Resume interrupted sessions automatically
+-   **Database Integration** - Upload directly to your quiz platform
+
+### 📊 **Supported Topics:**
+
+**Programming Languages:**
+
+-   React.js, Node.js, JavaScript, TypeScript
+-   Python, Java, C++, C
+-   HTML, CSS, Redux
+
+**Technologies & Frameworks:**
+
+-   MongoDB, Express.js, SQL, NoSQL
+-   Data Science, Machine Learning, Deep Learning
+-   Cloud Computing, DevOps, Cyber Security
+-   **Any Technology** - The system adapts to any topic you provide
+
+### 🎯 **Super Simple Usage:**
+
+```bash
+# Launch the quiz generation (choose one):
+
+# Option 1: Simple launcher
+./quiz-prep.sh
+
+# Option 2: Advanced workflow
+./scripts/quiz_generation_workflow.sh
+
+# You'll be asked 3 simple questions:
+# 1. Quiz topic: "React", "Python", "DevOps", "Machine Learning", etc.
+# 2. Number of questions: 10-50 (default: 20)
+# 3. Target audience: beginners, developers (default), experts
+
+# Examples:
+# ✅ "React" + 25 questions + developers → React quiz for working professionals
+# ✅ "Python" + 15 questions + beginners → Python basics quiz
+# ✅ "Machine Learning" + 30 questions + experts → Advanced ML quiz
+# ✅ "DevOps" + 20 questions + developers → DevOps interview prep
+
+# That's it! Everything else is automated.
+```
+
+### 📁 **Auto-Generated File Structure:**
+
+```
+output/
+├── quiz_react_a1b2c3d4.json         # Generated quiz file
+├── quiz_python_e5f6g7h8.json        # Another quiz file
+└── logs/                             # Execution logs
+    └── quiz_workflow_20241201_143022.log
+
+temp/
+└── quiz_progress/                    # Session recovery files
+    └── quiz_react_a1b2c3d4.json
+```
+
+### 🔧 **Advanced Options:**
+
+```bash
+# Make scripts executable (first time setup)
+chmod +x quiz-prep.sh scripts/quiz_generation_workflow.sh
+
+# Check system status before running
+python3 main.py status
+
+# View available quiz commands and parameters
+python3 main.py quiz --help
+
+# Run simple launcher
+./quiz-prep.sh
+
+# Run advanced workflow directly
+./scripts/quiz_generation_workflow.sh
+```
+
+### 🚨 **Workflow Troubleshooting:**
+
+-   **Permission Issues**: Run `chmod +x quiz-prep.sh scripts/quiz_generation_workflow.sh`
+-   **Python Errors**: Ensure you're in the right directory and dependencies are installed
+-   **API Issues**: Check your `.env` file has valid API keys
+-   **Server Connection**: The workflow tests server connectivity before upload
+-   **Interrupted Generation**: Sessions are auto-saved and can be resumed
+-   **Script Not Found**: Make sure you're in the `The-Boring-Agents` directory
+
+---
+
+## 🎯 Manual Quiz Generation Workflow
+
+For advanced users who prefer manual control, use individual CLI commands:
+
+### Available Commands
+
+```bash
+# Generate complete quiz
+python3 main.py quiz generate --topic "React" --question-count 20 --target-audience developers --save
+
+# Validate quiz file
+python3 main.py quiz validate --quiz-file output/quiz_react_abc123.json
+
+# Upload to database
+python3 main.py quiz upload --quiz-file output/quiz_react_abc123.json --api-url http://localhost:3000 --admin-secret TBEAdmin
+
+# Resume interrupted session
+python3 main.py quiz resume --session-id abc123
+```
+
+### Step 1: Generate Quiz
+
+```bash
+# Basic usage
+python3 main.py quiz generate --topic "Python" --save
+
+# With custom parameters
+python3 main.py quiz generate \
+  --topic "React.js" \
+  --question-count 25 \
+  --target-audience "developers" \
+  --save
+
+# Supported target audiences
+python3 main.py quiz generate --topic "DevOps" --target-audience "beginners" --save
+python3 main.py quiz generate --topic "Machine Learning" --target-audience "experts" --save
+```
+
+**Features:**
+
+-   ✅ Comprehensive topic research and analysis
+-   ✅ 10-50 questions with varying difficulty levels
+-   ✅ Detailed explanations for each answer
+-   ✅ Code examples and practical scenarios
+-   ✅ Professional quiz structure with metadata
+
+**Output:** `./output/quiz_{topic}_{unique_id}.json`
+
+### Step 2: Validate Quiz Quality
+
+```bash
+# Validate quiz structure and content
+python3 main.py quiz validate --quiz-file output/quiz_react_abc123.json
+```
+
+**Validation Checks:**
+
+-   ✅ Proper JSON structure
+-   ✅ Required fields present
+-   ✅ Question format validation
+-   ✅ Answer options validation
+-   ✅ Explanation quality check
+
+### Step 3: Upload to Database (Optional)
+
+```bash
+# Upload to local development server
+python3 main.py quiz upload \
+  --quiz-file output/quiz_react_abc123.json \
+  --api-url http://localhost:3000 \
+  --admin-secret TBEAdmin
+
+# Upload to production server
+python3 main.py quiz upload \
+  --quiz-file output/quiz_react_abc123.json \
+  --api-url https://www.theboringeducation.com \
+  --admin-secret YOUR_ADMIN_SECRET
+
+# The system automatically tests connectivity before upload
+```
+
+**Upload Features:**
+
+-   ✅ Automatic connection testing
+-   ✅ Server compatibility validation
+-   ✅ Error handling and recovery
+-   ✅ Upload progress tracking
+-   ✅ Success confirmation with quiz ID
+
+### Session Management & Recovery
+
+#### Resume Interrupted Sessions
+
+```bash
+# List all active sessions
+python3 main.py quiz resume
+
+# Resume specific session
+python3 main.py quiz resume --session-id abc123
+```
+
+**Session Features:**
+
+-   ✅ **Automatic Session Saving**: Progress saved after each question
+-   ✅ **Smart Recovery**: Detect and resume from interruptions
+-   ✅ **Interactive Selection**: Choose from multiple active sessions
+-   ✅ **Progress Tracking**: See exactly where you left off
+
+#### Session Recovery Example
+
+```bash
+# 1. Start quiz generation
+python3 main.py quiz generate --topic "Node.js" --question-count 30 --save
+# > Generating question 15/30... [INTERRUPTED]
+
+# 2. Resume session
+python3 main.py quiz resume
+# > Shows list of active sessions
+# > Select session to continue from question 15
+
+# 3. Session completes automatically
+# > Quiz saved to output/quiz_nodejs_xyz789.json
+```
+
+### Complete Manual Workflow Example
+
+```bash
+# 1. Generate quiz with custom parameters
+python3 main.py quiz generate \
+  --topic "Machine Learning" \
+  --question-count 25 \
+  --target-audience "experts" \
+  --save
+
+# 2. Validate the generated quiz
+python3 main.py quiz validate --quiz-file output/quiz_machine-learning_def456.json
+
+# 3. Upload to your quiz platform
+python3 main.py quiz upload \
+  --quiz-file output/quiz_machine-learning_def456.json \
+  --api-url http://localhost:3000 \
+  --admin-secret TBEAdmin
+
+# Done! 🎉
+```
+
+### Quiz Generation Best Practices
+
+#### **Topic Selection Tips:**
+
+```bash
+# ✅ Good topics
+python3 main.py quiz generate --topic "React Hooks" --save
+python3 main.py quiz generate --topic "Python Django" --save
+python3 main.py quiz generate --topic "Docker Containerization" --save
+
+# ✅ Specific technologies work better than general terms
+python3 main.py quiz generate --topic "Express.js" --save  # Better than "Backend"
+python3 main.py quiz generate --topic "MongoDB" --save     # Better than "Database"
+```
+
+#### **Target Audience Guidelines:**
+
+-   **`beginners`**: New to the technology, basic concepts, simple examples
+-   **`developers`**: Working professionals, practical scenarios, real-world applications
+-   **`experts`**: Advanced concepts, optimization, edge cases, architectural decisions
+
+#### **Question Count Recommendations:**
+
+-   **10-15 questions**: Quick assessment, specific topic focus
+-   **20-25 questions**: Standard comprehensive quiz
+-   **30-50 questions**: Detailed examination, multiple subtopics
+
+### Troubleshooting Quiz Generation
+
+#### **Common Issues & Solutions:**
+
+```bash
+# ❌ API Connection Failed
+python3 main.py quiz upload --quiz-file output/quiz.json --api-url http://localhost:3000
+# Solution: Start your local server first or check network connectivity
+
+# ❌ Generation Interrupted
+python3 main.py quiz generate --topic "React" --question-count 30
+# Solution: Use resume command to continue
+python3 main.py quiz resume
+
+# ❌ Invalid Quiz File
+python3 main.py quiz validate --quiz-file output/corrupted_quiz.json
+# Solution: Check validation output for specific issues
+
+# ❌ Server Not Running
+# Solution: Start your development server
+cd your-server-directory && npm start
+# Or use the development/production URLs instead of localhost
+```
+
+#### **API Server Setup:**
+
+```bash
+# For local development
+# 1. Start your Next.js development server
+cd tbe-webapp && npm run dev
+# Server runs on http://localhost:3000
+
+# 2. Use the correct API URL in upload command
+python3 main.py quiz upload \
+  --quiz-file output/quiz.json \
+  --api-url http://localhost:3000
+
+# For production deployment
+python3 main.py quiz upload \
+  --quiz-file output/quiz.json \
+  --api-url https://www.theboringeducation.com
+```
+
+### Quiz Data Structure
+
+Generated quiz files follow this structure:
+
+```json
+{
+    "quiz": {
+        "categoryId": "unique_category_id",
+        "categoryName": "React.js",
+        "categoryDescription": "React.js quiz for developers",
+        "categoryIcon": "⚛️",
+        "isActive": true,
+        "questions": [
+            {
+                "question": "What is the purpose of React hooks?",
+                "options": [
+                    "To manage component state",
+                    "To handle side effects",
+                    "To reuse stateful logic",
+                    "All of the above"
+                ],
+                "correctAnswer": 3,
+                "explanation": "Brief explanation",
+                "detailedExplanation": "Comprehensive explanation with examples",
+                "difficulty": "medium"
+            }
+        ]
+    },
+    "metadata": {
+        "totalQuestions": 20,
+        "difficultyDistribution": {
+            "easy": 6,
+            "medium": 10,
+            "hard": 4
+        },
+        "generatedAt": "2024-01-15T10:30:00Z",
+        "qualityScore": 8.5
+    }
+}
 ```
 
 ## 🔧 Configuration
