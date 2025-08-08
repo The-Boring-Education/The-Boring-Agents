@@ -641,6 +641,8 @@ python3 main.py quiz validate --quiz-file output/quiz_react_abc123.json
 # Upload to database
 python3 main.py quiz upload --quiz-file output/quiz_react_abc123.json --api-url http://localhost:3000 --admin-secret TBEAdmin
 
+python3 main.py quiz upload --quiz-file output/quiz_react.json --api-url https://tbe-dev-git-development-tbe.vercel.app --admin-secret TBEAdmin
+
 # Resume interrupted session
 python3 main.py quiz resume --session-id abc123
 ```

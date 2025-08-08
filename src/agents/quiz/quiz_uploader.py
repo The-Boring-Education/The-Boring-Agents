@@ -188,6 +188,9 @@ Clean and format the data appropriately."""
     def upload_quiz(self, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
         """Upload quiz to the database via API."""
         console.print("[green]🚀 Uploading quiz to database...[/green]")
+        category_id = quiz_data.get("categoryId")
+        num_questions = len(quiz_data.get("questions", []))
+        self.logger.info(f"Preparing upload - categoryId={category_id}, questions={num_questions}")
         
         # Validate first
         validation_result = self.validate_quiz(quiz_data)
@@ -199,29 +202,48 @@ Clean and format the data appropriately."""
             }
         
         try:
-            # Prepare API endpoint
+            if not category_id:
+                return {
+                    "status": "error",
+                    "message": "Missing required field: categoryId"
+                }
+
+            # Check if quiz already exists (by categoryId)
+            existing = self._get_quiz_by_category(category_id)
+            if existing is not None:
+                self.logger.info(f"Quiz for categoryId={category_id} already exists. Switching to update.")
+                return self.update_quiz(category_id, quiz_data)
+
+            # Prepare API endpoint for create
             url = f"{self.api_url}/api/v1/quiz"
-            
-            # Make API request
             console.print(f"[blue]📡 Sending request to: {url}[/blue]")
+            self.logger.info("POST /api/v1/quiz - creating new quiz")
             response = self.session.post(url, json=quiz_data, timeout=30)
-            
+            self.logger.info(f"POST response status={response.status_code}")
             if response.status_code in [200, 201]:
                 console.print("[green]✅ Quiz uploaded successfully![/green]")
                 return {
                     "status": "success",
                     "message": "Quiz uploaded successfully",
                     "response": response.json(),
-                    "quiz_id": response.json().get("_id") or response.json().get("id")
+                    "quiz_id": response.json().get("data", {}).get("_id") \
+                        if isinstance(response.json(), dict) else None
                 }
-            else:
-                error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
-                console.print(f"[red]❌ Upload failed: {error_msg}[/red]")
-                return {
-                    "status": "error",
-                    "message": f"Upload failed: {error_msg}",
-                    "status_code": response.status_code
-                }
+
+            # If creation failed, check if unique constraint caused it and then try update
+            self.logger.warning(f"Create failed (status={response.status_code}). Body={response.text[:500]}")
+            exists_after = self._get_quiz_by_category(category_id)
+            if exists_after is not None:
+                self.logger.info("Detected existing quiz after failed create. Attempting update...")
+                return self.update_quiz(category_id, quiz_data)
+
+            error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
+            console.print(f"[red]❌ Upload failed: {error_msg}[/red]")
+            return {
+                "status": "error",
+                "message": f"Upload failed: {error_msg}",
+                "status_code": response.status_code
+            }
                 
         except requests.exceptions.Timeout:
             return {
@@ -309,9 +331,10 @@ Clean and format the data appropriately."""
         
         return results
     
-    def update_quiz(self, quiz_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update an existing quiz."""
-        console.print(f"[blue]🔄 Updating quiz: {quiz_id}[/blue]")
+    def update_quiz(self, category_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing quiz by categoryId."""
+        console.print(f"[blue]🔄 Updating quiz: {category_id}[/blue]")
+        self.logger.info(f"PUT /api/v1/quiz/{category_id} - updating quiz")
         
         # Validate the updated data
         validation_result = self.validate_quiz(quiz_data)
@@ -323,8 +346,9 @@ Clean and format the data appropriately."""
             }
         
         try:
-            url = f"{self.api_url}/api/v1/quiz/{quiz_id}"
+            url = f"{self.api_url}/api/v1/quiz/{category_id}"
             response = self.session.put(url, json=quiz_data, timeout=30)
+            self.logger.info(f"PUT response status={response.status_code}")
             
             if response.status_code == 200:
                 console.print("[green]✅ Quiz updated successfully![/green]")
@@ -335,12 +359,14 @@ Clean and format the data appropriately."""
                 }
             else:
                 error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
+                self.logger.warning(f"Update failed - {error_msg}")
                 return {
                     "status": "error",
                     "message": f"Update failed: {error_msg}"
                 }
                 
         except Exception as e:
+            self.logger.error(f"Update error: {str(e)}")
             return {
                 "status": "error",
                 "message": f"Update failed: {str(e)}"
@@ -471,21 +497,24 @@ Clean and format the data appropriately."""
             # Try a simple health check or GET request
             url = f"{self.api_url}/api/health"
             response = self.session.get(url, timeout=10)
-            
             if response.status_code == 200:
                 console.print("[green]✅ Connection successful![/green]")
-                return {
-                    "status": "success",
-                    "message": "API connection successful",
-                    "api_url": self.api_url
-                }
-            else:
-                console.print(f"[yellow]⚠️  API responded with status: {response.status_code}[/yellow]")
-                return {
-                    "status": "warning",
-                    "message": f"API accessible but returned status {response.status_code}",
-                    "api_url": self.api_url
-                }
+                return {"status": "success", "message": "API connection successful", "api_url": self.api_url}
+
+            # Fallback to categories endpoint (exists in tbe-webapp)
+            categories_url = f"{self.api_url}/api/v1/quiz"
+            self.logger.info(f"Health check fallback: GET {categories_url}")
+            resp2 = self.session.get(categories_url, timeout=10)
+            if resp2.status_code == 200:
+                console.print("[green]✅ Connection successful via /api/v1/quiz![/green]")
+                return {"status": "success", "message": "API connection successful", "api_url": self.api_url}
+
+            console.print(f"[yellow]⚠️  API responded with status: {response.status_code} (health), {resp2.status_code} (categories)[/yellow]")
+            return {
+                "status": "warning",
+                "message": f"API accessible but returned status health={response.status_code} categories={resp2.status_code}",
+                "api_url": self.api_url
+            }
                 
         except requests.exceptions.ConnectionError:
             console.print("[red]❌ Connection failed - API server not reachable[/red]")
@@ -501,3 +530,17 @@ Clean and format the data appropriately."""
                 "message": f"Connection test failed: {str(e)}",
                 "api_url": self.api_url
             } 
+
+    def _get_quiz_by_category(self, category_id: str) -> Optional[Dict[str, Any]]:
+        """Fetch quiz by categoryId. Returns dict when found, None otherwise."""
+        try:
+            url = f"{self.api_url}/api/v1/quiz/{category_id}"
+            self.logger.info(f"GET {url}")
+            resp = self.session.get(url, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("data") if isinstance(data, dict) else data
+            return None
+        except Exception as e:
+            self.logger.warning(f"Failed to check existing quiz for categoryId={category_id}: {str(e)}")
+            return None
