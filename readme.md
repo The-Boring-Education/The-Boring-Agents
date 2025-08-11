@@ -89,16 +89,6 @@ curl -sS http://localhost:8088/api/v1/ping | jq
 # Available topics (dynamic for Admin UI)
 curl -sS http://localhost:8088/api/v1/quiz/topics | jq
 
-# Sessions (NEW)
-# List active sessions (quiz + interview)
-curl -sS http://localhost:8088/api/v1/sessions/active | jq
-
-# Get session detail (progress JSON)
-curl -sS http://localhost:8088/api/v1/sessions/detail/<SESSION_ID> | jq
-
-# Stream recent logs for a session (JSONL aggregated)
-curl -sS 'http://localhost:8088/api/v1/sessions/logs/<SESSION_ID>?limit=200' | jq
-
 # Example: Generate a quiz (cURL)
 curl -sS -X POST http://localhost:8088/api/v1/quiz/generate \
   -H 'Content-Type: application/json' \
@@ -953,22 +943,22 @@ Generated quiz files follow this structure:
 
 The Agents API now tracks which environment requests originate from:
 
-- **Quiz Generation**: Includes environment info in logs and responses
-- **Quiz Upload**: Tracks environment for platform integration
-- **Enhanced Logging**: All operations log environment context for debugging
+-   **Quiz Generation**: Includes environment info in logs and responses
+-   **Quiz Upload**: Tracks environment for platform integration
+-   **Enhanced Logging**: All operations log environment context for debugging
 
 ### Enhanced Logging
 
-- **Structured Logging**: All API operations include detailed context
-- **Environment Context**: Requests include environment information (local/dev/prod)
-- **Error Tracking**: Comprehensive error logging with environment details
-- **Performance Monitoring**: Request timing and success/failure tracking
+-   **Structured Logging**: All API operations include detailed context
+-   **Environment Context**: Requests include environment information (local/dev/prod)
+-   **Error Tracking**: Comprehensive error logging with environment details
+-   **Performance Monitoring**: Request timing and success/failure tracking
 
 ### Health & Monitoring
 
-- **Health Check**: `GET /api/v1/ping` for service status
-- **Topics Endpoint**: `GET /api/v1/quiz/topics` for dynamic Admin UI integration
-- **Environment Awareness**: Automatic environment detection and logging
+-   **Health Check**: `GET /api/v1/ping` for service status
+-   **Topics Endpoint**: `GET /api/v1/quiz/topics` for dynamic Admin UI integration
+-   **Environment Awareness**: Automatic environment detection and logging
 
 ## 🔧 Configuration
 
