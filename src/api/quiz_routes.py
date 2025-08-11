@@ -48,8 +48,9 @@ def generate_quiz(payload: GenerateQuizRequest):
 def validate_quiz(payload: ValidateQuizRequest):
     uploader = QuizUploader()
     validation = uploader.validate_quiz(payload.quiz)
-    ok = validation.get("ok", False)
-    message = validation.get("message", "Validation complete")
+    status = validation.get("status")
+    ok = status == "success"
+    message = "Validation complete" if ok else "Validation failed"
     return SimpleStatus(ok=ok, message=message)
 
 
@@ -57,7 +58,7 @@ def validate_quiz(payload: ValidateQuizRequest):
 def upload_quiz(payload: UploadQuizRequest):
     uploader = QuizUploader(api_url=payload.api_url, admin_secret=payload.admin_secret or "TBEAdmin")
     result = uploader.upload_quiz(payload.quiz)
-    ok = result.get("ok", False)
+    ok = result.get("status") == "success"
     message = result.get("message", "Upload complete")
     if not ok:
         raise HTTPException(status_code=400, detail=message)
