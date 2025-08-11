@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel, Field
+from typing import List, Optional
 
 
 class GenerateQuizRequest(BaseModel):
@@ -28,4 +29,9 @@ class UploadQuizRequest(BaseModel):
 class SimpleStatus(BaseModel):
     ok: bool
     message: str
+
+
+class QuizTopicsResponse(BaseModel):
+    """Response model for available quiz topics."""
+    topics: List[str]
 

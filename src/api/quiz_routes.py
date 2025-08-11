@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Optional
 
 from ..agents.quiz.quiz_orchestrator import QuizOrchestrator
+from ..agents.quiz.types import QuizTopic
 from ..agents.quiz.quiz_uploader import QuizUploader
 from ..utils.helpers import generate_filename
 from .models import (
@@ -10,10 +11,21 @@ from .models import (
     ValidateQuizRequest,
     UploadQuizRequest,
     SimpleStatus,
+    QuizTopicsResponse,
 )
 
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
+
+
+@router.get("/topics", response_model=QuizTopicsResponse)
+def get_available_topics():
+    """Return the list of available quiz topics supported by the orchestrator.
+
+    This keeps Admin UI dynamic and in sync with agents.
+    """
+    topics = [t.value for t in QuizTopic]
+    return QuizTopicsResponse(topics=topics)
 
 
 @router.post("/generate", response_model=GenerateQuizAPIResponse)

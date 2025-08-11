@@ -24,6 +24,11 @@ def create_app() -> FastAPI:
     def health():
         return {"ok": True}
 
+    # Admin UI ping endpoint to ensure Agents are up
+    @app.get("/api/v1/ping")
+    def ping():
+        return {"ok": True, "service": "agents", "version": app.version}
+
     return app
 
 

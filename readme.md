@@ -83,10 +83,15 @@ export AGENTS_API_PORT=8088
 python3 run_api.py  # FastAPI on http://localhost:8088
 # Swagger UI: http://localhost:8088/docs
 
+# Health check
+curl -sS http://localhost:8088/api/v1/ping | jq
+
 # Example: Generate a quiz (cURL)
 curl -sS -X POST http://localhost:8088/api/v1/quiz/generate \
   -H 'Content-Type: application/json' \
   -d '{"topic":"React","question_count":10,"target_audience":"developers","save":true}' | jq '.ok? // .quiz.questions | length?'
+# Available topics (dynamic for Admin UI)
+curl -sS http://localhost:8088/api/v1/quiz/topics | jq
 
 # Example: Create interview sheet from MDX (cURL)
 curl -sS -X POST http://localhost:8088/api/v1/interview/create-sheet \
