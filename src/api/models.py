@@ -1,6 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 class GenerateQuizRequest(BaseModel):
@@ -36,4 +36,39 @@ class SimpleStatus(BaseModel):
 class QuizTopicsResponse(BaseModel):
     """Response model for available quiz topics."""
     topics: List[str]
+
+
+class SessionInfo(BaseModel):
+    session_id: str
+    topic: Optional[str] = None
+    status: Optional[str] = None
+    current_step: Optional[str] = None
+    questions_generated: Optional[int] = 0
+    created_at: Optional[str] = None
+    filename: Optional[str] = None
+
+
+class SessionListResponse(BaseModel):
+    status: str
+    sessions: List[SessionInfo] = []
+    count: int = 0
+
+
+class SessionProgress(BaseModel):
+    session_id: str
+    topic: Optional[str] = None
+    status: Optional[str] = None
+    current_step: Optional[str] = None
+    steps_completed: List[str] = []
+    question_count: Optional[int] = None
+    questions_generated: int = 0
+    percent: float = 0.0
+    last_updated: Optional[str] = None
+    created_at: Optional[str] = None
+    raw: Dict[str, Any] = {}
+
+
+class SessionLogsResponse(BaseModel):
+    session_id: str
+    logs: List[Dict[str, Any]] = []
 

@@ -6,6 +6,8 @@ from ..agents.quiz.quiz_orchestrator import QuizOrchestrator
 from ..agents.quiz.quiz_uploader import QuizUploader
 from ..agents.quiz.types import QuizTopic
 from ..utils.helpers import generate_filename
+from ..utils.helpers import load_json_file
+from ..utils.session_logger import read_logs
 from .models import (
     GenerateQuizRequest,
     GenerateQuizAPIResponse,
@@ -13,6 +15,9 @@ from .models import (
     UploadQuizRequest,
     SimpleStatus,
     QuizTopicsResponse,
+    SessionListResponse,
+    SessionProgress,
+    SessionLogsResponse,
 )
 
 # Configure logging
@@ -65,6 +70,68 @@ def generate_quiz(payload: GenerateQuizRequest):
         quiz=quiz_dict,
     )
     return response
+
+
+@router.get("/sessions", response_model=SessionListResponse)
+def list_sessions():
+    """List active/in-progress quiz generation sessions.
+
+    Reads temp/quiz_progress/*.json files via orchestrator helper.
+    """
+    orchestrator = QuizOrchestrator()
+    result = orchestrator.list_active_sessions()
+    return SessionListResponse(
+        status=result.get("status", "success"),
+        sessions=result.get("sessions", []),
+        count=result.get("count", 0),
+    )
+
+
+@router.get("/progress/{session_id}", response_model=SessionProgress)
+def get_session_progress(session_id: str):
+    """Return computed progress for a specific session.
+
+    Loads the corresponding temp/quiz_progress file and computes percent.
+    """
+    orchestrator = QuizOrchestrator()
+    # Locate progress file
+    progress_dir = orchestrator.progress_dir
+    # Find file containing session_id
+    import os
+    matches = [f for f in os.listdir(progress_dir) if session_id in f]
+    if not matches:
+        raise HTTPException(status_code=404, detail="Session not found")
+    progress_path = os.path.join(progress_dir, matches[0])
+    try:
+        data = load_json_file(progress_path)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to read progress file")
+
+    total = int(data.get("question_count") or 0)
+    generated = len(data.get("questions", []))
+    percent = 0.0
+    if total > 0:
+        percent = min(100.0, max(0.0, (generated / total) * 100.0))
+    return SessionProgress(
+        session_id=session_id,
+        topic=data.get("topic"),
+        status=data.get("status"),
+        current_step=data.get("current_step"),
+        steps_completed=data.get("steps_completed", []),
+        question_count=total,
+        questions_generated=generated,
+        percent=percent,
+        last_updated=data.get("last_updated"),
+        created_at=data.get("created_at"),
+        raw=data,
+    )
+
+
+@router.get("/logs/{session_id}", response_model=SessionLogsResponse)
+def get_session_logs(session_id: str):
+    """Return recent JSONL logs for a session."""
+    logs = read_logs(session_id, limit=200)
+    return SessionLogsResponse(session_id=session_id, logs=logs)
 
 
 @router.post("/validate", response_model=SimpleStatus)
