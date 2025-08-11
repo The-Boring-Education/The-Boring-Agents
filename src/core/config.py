@@ -4,11 +4,18 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Config(BaseSettings):
     """Configuration settings for The Boring Agents application."""
+    
+    # Pydantic v2 settings
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # ignore unknown env keys like AGENTS_API_HOST, AGENTS_API_PORT
+    )
     
     # API Keys
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
@@ -45,10 +52,6 @@ class Config(BaseSettings):
     def api_v1_url(self) -> str:
         """Get the API v1 URL with /api/v1 suffix."""
         return f"{self.api_base_url}/api/v1"
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
     
     def __init__(self, **kwargs):
         # Load environment variables from .env file

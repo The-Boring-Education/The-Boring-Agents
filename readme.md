@@ -6,7 +6,7 @@ AI-powered content generation for The Boring Education platform.
 
 ### Prerequisites
 
-1. **Python 3.8+** installed
+1. **Python 3.9+** installed (recommended to use a virtualenv)
 2. **API Keys** configured in `.env` file:
     ```bash
     OPENAI_API_KEY=your_openai_key
@@ -21,20 +21,78 @@ AI-powered content generation for The Boring Education platform.
     ```bash
     git clone <repository-url>
     cd The-Boring-Agents
+
+    # Create & activate virtualenv (macOS/Linux)
+    python3 -m venv .venv
+    source .venv/bin/activate
+
+    # Install dependencies
     pip install -r requirements.txt
+
+    # If you see "ModuleNotFoundError: pydantic_settings"
+    pip install pydantic-settings
     ```
 
 2. **Configure environment**:
 
+    Create a `.env` file in the repo root (at least one provider key is required):
+
     ```bash
-    cp .env.example .env
-    # Edit .env with your API keys
+    cat > .env <<'EOF'
+    # AI Provider Keys (provide at least one)
+    OPENAI_API_KEY=your_openai_key
+    ANTHROPIC_API_KEY=your_anthropic_key
+    HUGGINGFACE_API_KEY=your_huggingface_key
+
+    # App behavior
+    ENVIRONMENT=dev
+    DEFAULT_MODEL=gpt-4o-mini
+    MAX_TOKENS=4000
+    TEMPERATURE=0.8
+    OUTPUT_DIR=./output
+    TEMP_DIR=./temp
+
+    # Local Agents API server controls
+    AGENTS_API_HOST=0.0.0.0
+    AGENTS_API_PORT=8088
+    RELOAD=1
+
+    # Backend URLs used for uploads (optional)
+    LOCAL_API_BASE_URL=http://localhost:3000
+    DEV_API_BASE_URL=https://tbe-dev-git-development-tbe.vercel.app
+    PROD_API_BASE_URL=https://www.theboringeducation.com
+    EOF
     ```
 
 3. **Test the system**:
     ```bash
     python3 main.py status
     ```
+
+### Start the Agents API (FastAPI)
+
+```bash
+# From repo root
+source .venv/bin/activate
+export OPENAI_API_KEY=...  # set at least one provider key, or use .env
+
+# Optional: override host/port
+export AGENTS_API_HOST=0.0.0.0
+export AGENTS_API_PORT=8088
+
+python3 run_api.py  # FastAPI on http://localhost:8088
+# Swagger UI: http://localhost:8088/docs
+
+# Example: Generate a quiz (cURL)
+curl -sS -X POST http://localhost:8088/api/v1/quiz/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"topic":"React","question_count":10,"target_audience":"developers","save":true}' | jq '.ok? // .quiz.questions | length?'
+
+# Example: Create interview sheet from MDX (cURL)
+curl -sS -X POST http://localhost:8088/api/v1/interview/create-sheet \
+  -H 'Content-Type: application/json' \
+  -d '{"mdx_file":"lab/interview-prep/python/python_requirements.mdx","agent_type":"generic","save":true}'
+```
 
 ## 📁 File Structure
 
@@ -64,7 +122,7 @@ The-Boring-Agents/
 
 ```bash
 # Run the professional automated workflow
-./interview-prep.sh
+./scripts/interview_prep_workflow.sh
 ```
 
 This launches our **production-grade workflow automation** that requires **ONLY** a skill name and automates everything else:
@@ -105,7 +163,7 @@ This launches our **production-grade workflow automation** that requires **ONLY*
 
 ```bash
 # Launch the workflow
-./interview-prep.sh
+./scripts/interview_prep_workflow.sh
 
 # You'll be asked 2 simple questions:
 # 1. Skill/Technology name: "Python", "React", "DSA", "Java", etc.
@@ -161,7 +219,7 @@ python3 main.py status
 
 ### 🚨 **Troubleshooting:**
 
--   **Permission Issues**: Run `chmod +x interview-prep.sh` and `chmod +x scripts/interview_prep_workflow.sh`
+-   **Permission Issues**: Run `chmod +x scripts/interview_prep_workflow.sh`
 -   **Python Errors**: Ensure you're in the right directory and virtual environment is activated
 -   **API Issues**: Check your `.env` file has valid API keys
 -   **Interrupted Workflow**: Check the log files in `logs/` directory for detailed error information
@@ -512,10 +570,7 @@ Create comprehensive, high-quality quizzes for any technology topic with our adv
 **🎯 Complete Quiz Generation** - Just provide a topic, we handle everything!
 
 ```bash
-# Option 1: Simple launcher (recommended for beginners)
-./quiz-prep.sh
-
-# Option 2: Direct workflow script (advanced users)
+# Direct workflow script (recommended)
 ./scripts/quiz_generation_workflow.sh
 ```
 
@@ -559,12 +614,7 @@ This launches our **production-grade quiz workflow** that requires **ONLY** a to
 ### 🎯 **Super Simple Usage:**
 
 ```bash
-# Launch the quiz generation (choose one):
-
-# Option 1: Simple launcher
-./quiz-prep.sh
-
-# Option 2: Advanced workflow
+# Launch the quiz generation workflow
 ./scripts/quiz_generation_workflow.sh
 
 # You'll be asked 3 simple questions:
@@ -599,7 +649,7 @@ temp/
 
 ```bash
 # Make scripts executable (first time setup)
-chmod +x quiz-prep.sh scripts/quiz_generation_workflow.sh
+chmod +x scripts/quiz_generation_workflow.sh
 
 # Check system status before running
 python3 main.py status
@@ -607,16 +657,13 @@ python3 main.py status
 # View available quiz commands and parameters
 python3 main.py quiz --help
 
-# Run simple launcher
-./quiz-prep.sh
-
-# Run advanced workflow directly
+# Run the workflow
 ./scripts/quiz_generation_workflow.sh
 ```
 
 ### 🚨 **Workflow Troubleshooting:**
 
--   **Permission Issues**: Run `chmod +x quiz-prep.sh scripts/quiz_generation_workflow.sh`
+-   **Permission Issues**: Run `chmod +x scripts/quiz_generation_workflow.sh`
 -   **Python Errors**: Ensure you're in the right directory and dependencies are installed
 -   **API Issues**: Check your `.env` file has valid API keys
 -   **Server Connection**: The workflow tests server connectivity before upload
