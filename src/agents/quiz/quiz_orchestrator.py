@@ -12,6 +12,7 @@ from rich.progress import Progress, TaskID
 from ...core.base_agent import BaseAgent
 from ...core.config import config
 from ...utils.helpers import generate_filename, save_json_file, load_json_file
+from ...utils.session_logger import append_log
 from .quiz_researcher import QuizResearcher
 from .quiz_question_creator import QuizQuestionCreator
 from .types import QuizTopic, QuizDifficulty, QuizModel, QuizQuestionModel
@@ -151,6 +152,9 @@ Provide:
             "metadata": {}
         }
         
+        # Session start log
+        append_log(session_id, "session_started", {"workflow": "quiz", "topic": topic, "question_count": question_count, "target_audience": target_audience})
+
         try:
             # Step 1: Research the topic
             console.print(f"[blue]📚 Step 1/4: Researching {topic}...[/blue]")
@@ -163,6 +167,7 @@ Provide:
             progress_data["steps_completed"].append("research")
             progress_data["current_step"] = "planning"
             self._save_progress(progress_data, progress_file)
+            append_log(session_id, "step_completed", {"step": "research"})
             
             # Step 2: Plan quiz generation
             console.print(f"[blue]📋 Step 2/4: Planning quiz structure...[/blue]")
@@ -175,6 +180,7 @@ Provide:
             progress_data["steps_completed"].append("planning")
             progress_data["current_step"] = "generation"
             self._save_progress(progress_data, progress_file)
+            append_log(session_id, "step_completed", {"step": "planning"})
             
             # Step 3: Generate questions
             console.print(f"[blue]🎯 Step 3/4: Generating {question_count} questions...[/blue]")
@@ -187,6 +193,7 @@ Provide:
             progress_data["steps_completed"].append("generation")
             progress_data["current_step"] = "metadata"
             self._save_progress(progress_data, progress_file)
+            append_log(session_id, "step_completed", {"step": "generation", "questions_generated": len(questions)})
             
             # Step 4: Generate category metadata
             console.print(f"[blue]🏷️ Step 4/4: Generating quiz metadata...[/blue]")
@@ -200,6 +207,7 @@ Provide:
             progress_data["current_step"] = "completed"
             progress_data["status"] = "completed"
             self._save_progress(progress_data, progress_file)
+            append_log(session_id, "step_completed", {"step": "metadata"})
             
             # Create final quiz model
             quiz_model = self._create_quiz_model(progress_data)
@@ -228,6 +236,7 @@ Provide:
             
             console.print(f"[green]✅ Quiz generation completed![/green]")
             console.print(f"[green]📁 Output saved to: {output_file}[/green]")
+            append_log(session_id, "session_completed", {"output_file": output_file})
             
             return {
                 "status": "success",
@@ -242,6 +251,7 @@ Provide:
             progress_data["status"] = "failed"
             progress_data["error"] = str(e)
             self._save_progress(progress_data, progress_file)
+            append_log(session_id, "session_failed", {"error": str(e)})
             
             return {
                 "status": "error",
@@ -419,6 +429,7 @@ Provide:
                     # Save progress every 5 questions
                     if (i + 1) % 5 == 0:
                         self._save_progress(progress_data, progress_file)
+                        append_log(progress_data.get("session_id", "unknown"), "progress", {"generated": len(questions), "total": question_count})
                 
                 progress.update(task, advance=1)
         

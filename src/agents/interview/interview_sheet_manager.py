@@ -13,6 +13,7 @@ from rich.progress import Progress, TaskID
 from ...core.base_agent import BaseAgent
 from ...core.config import config
 from ...utils.helpers import generate_filename, save_json_file, load_json_file
+from ...utils.session_logger import append_log
 from ...utils.validation import InterviewQuestionValidator
 from .answer_creator import AnswerCreator
 from .dsa_answer_creator import DSAAnswerCreator
@@ -373,6 +374,7 @@ Questions:
         # Save initial progress
         self._save_progress(progress_data, progress_filepath)
         console.print(f"[blue]💾 Progress tracking initialized: {progress_filepath}[/blue]")
+        append_log(progress_data["session_id"], "session_started", {"workflow": "interview_answers", "topic": topic, "file": mdx_filepath, "total_questions": total_questions})
         
         # Generate answers with progress tracking
         with Progress() as progress:
@@ -412,6 +414,7 @@ Questions:
                     
                     # Save progress after each question
                     self._save_progress(progress_data, progress_filepath)
+                    append_log(progress_data["session_id"], "question_completed", {"index": i + 1, "total": total_questions})
                     
                     # Update progress bar
                     progress.update(task, advance=1)
@@ -425,6 +428,7 @@ Questions:
                     progress_data["last_updated"] = datetime.now(timezone.utc).isoformat()
                     progress_data["last_error"] = str(e)
                     self._save_progress(progress_data, progress_filepath)
+                    append_log(progress_data["session_id"], "question_failed", {"index": i + 1, "error": str(e)})
                     
                     # Ask user if they want to continue
                     if not console.input("[yellow]Continue with next question? (y/n): [/yellow]").lower() == 'y':
@@ -434,6 +438,7 @@ Questions:
         progress_data["status"] = "completed"
         progress_data["completed_at"] = datetime.now(timezone.utc).isoformat()
         self._save_progress(progress_data, progress_filepath)
+        append_log(progress_data["session_id"], "session_completed", {"completed_questions": total_questions})
         
         # Create final complete sheet
         final_result = self._create_final_sheet(progress_data, topic)
@@ -491,6 +496,7 @@ Questions:
                     
                     # Save progress after each question
                     self._save_progress(progress_data, progress_filepath)
+                    append_log(progress_data["session_id"], "question_completed", {"index": i + 1, "total": total_questions})
                     
                     # Update progress bar
                     progress.update(task, advance=1)
@@ -504,6 +510,7 @@ Questions:
                     progress_data["last_updated"] = datetime.now(timezone.utc).isoformat()
                     progress_data["last_error"] = str(e)
                     self._save_progress(progress_data, progress_filepath)
+                    append_log(progress_data["session_id"], "question_failed", {"index": i + 1, "error": str(e)})
                     
                     # Ask user if they want to continue
                     if not console.input("[yellow]Continue with next question? (y/n): [/yellow]").lower() == 'y':
@@ -513,6 +520,7 @@ Questions:
         progress_data["status"] = "completed"
         progress_data["completed_at"] = datetime.now(timezone.utc).isoformat()
         self._save_progress(progress_data, progress_filepath)
+        append_log(progress_data["session_id"], "session_completed", {"completed_questions": total_questions})
         
         # Create final complete sheet
         final_result = self._create_final_sheet(progress_data, topic)

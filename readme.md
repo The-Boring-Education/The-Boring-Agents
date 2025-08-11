@@ -89,6 +89,16 @@ curl -sS http://localhost:8088/api/v1/ping | jq
 # Available topics (dynamic for Admin UI)
 curl -sS http://localhost:8088/api/v1/quiz/topics | jq
 
+# Sessions (NEW)
+# List active sessions (quiz + interview)
+curl -sS http://localhost:8088/api/v1/sessions/active | jq
+
+# Get session detail (progress JSON)
+curl -sS http://localhost:8088/api/v1/sessions/detail/<SESSION_ID> | jq
+
+# Stream recent logs for a session (JSONL aggregated)
+curl -sS 'http://localhost:8088/api/v1/sessions/logs/<SESSION_ID>?limit=200' | jq
+
 # Example: Generate a quiz (cURL)
 curl -sS -X POST http://localhost:8088/api/v1/quiz/generate \
   -H 'Content-Type: application/json' \
