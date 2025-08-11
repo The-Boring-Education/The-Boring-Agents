@@ -86,12 +86,13 @@ python3 run_api.py  # FastAPI on http://localhost:8088
 # Health check
 curl -sS http://localhost:8088/api/v1/ping | jq
 
+# Available topics (dynamic for Admin UI)
+curl -sS http://localhost:8088/api/v1/quiz/topics | jq
+
 # Example: Generate a quiz (cURL)
 curl -sS -X POST http://localhost:8088/api/v1/quiz/generate \
   -H 'Content-Type: application/json' \
-  -d '{"topic":"React","question_count":10,"target_audience":"developers","save":true}' | jq '.ok? // .quiz.questions | length?'
-# Available topics (dynamic for Admin UI)
-curl -sS http://localhost:8088/api/v1/quiz/topics | jq
+  -d '{"topic":"React","question_count":10,"target_audience":"developers","save":true,"environment":"local"}' | jq '.ok? // .quiz.questions | length?'
 
 # Example: Create interview sheet from MDX (cURL)
 curl -sS -X POST http://localhost:8088/api/v1/interview/create-sheet \
@@ -935,6 +936,29 @@ Generated quiz files follow this structure:
     }
 }
 ```
+
+## 🔧 API Features
+
+### Environment Tracking
+
+The Agents API now tracks which environment requests originate from:
+
+- **Quiz Generation**: Includes environment info in logs and responses
+- **Quiz Upload**: Tracks environment for platform integration
+- **Enhanced Logging**: All operations log environment context for debugging
+
+### Enhanced Logging
+
+- **Structured Logging**: All API operations include detailed context
+- **Environment Context**: Requests include environment information (local/dev/prod)
+- **Error Tracking**: Comprehensive error logging with environment details
+- **Performance Monitoring**: Request timing and success/failure tracking
+
+### Health & Monitoring
+
+- **Health Check**: `GET /api/v1/ping` for service status
+- **Topics Endpoint**: `GET /api/v1/quiz/topics` for dynamic Admin UI integration
+- **Environment Awareness**: Automatic environment detection and logging
 
 ## 🔧 Configuration
 
