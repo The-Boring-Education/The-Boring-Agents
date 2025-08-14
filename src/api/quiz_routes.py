@@ -1,11 +1,15 @@
 from fastapi import APIRouter, HTTPException
-from typing import Optional
+from typing import Optional, List, Dict, Any
+import os
 import logging
 
 from ..agents.quiz.quiz_orchestrator import QuizOrchestrator
 from ..agents.quiz.quiz_uploader import QuizUploader
 from ..agents.quiz.types import QuizTopic
 from ..utils.helpers import generate_filename
+from ..utils.helpers import load_json_file
+from ..utils.session_logger import read_logs
+from ..core.config import config
 from .models import (
     GenerateQuizRequest,
     GenerateQuizAPIResponse,
@@ -102,4 +106,129 @@ def upload_quiz(payload: UploadQuizRequest):
         raise HTTPException(status_code=400, detail=message)
     
     return SimpleStatus(ok=True, message=message)
+
+
+# Additional Quiz endpoints used by Admin UI
+
+@router.get("/sessions")
+def list_quiz_sessions():
+    orchestrator = QuizOrchestrator()
+    return orchestrator.list_active_sessions()
+
+
+@router.get("/progress/{session_id}")
+def get_quiz_progress(session_id: str):
+    """Return progress details for a quiz generation session.
+
+    Computes a percent based on steps completed and question generation progress.
+    """
+    progress_dir = os.path.join(config.temp_dir, "quiz_progress")
+    if not os.path.isdir(progress_dir):
+        raise HTTPException(status_code=404, detail="Progress not found")
+
+    progress_path: Optional[str] = None
+    for name in os.listdir(progress_dir):
+        if session_id in name and name.endswith(".json"):
+            progress_path = os.path.join(progress_dir, name)
+            break
+
+    if not progress_path or not os.path.isfile(progress_path):
+        raise HTTPException(status_code=404, detail="Progress not found")
+
+    data = load_json_file(progress_path)
+
+    # Derive counts
+    total = int(data.get("question_count") or 0)
+    generated = len(data.get("questions", []) or [])
+
+    # Compute percent: 4 steps (research, planning, generation, metadata)
+    steps_completed: List[str] = data.get("steps_completed", []) or []
+    current_step = data.get("current_step") or ""
+    base_steps = {"research", "planning", "generation", "metadata"}
+    completed_steps = len([s for s in steps_completed if s in base_steps])
+    percent = completed_steps * 25.0
+    # If currently generating, add partial progress within the generation step (worth 25%)
+    if current_step == "generation" and total > 0:
+        percent = 50.0 + min(25.0, (generated / total) * 25.0)
+    # Clamp and finalize for completed
+    if data.get("status") == "completed" or current_step == "completed":
+        percent = 100.0
+
+    return {
+        "session_id": data.get("session_id"),
+        "topic": data.get("topic"),
+        "status": data.get("status"),
+        "current_step": current_step,
+        "steps_completed": steps_completed,
+        "question_count": total,
+        "questions_generated": generated,
+        "percent": percent,
+        "last_updated": data.get("last_updated"),
+        "created_at": data.get("created_at"),
+    }
+
+
+@router.get("/logs/{session_id}")
+def get_quiz_logs(session_id: str, limit: int = 200):
+    """Proxy to session logs for convenience under quiz namespace."""
+    logs = read_logs(session_id=session_id, limit=max(1, min(limit, 2000)))
+    return {"session_id": session_id, "logs": logs}
+
+
+@router.get("/pending")
+def list_pending_quizzes():
+    """List quiz JSON files in the output directory as pending items for upload."""
+    pending: List[Dict[str, Any]] = []
+    out_dir = config.output_dir
+    if not os.path.isdir(out_dir):
+        return {"pending": pending}
+
+    for name in os.listdir(out_dir):
+        if not name.endswith(".json"):
+            continue
+        if not name.startswith("quiz_"):
+            continue
+        path = os.path.join(out_dir, name)
+        try:
+            content = load_json_file(path)
+            quiz = content.get("quiz", {}) if isinstance(content, dict) else {}
+            meta = content.get("metadata", {}) if isinstance(content, dict) else {}
+            pending.append({
+                "filename": name,
+                "session_id": meta.get("session_id"),
+                "topic": meta.get("topic"),
+                "question_count": len((quiz.get("questions") or [])),
+                "categoryId": quiz.get("categoryId"),
+                "categoryName": quiz.get("categoryName"),
+            })
+        except Exception:
+            # Skip unreadable files
+            continue
+
+    # Sort newest first if metadata has created timestamp embedded in filename order is enough
+    pending.sort(key=lambda x: x.get("filename", ""), reverse=True)
+    return {"pending": pending}
+
+
+@router.delete("/pending/{filename}")
+def delete_pending_quiz(filename: str):
+    out_path = os.path.join(config.output_dir, filename)
+    if not os.path.isfile(out_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        os.remove(out_path)
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/pending/{filename}/content")
+def get_pending_quiz_content(filename: str):
+    out_path = os.path.join(config.output_dir, filename)
+    if not os.path.isfile(out_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        return load_json_file(out_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
