@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import os
 
 from ..agents.quiz.quiz_orchestrator import QuizOrchestrator
 from ..agents.interview.interview_sheet_manager import InterviewSheetManager
-from ..utils.session_logger import read_logs
+from ..utils.session_logger import read_logs, get_log_file_path
 from ..utils.helpers import load_json_file
 from ..core.config import config
 
@@ -78,4 +78,59 @@ def resume_session(session_id: str):
             return {"ok": True, "result": result}
 
     raise HTTPException(status_code=404, detail="Unable to resume session")
+
+
+@router.delete("/{session_id}")
+def delete_session(session_id: str):
+    """Delete a session's progress artifacts and logs (quiz and interview).
+
+    This removes:
+    - Quiz progress file under temp/quiz_progress containing the session_id
+    - Interview progress file(s) in temp/ matching the session_id in content
+    - Session log file under logs/sessions/{session_id}.log
+    """
+    removed: Dict[str, Any] = {
+        "progress_files": [],
+        "logs_deleted": False,
+    }
+
+    # Delete quiz progress files
+    quiz_progress_dir = os.path.join(config.temp_dir, "quiz_progress")
+    if os.path.isdir(quiz_progress_dir):
+        for name in os.listdir(quiz_progress_dir):
+            if session_id in name and name.endswith(".json"):
+                path = os.path.join(quiz_progress_dir, name)
+                try:
+                    os.remove(path)
+                    removed["progress_files"].append(path)
+                except Exception:
+                    # best effort
+                    pass
+
+    # Delete interview progress files that match session_id in JSON content
+    if os.path.isdir(config.temp_dir):
+        for name in os.listdir(config.temp_dir):
+            if name.startswith("progress_") and name.endswith(".json"):
+                path = os.path.join(config.temp_dir, name)
+                try:
+                    data = load_json_file(path)
+                    if data.get("session_id") == session_id:
+                        try:
+                            os.remove(path)
+                            removed["progress_files"].append(path)
+                        except Exception:
+                            pass
+                except Exception:
+                    continue
+
+    # Delete logs file
+    log_path = get_log_file_path(session_id)
+    if os.path.exists(log_path):
+        try:
+            os.remove(log_path)
+            removed["logs_deleted"] = True
+        except Exception:
+            pass
+
+    return {"ok": True, "removed": removed}
 
