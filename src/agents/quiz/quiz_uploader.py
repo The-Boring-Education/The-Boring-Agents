@@ -85,7 +85,6 @@ Original Quiz Data:
 {quiz_data}
 
 Expected Schema:
-- categoryId: string (unique identifier)
 - categoryName: string
 - categoryDescription: string
 - categoryIcon: string (emoji or icon name)
@@ -315,10 +314,10 @@ Clean and format the data appropriately."""
         
         return results
     
-    def update_quiz(self, category_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update an existing quiz by categoryId."""
-        console.print(f"[blue]🔄 Updating quiz: {category_id}[/blue]")
-        self.logger.info(f"PUT /api/v1/quiz/{category_id} - updating quiz")
+    def update_quiz(self, quiz_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing quiz by ID."""
+        console.print(f"[blue]🔄 Updating quiz: {quiz_id}[/blue]")
+        self.logger.info(f"PUT /api/v1/quiz/{quiz_id} - updating quiz")
         
         # Validate the updated data
         validation_result = self.validate_quiz(quiz_data)
@@ -330,7 +329,7 @@ Clean and format the data appropriately."""
             }
         
         try:
-            url = f"{self.api_url}/api/v1/quiz/{category_id}"
+            url = f"{self.api_url}/api/v1/quiz/{quiz_id}"
             response = self.session.put(url, json=quiz_data, timeout=30)
             self.logger.info(f"PUT response status={response.status_code}")
             
@@ -515,10 +514,10 @@ Clean and format the data appropriately."""
                 "api_url": self.api_url
             } 
 
-    def _get_quiz_by_category(self, category_id: str) -> Optional[Dict[str, Any]]:
-        """Fetch quiz by categoryId. Returns dict when found, None otherwise."""
+    def _get_quiz_by_id(self, quiz_id: str) -> Optional[Dict[str, Any]]:
+        """Fetch quiz by ID. Returns dict when found, None otherwise."""
         try:
-            url = f"{self.api_url}/api/v1/quiz/{category_id}"
+            url = f"{self.api_url}/api/v1/quiz/{quiz_id}"
             self.logger.info(f"GET {url}")
             resp = self.session.get(url, timeout=15)
             if resp.status_code == 200:
@@ -526,5 +525,5 @@ Clean and format the data appropriately."""
                 return data.get("data") if isinstance(data, dict) else data
             return None
         except Exception as e:
-            self.logger.warning(f"Failed to check existing quiz for categoryId={category_id}: {str(e)}")
+            self.logger.warning(f"Failed to check existing quiz for quiz_id={quiz_id}: {str(e)}")
             return None
