@@ -126,7 +126,7 @@ Clean and format the data appropriately."""
         
         try:
             # Basic structure validation
-            required_fields = ["categoryId", "categoryName", "categoryDescription", "categoryIcon", "questions"]
+            required_fields = ["categoryName", "categoryDescription", "categoryIcon", "questions"]
             for field in required_fields:
                 if field not in quiz_data:
                     validation_result["errors"].append(f"Missing required field: {field}")
@@ -144,11 +144,7 @@ Clean and format the data appropriately."""
                     if q_errors:
                         validation_result["valid"] = False
             
-            # Category validation
-            category_id = quiz_data.get("categoryId", "")
-            if not category_id or not category_id.replace("-", "").replace("_", "").isalnum():
-                validation_result["errors"].append("Invalid categoryId format")
-                validation_result["valid"] = False
+
             
             # Additional quality checks
             if len(questions) < 10:
@@ -188,9 +184,8 @@ Clean and format the data appropriately."""
     def upload_quiz(self, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
         """Upload quiz to the database via API."""
         console.print("[green]🚀 Uploading quiz to database...[/green]")
-        category_id = quiz_data.get("categoryId")
         num_questions = len(quiz_data.get("questions", []))
-        self.logger.info(f"Preparing upload - categoryId={category_id}, questions={num_questions}")
+        self.logger.info(f"Preparing upload - questions={num_questions}")
         
         # Validate first
         validation_result = self.validate_quiz(quiz_data)
@@ -202,17 +197,6 @@ Clean and format the data appropriately."""
             }
         
         try:
-            if not category_id:
-                return {
-                    "status": "error",
-                    "message": "Missing required field: categoryId"
-                }
-
-            # Check if quiz already exists (by categoryId)
-            existing = self._get_quiz_by_category(category_id)
-            if existing is not None:
-                self.logger.info(f"Quiz for categoryId={category_id} already exists. Switching to update.")
-                return self.update_quiz(category_id, quiz_data)
 
             # Prepare API endpoint for create
             url = f"{self.api_url}/api/v1/quiz"

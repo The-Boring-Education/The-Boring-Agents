@@ -40,15 +40,13 @@ def get_available_topics():
 def generate_quiz(payload: GenerateQuizRequest):
     # Log environment information for tracking
     env_info = f"env:{payload.environment or 'unknown'}"
-    action_type = "append" if payload.categoryId else "create"
-    logger.info(f"Generating quiz for topic '{payload.topic}' with {payload.question_count} questions, target: {payload.target_audience}, action: {action_type}, {env_info}")
+    logger.info(f"Generating quiz for topic '{payload.topic}' with {payload.question_count} questions, target: {payload.target_audience}, {env_info}")
     
     orchestrator = QuizOrchestrator()
     result = orchestrator.generate_complete_quiz(
         topic=payload.topic,
         question_count=payload.question_count,
         target_audience=payload.target_audience,
-        categoryId=payload.categoryId,  # Pass categoryId for smart handling
     )
 
     # Save if requested (orchestrator already saves via its own flow; keep a stable filename)

@@ -128,14 +128,12 @@ class QuizModel:
     """Quiz data model matching the database schema."""
     
     def __init__(self,
-                 category_id: str,
                  category_name: str,
                  category_description: str,
                  category_icon: str,
                  questions: List[QuizQuestionModel],
                  is_active: bool = True):
         """Initialize a quiz."""
-        self.category_id = category_id
         self.category_name = category_name
         self.category_description = category_description
         self.category_icon = category_icon
@@ -145,7 +143,6 @@ class QuizModel:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
-            "categoryId": self.category_id,
             "categoryName": self.category_name,
             "categoryDescription": self.category_description,
             "categoryIcon": self.category_icon,
@@ -158,7 +155,6 @@ class QuizModel:
         """Create from dictionary."""
         questions = [QuizQuestionModel.from_dict(q) for q in data.get("questions", [])]
         return cls(
-            category_id=data.get("categoryId", ""),
             category_name=data.get("categoryName", ""),
             category_description=data.get("categoryDescription", ""),
             category_icon=data.get("categoryIcon", ""),
