@@ -9,6 +9,7 @@ class GenerateQuizRequest(BaseModel):
     target_audience: str = Field("developers", description="Target audience label")
     save: bool = Field(True, description="Whether to persist output JSON under output/")
     environment: Optional[str] = Field(None, description="Environment where request originated (local, dev, prod)")
+    categoryId: Optional[str] = Field(None, description="If provided, append questions to existing quiz category")
 
 
 class GenerateQuizAPIResponse(BaseModel):

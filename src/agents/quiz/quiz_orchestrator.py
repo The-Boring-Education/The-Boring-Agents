@@ -15,6 +15,7 @@ from ...utils.helpers import generate_filename, save_json_file, load_json_file
 from ...utils.session_logger import append_log
 from .quiz_researcher import QuizResearcher
 from .quiz_question_creator import QuizQuestionCreator
+from .quiz_uploader import QuizUploader
 from .types import QuizTopic, QuizDifficulty, QuizModel, QuizQuestionModel
 
 console = Console()
@@ -30,6 +31,7 @@ class QuizOrchestrator(BaseAgent):
         # Initialize sub-agents
         self.researcher = QuizResearcher(**kwargs)
         self.question_creator = QuizQuestionCreator(**kwargs)
+        self.uploader = QuizUploader(**kwargs)
         
         # Progress tracking
         self.progress_dir = os.path.join(config.temp_dir, "quiz_progress")
@@ -129,7 +131,7 @@ Provide:
             return {"status": "error", "message": f"Unknown content type: {content_type}"}
     
     def generate_complete_quiz(self, topic: str, question_count: int = 20,
-                             target_audience: str = "developers") -> Dict[str, Any]:
+                             target_audience: str = "developers", categoryId: str = None) -> Dict[str, Any]:
         """Generate a complete quiz with research, questions, and metadata."""
         console.print(f"[green]🚀 Starting quiz generation for {topic}...[/green]")
         
@@ -238,12 +240,79 @@ Provide:
             console.print(f"[green]📁 Output saved to: {output_file}[/green]")
             append_log(session_id, "session_completed", {"output_file": output_file})
             
+            # Smart auto-upload: if categoryId provided, automatically upload to database
+            upload_result = None
+            if categoryId:
+                console.print(f"[blue]🚀 Auto-uploading to database (categoryId: {categoryId})...[/blue]")
+                try:
+                    # Append to existing quiz using POST /api/v1/quiz/{categoryId}
+                    quiz_dict = quiz_model.to_dict()
+                    questions = quiz_dict.get("questions", [])
+                    
+                    try:
+                        url = f"{self.uploader.api_url}/api/v1/quiz/{categoryId}"
+                        payload = {"questions": questions}
+                        response = self.uploader.session.post(url, json=payload, timeout=30)
+                        
+                        if response.status_code == 200:
+                            upload_result = {
+                                "status": "success",
+                                "message": f"Successfully appended {len(questions)} questions to quiz {categoryId}",
+                                "response": response.json()
+                            }
+                            console.print(f"[green]✅ Successfully appended {len(questions)} questions to quiz {categoryId}![/green]")
+                            append_log(session_id, "auto_upload_success", {"categoryId": categoryId, "action": "append", "questions_added": len(questions)})
+                        else:
+                            upload_result = {
+                                "status": "error",
+                                "message": f"HTTP {response.status_code}: {response.text[:200]}"
+                            }
+                            console.print(f"[red]❌ Auto-append failed: {upload_result.get('message')}[/red]")
+                            append_log(session_id, "auto_upload_failed", {"categoryId": categoryId, "error": upload_result.get('message')})
+                            
+                    except Exception as api_error:
+                        upload_result = {
+                            "status": "error", 
+                            "message": f"API call failed: {str(api_error)}"
+                        }
+                        console.print(f"[red]❌ Auto-append API error: {str(api_error)}[/red]")
+                        append_log(session_id, "auto_upload_failed", {"categoryId": categoryId, "error": str(api_error)})
+                            
+                except Exception as upload_error:
+                    upload_result = {
+                        "status": "error",
+                        "message": f"Upload error: {str(upload_error)}"
+                    }
+                    console.print(f"[red]❌ Auto-upload error: {str(upload_error)}[/red]")
+                    append_log(session_id, "auto_upload_error", {"error": str(upload_error)})
+            else:
+                # No categoryId provided - auto-create new quiz
+                console.print(f"[blue]🚀 Auto-creating new quiz in database...[/blue]")
+                try:
+                    upload_result = self.uploader.upload_quiz(quiz_model.to_dict())
+                    
+                    if upload_result.get("status") == "success":
+                        console.print(f"[green]✅ Successfully created new quiz![/green]")
+                        append_log(session_id, "auto_upload_success", {"action": "create"})
+                    else:
+                        console.print(f"[red]❌ Auto-create failed: {upload_result.get('message', 'Unknown error')}[/red]")
+                        append_log(session_id, "auto_upload_failed", {"error": upload_result.get('message')})
+                        
+                except Exception as create_error:
+                    upload_result = {
+                        "status": "error",
+                        "message": f"Create error: {str(create_error)}"
+                    }
+                    console.print(f"[red]❌ Auto-create error: {str(create_error)}[/red]")
+                    append_log(session_id, "auto_upload_error", {"error": str(create_error)})
+            
             return {
                 "status": "success",
                 "quiz": quiz_model.to_dict(),
                 "output_file": output_file,
                 "session_id": session_id,
-                "quality_score": quality_review.get("score", 0)
+                "quality_score": quality_review.get("score", 0),
+                "upload_result": upload_result  # Include upload result for frontend feedback
             }
             
         except Exception as e:
