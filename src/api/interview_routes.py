@@ -10,7 +10,7 @@ from datetime import datetime
 from ..agents.interview.interview_sheet_manager import InterviewSheetManager
 from ..agents.interview.types import AnswerAgentType
 from ..core.config import config
-from ..utils.session_logger import append_log, get_session_logs
+from ..utils.session_logger import append_log, read_logs
 
 
 # Session management
