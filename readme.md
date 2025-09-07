@@ -100,6 +100,136 @@ curl -sS -X POST http://localhost:8088/api/v1/interview/create-sheet \
   -d '{"mdx_file":"lab/interview-prep/python/python_requirements.mdx","agent_type":"generic","save":true}'
 ```
 
+## 🎓 Shiksha Course Creation Agents
+
+**Automated course creation for AI, Data Analysis, and Machine Learning topics**
+
+The Shiksha Agents provide a complete automated system for creating and managing educational courses on the Shiksha platform. The system includes both CLI commands and REST API endpoints for flexible integration.
+
+### 🚀 CLI Usage
+
+#### Create a Standard Course
+```bash
+# Basic course creation
+python main.py shiksha create-course \
+  --course-name "Introduction to Python" \
+  --description "Learn Python programming fundamentals" \
+  --difficulty "Beginner" \
+  --roadmap "Backend" \
+  --save
+
+# Advanced course creation with custom difficulty
+python main.py shiksha create-course \
+  --course-name "Advanced Machine Learning" \
+  --description "Deep dive into ML algorithms and implementation" \
+  --difficulty "Advanced" \
+  --roadmap "Data Science" \
+  --save
+```
+
+#### Create a World-Class Course (Enhanced)
+```bash
+# Create enhanced course with research integration
+python main.py shiksha create-world-class-course \
+  --course-name "Modern React Development" \
+  --description "Learn React with latest best practices and patterns" \
+  --difficulty "Intermediate" \
+  --roadmap "Frontend" \
+  --api-url "https://your-research-api.com" \
+  --save
+```
+
+### 🌐 REST API Usage
+
+Start the API server:
+```bash
+python run_api.py  # Server on http://localhost:8088
+```
+
+#### API Endpoints
+
+**Create Course (Async Processing)**
+```bash
+curl -X POST http://localhost:8088/api/v1/shiksha/courses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "course_name": "Introduction to Data Science",
+    "description": "Comprehensive guide to data science concepts and tools",
+    "difficulty_level": "Beginner",
+    "roadmap": "Data Science",
+    "enhanced": true
+  }'
+```
+
+**Get Course Details**
+```bash
+curl http://localhost:8088/api/v1/shiksha/courses/{course_id}
+```
+
+**List All Courses**
+```bash
+curl http://localhost:8088/api/v1/shiksha/courses
+```
+
+**Delete Course**
+```bash
+curl -X DELETE http://localhost:8088/api/v1/shiksha/courses/{course_id}
+```
+
+**Health Check**
+```bash
+curl http://localhost:8088/api/v1/shiksha/health
+```
+
+### 📊 Course Structure
+
+Each generated course includes:
+
+- **Course Metadata**: Name, description, difficulty level, roadmap
+- **Chapters**: Structured learning modules with topics and subtopics
+- **Exercises**: Hands-on coding exercises and assignments
+- **Mini-Projects**: Practical application projects
+- **Quality Assurance**: Content validation and enhancement
+- **Indian Context**: Localized examples and cultural references
+
+### 🎯 Supported Roadmaps
+
+- **Backend**: Server-side development, APIs, databases
+- **Frontend**: UI/UX development, frameworks, responsive design
+- **Full Stack**: End-to-end web development
+- **Data Science**: Data analysis, machine learning, statistics
+- **DevOps**: CI/CD, cloud platforms, containerization
+- **Mobile**: iOS, Android, cross-platform development
+
+### 📁 Course Storage
+
+Courses are stored in the `output/courses/` directory as JSON files:
+```
+output/
+└── courses/
+    ├── {course-id-1}.json
+    ├── {course-id-2}.json
+    └── ...
+```
+
+### 🔄 Automated Workflow
+
+The Shiksha system provides end-to-end automation:
+
+1. **Research Phase**: Analyze course topic and gather relevant content
+2. **Planning Phase**: Structure course outline and learning objectives
+3. **Content Creation**: Generate comprehensive course materials
+4. **Exercise Generation**: Create practical exercises and projects
+5. **Quality Assurance**: Validate and enhance course content
+6. **Storage**: Save course to database with unique ID
+
+### ⚙️ Configuration Options
+
+**Enhanced Mode**: Uses `EnhancedShikshaOrchestrator` with advanced research capabilities
+**Standard Mode**: Uses basic `ShikshaOrchestrator` for faster generation
+**Custom API**: Integrate with external research APIs for enhanced content
+
+
 ## 📁 File Structure
 
 ```
