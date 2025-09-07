@@ -37,3 +37,37 @@ class QuizTopicsResponse(BaseModel):
     """Response model for available quiz topics."""
     topics: List[str]
 
+
+# Shiksha API Models
+class CreateCourseRequest(BaseModel):
+    course_name: str = Field(..., description="Name of the course")
+    description: str = Field(..., description="Course description")
+    difficulty_level: str = Field("Beginner", description="Difficulty level (Beginner, Intermediate, Advanced)")
+    roadmap: str = Field("Backend", description="Roadmap category (Backend, Frontend, Full Stack, etc.)")
+    api_base_url: Optional[str] = Field(None, description="Custom API URL for research (optional)")
+    enhanced: bool = Field(True, description="Use enhanced world-class course creation")
+
+
+class Course(BaseModel):
+    id: str
+    name: str
+    description: str
+    difficulty_level: str
+    roadmap: str
+    chapters: List[dict]
+    created_at: str
+    status: str
+
+
+class CreateCourseResponse(BaseModel):
+    status: str
+    message: str
+    course_id: Optional[str] = None
+    course: Optional[Course] = None
+
+
+class ListCoursesResponse(BaseModel):
+    status: str
+    courses: List[Course]
+    total: int
+
