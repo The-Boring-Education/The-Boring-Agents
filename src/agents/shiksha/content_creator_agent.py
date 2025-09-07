@@ -348,3 +348,109 @@ class ContentCreatorAgent(BaseAgent):
             "content_type": content_type,
             "parameters": kwargs
         } 
+    
+    def generate_explanation(self, question: str, answer: str) -> str:
+        """
+        Generate a clear explanation for a quiz answer.
+        
+        Args:
+            question: The quiz question
+            answer: The correct answer
+            
+        Returns:
+            A textual explanation of the answer
+        """
+        try:
+            prompt = (
+                f"Explain the answer to the following question clearly and concisely:\n\n"
+                f"Question: {question}\n"
+                f"Answer: {answer}\n\n"
+                "Provide a step-by-step explanation suitable for a beginner."
+            )
+            explanation = self.llm_call(prompt)  # assuming llm_call interacts with OpenAI / LLM
+            return explanation.strip()
+        except Exception as e:
+            self.logger.error(f"Error generating explanation for question '{question}': {str(e)}")
+            return "Explanation not available."
+
+    def generate_chapter_summary(self, chapter_content: str) -> str:
+        """
+        Generate a concise summary for a chapter.
+        
+        Args:
+            chapter_content: Full text/content of the chapter
+            
+        Returns:
+            Summary of the chapter
+        """
+        try:
+            prompt = (
+                "Summarize the following chapter content in a clear and concise manner, "
+                "highlighting key points, concepts, and takeaways:\n\n"
+                f"{chapter_content}"
+            )
+            summary = self.llm_call(prompt)
+            return summary.strip()
+        except Exception as e:
+            self.logger.error(f"Error generating chapter summary: {str(e)}")
+            return "Summary not available."
+    
+    def generate_quiz_with_explanations(
+    self,
+    chapter_name: str,
+    course_name: str,
+    difficulty_level: str,
+    key_concepts: List[str] = None,
+    num_questions: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate a quiz for a chapter with explanations for each correct answer.
+
+        Args:
+            chapter_name: Name of the chapter
+            course_name: Name of the course
+            difficulty_level: Target learner level
+            key_concepts: List of key concepts to focus on
+            num_questions: Number of quiz questions to generate
+
+        Returns:
+            A list of quiz questions with options, correct answer, and explanations
+        """
+        try:
+            concepts_text = "\n".join([f"- {concept}" for concept in (key_concepts or [])])
+        
+            # Step 1: Generate questions and options
+            prompt_questions = (
+                f"Create {num_questions} multiple-choice questions for the chapter '{chapter_name}' "
+                f"in the course '{course_name}'. Target audience: {difficulty_level} learners.\n"
+                f"Key concepts: {concepts_text}\n"
+                f"For each question, provide:\n"
+                "1. Question text\n"
+                "2. 3-4 options\n"
+                "3. Correct answer\n"
+                "Format in JSON."
+            )
+            questions_response = self.llm_call(prompt_questions)
+        
+            # Convert the response into Python data
+            try:
+                questions_list = json.loads(questions_response)
+            except Exception:
+                self.logger.warning("Failed to parse quiz questions JSON, returning empty list.")
+                return []
+
+            # Step 2: Generate explanation for each question
+            for q in questions_list:
+                question_text = q.get("question")
+                correct_answer = q.get("correct_answer")
+                if question_text and correct_answer:
+                    explanation = self.generate_explanation(question_text, correct_answer)
+                    q["explanation"] = explanation
+                else:
+                    q["explanation"] = "Explanation not available."
+
+            return questions_list
+
+        except Exception as e:
+            self.logger.error(f"Error generating quiz for chapter '{chapter_name}': {str(e)}")
+            return []
