@@ -348,53 +348,7 @@ class ContentCreatorAgent(BaseAgent):
             "content_type": content_type,
             "parameters": kwargs
         } 
-    
-    def generate_explanation(self, question: str, answer: str) -> str:
-        """
-        Generate a clear explanation for a quiz answer.
-        
-        Args:
-            question: The quiz question
-            answer: The correct answer
-            
-        Returns:
-            A textual explanation of the answer
-        """
-        try:
-            prompt = (
-                f"Explain the answer to the following question clearly and concisely:\n\n"
-                f"Question: {question}\n"
-                f"Answer: {answer}\n\n"
-                "Provide a step-by-step explanation suitable for a beginner."
-            )
-            explanation = self.llm_call(prompt)  # assuming llm_call interacts with OpenAI / LLM
-            return explanation.strip()
-        except Exception as e:
-            self.logger.error(f"Error generating explanation for question '{question}': {str(e)}")
-            return "Explanation not available."
 
-    def generate_chapter_summary(self, chapter_content: str) -> str:
-        """
-        Generate a concise summary for a chapter.
-        
-        Args:
-            chapter_content: Full text/content of the chapter
-            
-        Returns:
-            Summary of the chapter
-        """
-        try:
-            prompt = (
-                "Summarize the following chapter content in a clear and concise manner, "
-                "highlighting key points, concepts, and takeaways:\n\n"
-                f"{chapter_content}"
-            )
-            summary = self.llm_call(prompt)
-            return summary.strip()
-        except Exception as e:
-            self.logger.error(f"Error generating chapter summary: {str(e)}")
-            return "Summary not available."
-    
     def generate_quiz_with_explanations(
     self,
     chapter_name: str,
@@ -454,3 +408,49 @@ class ContentCreatorAgent(BaseAgent):
         except Exception as e:
             self.logger.error(f"Error generating quiz for chapter '{chapter_name}': {str(e)}")
             return []
+
+    def generate_explanation(self, question: str, answer: str) -> str:
+        """
+        Generate a clear explanation for a quiz answer.
+        
+        Args:
+            question: The quiz question
+            answer: The correct answer
+            
+        Returns:
+            A textual explanation of the answer
+        """
+        try:
+            prompt = (
+                f"Explain the answer to the following question clearly and concisely:\n\n"
+                f"Question: {question}\n"
+                f"Answer: {answer}\n\n"
+                "Provide a step-by-step explanation suitable for a beginner."
+            )
+            explanation = self.llm_call(prompt)  # assuming llm_call interacts with OpenAI / LLM
+            return explanation.strip()
+        except Exception as e:
+            self.logger.error(f"Error generating explanation for question '{question}': {str(e)}")
+            return "Explanation not available."
+
+    def generate_chapter_summary(self, chapter_content: str) -> str:
+        """
+        Generate a concise summary for a chapter.
+        
+        Args:
+            chapter_content: Full text/content of the chapter
+            
+        Returns:
+            Summary of the chapter
+        """
+        try:
+            prompt = (
+                "Summarize the following chapter content in a clear and concise manner, "
+                "highlighting key points, concepts, and takeaways:\n\n"
+                f"{chapter_content}"
+            )
+            summary = self.llm_call(prompt)
+            return summary.strip()
+        except Exception as e:
+            self.logger.error(f"Error generating chapter summary: {str(e)}")
+            return "Summary not available."

@@ -10,9 +10,7 @@ from ...core.base_agent import BaseAgent
 from .course_planner_agent import CoursePlannerAgent
 from .content_creator_agent import ContentCreatorAgent
 from .quality_assurance_agent import QualityAssuranceAgent
-from .google_research_agent import GoogleResearchAgent 
-from .quiz_agent import QuizAgent 
-
+from .google_research_agent import QualityAssuranceAgent
 
 
 class ShikshaOrchestrator(BaseAgent):
@@ -24,11 +22,8 @@ class ShikshaOrchestrator(BaseAgent):
         
         # Initialize specialized agents
         self.planner = CoursePlannerAgent(**kwargs)
-        self.subtopic_agent = SubtopicAgent(**kwargs)
         self.content_creator = ContentCreatorAgent(**kwargs)
-        self.qa_agent = QualityAssuranceAgent(**kwargs)    
-        self.google_agent = GoogleResearchAgent(**kwargs)  
-        self.quiz_agent = QuizAgent(**kwargs)
+        self.qa_agent = QualityAssuranceAgent(**kwargs)
         
         self.logger.info("Shiksha Orchestrator initialized with specialized agents")
     
@@ -47,7 +42,7 @@ class ShikshaOrchestrator(BaseAgent):
     
         Args:
             course_name: Name of the course
-           description: Course description
+            description: Course description
             difficulty_level: Beginner, Intermediate, or Advanced
             roadmap: Backend, Frontend, Full Stack, etc.
         
@@ -99,7 +94,7 @@ class ShikshaOrchestrator(BaseAgent):
                         "explanation": explanation
                     }
                     quiz_content.append(quiz_item)
-            
+
                 # Update chapter content
                 chapter["content"] = self.content_creator.enhance_content_with_practice_problems(
                     chapter["content"], practice_content
@@ -123,14 +118,14 @@ class ShikshaOrchestrator(BaseAgent):
             if review_results.get("overall_score", 0) < 7.0:
                 self.logger.info("Step 6: Refining course based on feedback...")
                 course_data = self._refine_course(course_data, review_results, course_name, difficulty_level)
-        
+
             # Step 7: Final validation
             self.logger.info("Step 7: Final validation...")
             validation_results = self.qa_agent.validate_final_course(course_data, course_name)
         
             if not validation_results.get("is_valid", True):
                 self.logger.warning(f"Validation issues found: {validation_results.get('issues', [])}")
-        
+
             self.logger.info(f"Course creation completed successfully for: {course_name}")
             return course_data
         
