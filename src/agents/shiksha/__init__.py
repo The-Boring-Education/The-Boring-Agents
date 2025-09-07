@@ -9,6 +9,7 @@ from .instructor_agent import InstructorAgent
 from .exercise_creator_agent import ExerciseCreatorAgent
 from .shiksha_orchestrator import ShikshaOrchestrator
 from .enhanced_shiksha_orchestrator import EnhancedShikshaOrchestrator
+from .ai_course_specialist_agent import AICourseSpecialistAgent
 
 __all__ = [
     "ShikshaCourseAgent",
@@ -19,5 +20,6 @@ __all__ = [
     "InstructorAgent",
     "ExerciseCreatorAgent",
     "ShikshaOrchestrator",
-    "EnhancedShikshaOrchestrator"
-] 
+    "EnhancedShikshaOrchestrator",
+    "AICourseSpecialistAgent"
+]

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .quiz_routes import router as quiz_router
 from .interview_routes import router as interview_router
 from .sessions_routes import router as sessions_router
+from .shiksha_routes import router as shiksha_router
 
 
 def create_app() -> FastAPI:
@@ -21,6 +22,7 @@ def create_app() -> FastAPI:
     app.include_router(quiz_router, prefix="/api/v1")
     app.include_router(interview_router, prefix="/api/v1")
     app.include_router(sessions_router, prefix="/api/v1")
+    app.include_router(shiksha_router, prefix="/api/v1/shiksha")
     
     @app.get("/health")
     def health():

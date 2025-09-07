@@ -557,7 +557,9 @@ python3 main.py quiz upload --quiz-file output/quiz_react_abc123.json --api-url 
 python3 main.py quiz resume --session-id abc123
 ```
 
-### Course Creation (Shiksha)
+### Course Creation (Shiksha) - NEW!
+
+**🎓 Complete AI-Powered Course Generation**
 
 ```bash
 # Create basic course
@@ -565,6 +567,258 @@ python3 main.py shiksha create-course --course-name "Python Backend" --descripti
 
 # Create world-class course with research
 python3 main.py shiksha create-world-class-course --course-name "Advanced React" --description "Master React patterns"
+
+# AI/ML/Data Analysis specialized courses (NEW!)
+python3 main.py shiksha create-world-class-course --course-name "Machine Learning Mastery" --description "Complete ML course for Indian developers" --roadmap "Machine Learning" --difficulty "Intermediate"
+
+# Start the API server for web integration
+python3 run_api.py
+# Then access: http://localhost:8088/api/v1/shiksha/course/types
+```
+
+---
+
+## 🎓 **SHIKSHA AGENTS - AI Course Generation System**
+
+**The most advanced AI-powered course creation platform for Indian education!**
+
+### 🎆 **What's New in Shiksha Agents:**
+
+✅ **Specialized AI Agents** for AI, Machine Learning, and Data Analysis courses  
+✅ **REST APIs** for web platform integration  
+✅ **Indian Context Focus** - Examples from Flipkart, Zomato, Indian datasets  
+✅ **Background Processing** - Create courses asynchronously  
+✅ **Quality Assurance** - AI-powered content review and optimization  
+✅ **Database Integration** - Direct integration with Shiksha platform  
+
+### 🚀 **Quick Start - Shiksha API Server**
+
+```bash
+# 1. Setup environment
+cp .env.example .env
+# Add your API keys: OPENAI_API_KEY, ANTHROPIC_API_KEY
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Start the API server
+python3 run_api.py
+# Server starts at: http://localhost:8088
+
+# 4. Test the system
+curl http://localhost:8088/api/v1/shiksha/ping
+```
+
+### 📚 **Supported Course Types**
+
+**🎓 Specializations:**
+- **AI & Machine Learning** - Deep Learning, Computer Vision, NLP
+- **Data Analysis** - Python Data Science, SQL Analytics, Business Intelligence  
+- **Traditional Tech** - Backend, Frontend, Full Stack, DevOps
+- **Emerging Tech** - Blockchain, Mobile Development, Cloud Computing
+
+**🎯 Difficulty Levels:**
+- **Beginner** - No prior experience required
+- **Intermediate** - Some programming knowledge
+- **Advanced** - Industry-ready, expert-level content
+
+### 🔧 **API Endpoints**
+
+#### **1. Course Creation (Async)**
+```bash
+# Create course in background
+curl -X POST http://localhost:8088/api/v1/shiksha/course/create \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "course_name": "Machine Learning for Indian Startups",
+    "description": "Complete ML course with Indian business cases",
+    "difficulty_level": "Intermediate",
+    "roadmap": "Machine Learning",
+    "save_to_db": true,
+    "environment": "dev"
+  }'
+
+# Response: {"ok": true, "course_id": "abc-123", "message": "Course creation initiated"}
+```
+
+#### **2. Check Course Status**
+```bash
+# Monitor progress
+curl http://localhost:8088/api/v1/shiksha/course/status/abc-123
+
+# Response: {
+#   "ok": true,
+#   "course_id": "abc-123",
+#   "status": "processing",
+#   "progress": 0.6,
+#   "current_step": "Creating chapter content..."
+# }
+```
+
+#### **3. Get Completed Course**
+```bash
+# Retrieve finished course
+curl http://localhost:8088/api/v1/shiksha/course/result/abc-123
+
+# Returns complete course JSON with:
+# - Course structure and metadata
+# - 6-8 detailed chapters
+# - Mini-projects and assignments
+# - Video suggestions and resources
+# - Tips and tricks for each chapter
+# - Research insights and market analysis
+```
+
+#### **4. Synchronous Creation (Testing)**
+```bash
+# Create course immediately (takes 3-5 minutes)
+curl -X POST http://localhost:8088/api/v1/shiksha/course/create-sync \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "course_name": "Python Data Science",
+    "description": "Data science with Indian datasets",
+    "roadmap": "Data Analysis"
+  }'
+```
+
+#### **5. Utility Endpoints**
+```bash
+# Get supported course types
+curl http://localhost:8088/api/v1/shiksha/course/types
+
+# List recent courses
+curl http://localhost:8088/api/v1/shiksha/course/list
+
+# Health check
+curl http://localhost:8088/api/v1/shiksha/ping
+```
+
+### 🎨 **Web UI Integration**
+
+**Swagger/OpenAPI Documentation:**  
+🌐 http://localhost:8088/docs
+
+**Example JavaScript Integration:**
+```javascript
+// Create course
+const response = await fetch('http://localhost:8088/api/v1/shiksha/course/create', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    course_name: "AI for Indian Healthcare",
+    description: "AI applications in Indian healthcare system",
+    difficulty_level: "Intermediate",
+    roadmap: "AI"
+  })
+});
+
+const { course_id } = await response.json();
+
+// Poll for completion
+const checkStatus = async () => {
+  const status = await fetch(`http://localhost:8088/api/v1/shiksha/course/status/${course_id}`);
+  const data = await status.json();
+  
+  if (data.status === 'completed') {
+    const result = await fetch(`http://localhost:8088/api/v1/shiksha/course/result/${course_id}`);
+    const courseData = await result.json();
+    console.log('Course completed:', courseData.course_data);
+  } else {
+    console.log(`Progress: ${(data.progress * 100).toFixed(1)}% - ${data.current_step}`);
+    setTimeout(checkStatus, 5000); // Check every 5 seconds
+  }
+};
+
+checkStatus();
+```
+
+### 🎆 **What Makes Shiksha Agents Special**
+
+**1. 🇮🇳 Indian Context Focus**
+- Examples from Indian companies (Flipkart, Paytm, Zomato)
+- Indian datasets and use cases
+- Cultural references and local relevance
+- Career guidance for Indian job market
+
+**2. 🤖 Advanced AI Orchestration**
+- Research Agent - Market analysis and trends
+- Content Creator - Engaging chapter content
+- Exercise Creator - Practical assignments
+- Quality Assurance - AI-powered review
+- Instructor Agent - Teaching methodology
+
+**3. 🎨 Rich Content Generation**
+- **Chapters**: Detailed content with learning objectives
+- **Mini-Projects**: 3-4 hands-on projects per chapter
+- **Assignments**: 5-8 varied exercises (coding, conceptual, case studies)
+- **Resources**: Curated videos, articles, and tools
+- **Tips & Tricks**: Practical advice for mastering each topic
+
+**4. 📊 Industry-Ready Output**
+- Portfolio projects that impress recruiters
+- Interview preparation content
+- Real-world case studies
+- Latest tools and frameworks
+- Career guidance and freelancing tips
+
+### 🔍 **Course Structure Example**
+
+Here's what the AI generates for each course:
+
+```json
+{
+  "name": "Machine Learning for Indian Startups",
+  "description": "Complete ML course...",
+  "difficulty_level": "Intermediate",
+  "roadmap": "Machine Learning",
+  "total_chapters": 8,
+  "estimated_duration": "12-16 weeks",
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "name": "ML Foundations for Indian Context",
+      "content": "Detailed chapter content...",
+      "learning_objectives": ["Understand ML basics", "Setup Python environment"],
+      "mini_projects": [
+        {
+          "title": "E-commerce Recommendation Engine",
+          "description": "Build a basic recommendation system...",
+          "indian_context": "Based on Indian shopping patterns",
+          "estimated_hours": 3,
+          "skills_covered": ["Python", "pandas", "scikit-learn"]
+        }
+      ],
+      "assignments": [
+        {
+          "title": "Data Preprocessing Challenge",
+          "type": "Coding Challenge",
+          "difficulty": "Medium",
+          "estimated_time": "2 hours"
+        }
+      ],
+      "video_suggestions": [
+        {
+          "title": "ML Fundamentals by Indian Creator",
+          "url": "https://youtube.com/watch?v=...",
+          "duration": "45 minutes",
+          "why_recommended": "Great explanation with Indian examples"
+        }
+      ],
+      "tips_and_tricks": [
+        {
+          "category": "Learning Strategy",
+          "title": "Start with Indian Datasets",
+          "content": "Use familiar data to understand concepts better",
+          "indian_context": "Why this matters for Indian learners"
+        }
+      ]
+    }
+  ],
+  "research_insights": {
+    "key_recommendations": ["Focus on practical implementation"],
+    "market_trends": ["High demand for ML in Indian fintech"]
+  }
+}
 ```
 
 ## 🎯 Quiz Generation - Professional Workflow

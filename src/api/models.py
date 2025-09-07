@@ -1,6 +1,12 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 from typing import List, Optional
+
+
+class BaseResponse(BaseModel):
+    """Base response model for all API endpoints."""
+    ok: bool = True
+    message: Optional[str] = None
 
 
 class GenerateQuizRequest(BaseModel):
