@@ -1,6 +1,180 @@
 # The Boring Agents
 
-AI-powered content generation for The Boring Education platform.
+# 📌 Assignment Work – The Boring Agents
+
+## ✅ Tasks Completed
+
+### 1. Create Interview Sheet
+- Created **`output/complete_sheet_general-tech.mdx`** containing:
+
+```md
+# General Tech Interview
+
+## Questions
+1. What is a deadlock in operating systems?
+2. Explain ACID properties in databases.
+3. What is normalization in databases?
+2. API Call – Create Sheet
+bash
+Copy code
+curl -X POST http://localhost:8000/api/v1/interview/create-sheet \
+  -H "Content-Type: application/json" \
+  -H "x-admin-secret: TBEAdmin" \
+  -d '{
+    "title": "General Tech Interview",
+    "description": "Basic interview prep questions",
+    "mdx_file": "# General Tech Interview\n\n1. What is a deadlock in operating systems?\n2. Explain ACID properties in databases.\n3. What is normalization in databases?"
+  }'
+
+# Response:
+{"ok": true, "message": "Interview sheet created"}
+3. Push to Database
+bash
+Copy code
+python3 scripts/push_to_database.py output/complete_sheet_general-tech.json 67345538bdf619907a005031 --api-url http://localhost:8000 --admin-secret TBEAdmin
+4. Verify APIs
+Confirmed API server running at:
+👉 http://localhost:8000/docs
+
+Health check:
+
+bash
+Copy code
+curl http://localhost:8000/api/v1/ping
+Quiz topics:
+
+bash
+Copy code
+curl -X GET http://localhost:8000/api/v1/quiz/topics
+Response:
+
+json
+Copy code
+{"topics":["React.js","Node.js","MongoDB","Express.js","HTML","CSS","JavaScript","Python","Java","C++","C","Redux","SQL","NoSQL","Data Science","Machine Learning","Deep Learning","Artificial Intelligence","Cloud Computing","DevOps","Cyber Security"]}
+📝 Notes
+The assignment required:
+
+Create a sheet ✅
+
+Push it to DB ✅
+
+Show APIs are running ✅
+
+👉 Extending backend to add custom quiz topics (e.g., “General Tech”) is out of scope and not required for submission.
+
+The Boring Agents
+🚀 Quick Start
+Prerequisites
+Python 3.9+ installed (recommended to use a virtualenv)
+
+API Keys configured in .env file:
+
+bash
+Copy code
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+HUGGINGFACE_API_KEY=your_huggingface_key
+Installation
+Clone and setup:
+
+bash
+Copy code
+git clone <repository-url>
+cd The-Boring-Agents
+
+# Create & activate virtualenv (macOS/Linux)
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# If you see "ModuleNotFoundError: pydantic_settings"
+pip install pydantic-settings
+Configure environment:
+
+Create a .env file in the repo root (at least one provider key is required):
+
+bash
+Copy code
+cat > .env <<'EOF'
+# AI Provider Keys (provide at least one)
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+HUGGINGFACE_API_KEY=your_huggingface_key
+
+# App behavior
+ENVIRONMENT=dev
+DEFAULT_MODEL=gpt-4o-mini
+MAX_TOKENS=4000
+TEMPERATURE=0.8
+OUTPUT_DIR=./output
+TEMP_DIR=./temp
+
+# Local Agents API server controls
+AGENTS_API_HOST=0.0.0.0
+AGENTS_API_PORT=8088
+RELOAD=1
+
+# Backend URLs used for uploads (optional)
+LOCAL_API_BASE_URL=http://localhost:3000
+DEV_API_BASE_URL=https://tbe-dev-git-development-tbe.vercel.app
+PROD_API_BASE_URL=https://www.theboringeducation.com
+EOF
+Test the system:
+
+bash
+Copy code
+python3 main.py status
+Start the Agents API (FastAPI)
+bash
+Copy code
+# From repo root
+source .venv/bin/activate
+export OPENAI_API_KEY=...  # set at least one provider key, or use .env
+
+# Optional: override host/port
+export AGENTS_API_HOST=0.0.0.0
+export AGENTS_API_PORT=8088
+
+python3 run_api.py  # FastAPI on http://localhost:8088
+# Swagger UI: http://localhost:8088/docs
+
+# Health check
+curl -sS http://localhost:8088/api/v1/ping | jq
+
+# Available topics (dynamic for Admin UI)
+curl -sS http://localhost:8088/api/v1/quiz/topics | jq
+
+# Example: Generate a quiz (cURL)
+curl -sS -X POST http://localhost:8088/api/v1/quiz/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"topic":"React","question_count":10,"target_audience":"developers","save":true,"environment":"local"}' | jq '.ok? // .quiz.questions | length?'
+
+# Example: Create interview sheet from MDX (cURL)
+curl -sS -X POST http://localhost:8088/api/v1/interview/create-sheet \
+  -H 'Content-Type: application/json' \
+  -d '{"mdx_file":"lab/interview-prep/python/python_requirements.mdx","agent_type":"generic","save":true}'
+📁 File Structure
+graphql
+Copy code
+The-Boring-Agents/
+├── lab/
+│   └── interview-prep/          # Interview preparation files
+│       ├── dsa_requirements.mdx     # Requirements for DSA interviews
+│       ├── dsa_questions.mdx        # DSA questions list
+│       ├── dsa_questions_with_metadata.mdx  # Questions with metadata
+│       └── test_questions.mdx       # Test file for quick testing
+├── src/
+│   ├── agents/                 # AI agents for different tasks
+│   │   ├── interview/          # Interview preparation agents
+│   │   ├── project/           # Project generation agents
+│   │   └── shiksha/           # Course creation agents
+│   ├── core/                  # Core functionality
+│   └── utils/                 # Utility functions
+├── output/                    # Generated content output
+├── main.py                    # CLI entry point
+└── requirements.txt           # Python dependencies
 
 ## 🚀 Quick Start
 
@@ -1031,3 +1205,4 @@ For issues or questions:
 2. Verify API keys are configured
 3. Test with the provided test files
 4. Review logs for detailed error messages
+
