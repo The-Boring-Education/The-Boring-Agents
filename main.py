@@ -809,6 +809,32 @@ def create_world_class_course(course_name, description, difficulty, roadmap, api
         console.print(f"[red]❌ Error creating world-class course: {str(e)}[/red]")
         raise click.Abort()
 
+@shiksha.command()
+@click.option('--json-file', required=True, help='Path to course JSON file')
+@click.option('--api-url', default='http://localhost:3000/api/v1/shiksha', help='API base URL to push course')
+@click.option('--admin-secret', default='TBEAdmin', help='Admin secret header for authentication')
+def push_to_database(json_file, api_url, admin_secret):
+    """Push a generated Shiksha course JSON to the database API."""
+    console.print(f"[green]🚀 Pushing course from: {json_file}[/green]")
+
+    try:
+        with open(json_file, 'r') as f:
+            course_data = json.load(f)
+
+        import requests
+        headers = {"Content-Type": "application/json", "x-admin-secret": admin_secret}
+        resp = requests.post(api_url, json=course_data.get("data", course_data), headers=headers, timeout=30)
+
+        if resp.status_code in (200, 201):
+            console.print(f"[green]✅ Course pushed successfully![/green]")
+            console.print(f"[blue]📝 Response: {resp.json()}[/blue]")
+        else:
+            console.print(f"[red]❌ Push failed with status {resp.status_code}: {resp.text[:300]}[/red]")
+
+    except Exception as e:
+        console.print(f"[red]❌ Error pushing course: {str(e)}[/red]")
+        raise click.Abort()
+
 
 @cli.group()
 def quiz():
@@ -1018,6 +1044,16 @@ def status():
         console.print(f"[green]✅ Created output directory[/green]")
     
     console.print(f"\n[green]🎉 System is ready![/green]")
+
+@cli.command()
+@click.option('--host', default='0.0.0.0', help='Host to bind API')
+@click.option('--port', default=8088, type=int, help='Port to run API on')
+@click.option('--reload/--no-reload', default=False, help='Enable auto-reload (dev only)')
+def run_api(host, port, reload):
+    """Run the FastAPI server exposing agent APIs."""
+    import uvicorn
+    console.print(f"[green]🚀 Starting API at http://{host}:{port}[/green]")
+    uvicorn.run("src.api.app:app", host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

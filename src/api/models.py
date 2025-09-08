@@ -1,39 +1,47 @@
-from typing import Optional
+"""Data models for Shiksha and other agents."""
+
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from datetime import datetime
 
 
-class GenerateQuizRequest(BaseModel):
-    topic: str = Field(..., description="Quiz topic (e.g., React, Python, DevOps)")
-    question_count: int = Field(20, ge=1, le=100, description="Number of questions to generate")
-    target_audience: str = Field("developers", description="Target audience label")
-    save: bool = Field(True, description="Whether to persist output JSON under output/")
-    environment: Optional[str] = Field(None, description="Environment where request originated (local, dev, prod)")
+class Assignment(BaseModel):
+    id: str
+    title: str
+    description: str
+    type: str = "practical"
+    expected_time: Optional[str] = "1-3 hours"
+    grading: Optional[Dict[str, Any]] = None
 
 
-class GenerateQuizAPIResponse(BaseModel):
-    session_id: str
-    output_file: Optional[str] = None
-    quiz: dict
+class Chapter(BaseModel):
+    _id: str
+    name: str
+    content: str
+    assignments: List[Assignment] = []
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
 
 
-class ValidateQuizRequest(BaseModel):
-    quiz: dict
+class MiniProject(BaseModel):
+    id: str
+    title: str
+    description: str
+    difficulty: Optional[str] = "Intermediate"
+    expected_time: Optional[str] = "5-10 hours"
 
 
-class UploadQuizRequest(BaseModel):
-    quiz: dict
-    api_url: Optional[str] = None
-    admin_secret: Optional[str] = Field(default="TBEAdmin")
-    environment: Optional[str] = Field(None, description="Environment where request originated (local, dev, prod)")
-
-
-class SimpleStatus(BaseModel):
-    ok: bool
-    message: str
-
-
-class QuizTopicsResponse(BaseModel):
-    """Response model for available quiz topics."""
-    topics: List[str]
-
+class Course(BaseModel):
+    _id: str
+    name: str
+    slug: str
+    description: str
+    roadmap: str
+    difficulty: str
+    chapters: List[Chapter]
+    mini_projects: List[MiniProject] = []
+    meta_content: Optional[str] = None
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
+    isPremium: bool = True
+    price: int = 1

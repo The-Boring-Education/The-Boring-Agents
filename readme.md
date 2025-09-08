@@ -1031,3 +1031,86 @@ For issues or questions:
 2. Verify API keys are configured
 3. Test with the provided test files
 4. Review logs for detailed error messages
+
+
+🚀 Shiksha Agent API & CLI Usage
+
+We extended the Shiksha system to automatically generate courses, assignments, and mini-projects.
+This can be done via CLI or API.
+
+1️⃣ Run the API
+
+Start FastAPI server:
+
+python main.py run-api --host 0.0.0.0 --port 8088
+
+
+By default, it runs on:
+👉 http://localhost:8088
+
+Check health:
+
+curl http://localhost:8088/shiksha/health
+
+2️⃣ API Endpoints
+
+POST /shiksha/create → Generate a course
+
+Example payload:
+
+{
+  "name": "Intro to AI",
+  "description": "Learn fundamentals of Artificial Intelligence",
+  "difficulty": "Beginner",
+  "roadmap": "AI",
+  "enhanced": false
+}
+
+
+Response: JSON course structure with chapters, assignments, mini-projects.
+
+GET /shiksha/health → Health check
+
+Returns:
+
+{ "status": true, "message": "Shiksha API is running" }
+
+
+👉 API Docs available at: http://localhost:8088/docs
+
+3️⃣ CLI Commands
+
+Generate course via CLI:
+
+python main.py shiksha create-course \
+  --course-name "Intro to AI" \
+  --description "Hands-on AI basics" \
+  --difficulty "Beginner" \
+  --roadmap "AI" \
+  --save
+
+
+This will save the course JSON to:
+
+outputs/shiksha/course_YYYYMMDD_HHMMSS.json
+
+
+Push course to DB/API:
+
+python main.py shiksha push-to-database \
+  --json-file outputs/shiksha/course_20250908_180900.json \
+  --api-url http://localhost:3000/api/v1/shiksha \
+  --admin-secret TBEAdmin
+
+4️⃣ Notes
+
+OpenAI API Key: To enable real content generation, set:
+
+export OPENAI_API_KEY="your_api_key_here"
+
+
+Without it, fallback metadata/structure is used (no real AI content).
+
+Outputs: All generated courses are saved under ./outputs/shiksha/.
+
+Extensible: Supports new categories like AI, Machine Learning, Data Analytics.
