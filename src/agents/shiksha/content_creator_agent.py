@@ -454,3 +454,10 @@ class ContentCreatorAgent(BaseAgent):
         except Exception as e:
             self.logger.error(f"Error generating chapter summary: {str(e)}")
             return "Summary not available."
+        
+    def generate_real_life_analogy(self, topic: str, content: str) -> str:
+        """Generate a real-life analogy for better understanding of the topic."""
+        prompt = f"Explain the concept '{topic}' using a real-life analogy. \
+        Keep it simple and relatable to everyday life. \
+        Content reference: {content[:500]}..."  # keep it short
+        return self.llm.generate_text(prompt)

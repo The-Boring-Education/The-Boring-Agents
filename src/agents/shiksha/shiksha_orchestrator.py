@@ -39,33 +39,33 @@ class ShikshaOrchestrator(BaseAgent):
                            difficulty_level: str = "Beginner", 
                            roadmap: str = "Backend") -> Dict[str, Any]:
         """Create a complete Shiksha course using the multi-agent system.
-    
+
         Args:
             course_name: Name of the course
             description: Course description
             difficulty_level: Beginner, Intermediate, or Advanced
             roadmap: Backend, Frontend, Full Stack, etc.
-        
+    
         Returns:
             Complete course JSON following Shiksha schema
         """
         self.logger.info(f"Starting complete course creation for: {course_name}")
-    
+
         try:
             # Step 1: Plan the course structure
             self.logger.info("Step 1: Planning course structure...")
             course_plan = self.planner.create_course_structure(
                 course_name, description, difficulty_level, roadmap
             )
-        
+    
             # Step 2: Generate meta content
             self.logger.info("Step 2: Generating meta content...")
             meta_content = self._generate_meta_content(course_name, description, difficulty_level, roadmap)
-        
+    
             # Step 3: Generate chapters with content
             self.logger.info("Step 3: Generating chapter content...")
             chapters = self._generate_chapters_with_content(course_plan, course_name, difficulty_level)
-        
+    
             # Step 3a: Enhance each chapter with quizzes, explanations, practice problems, and summary
             self.logger.info("Step 3a: Adding quizzes, practice problems, and summaries...")
             for chapter in chapters:
@@ -76,10 +76,10 @@ class ShikshaOrchestrator(BaseAgent):
                     difficulty_level=difficulty_level,
                     key_concepts=chapter.get("key_concepts", [])
                 )
-            
+        
                 # Generate chapter summary
                 summary_content = self.content_creator.generate_chapter_summary(chapter["content"])
-            
+        
                 # Generate quiz with explanations
                 quiz_content = []
                 for question in chapter.get("quiz_questions", []):
@@ -102,18 +102,27 @@ class ShikshaOrchestrator(BaseAgent):
                 chapter["content"] += f"\n\n## Quiz\n\n{json.dumps(quiz_content, indent=2)}"
                 chapter["content"] += f"\n\n## Summary\n\n{summary_content}"
         
+            # Step 3b: Add real-life analogies
+            self.logger.info("Step 3b: Adding real-life analogies...")
+            for chapter in chapters:
+                analogy = self.content_creator.generate_real_life_analogy(
+                    topic=chapter["title"],
+                    content=chapter["content"]
+                )
+                chapter["content"] += f"\n\n## Real-Life Analogy\n\n{analogy}"
+    
             # Step 4: Create final course structure
             self.logger.info("Step 4: Creating final course structure...")
             course_data = self._create_course_structure(
                 course_name, description, difficulty_level, roadmap, meta_content, chapters
             )
-        
+    
             # Step 5: Quality assurance review
             self.logger.info("Step 5: Performing quality assurance review...")
             review_results = self.qa_agent.review_course_structure(
                 course_data, course_name, difficulty_level
             )
-        
+    
             # Step 6: Refine based on feedback if needed
             if review_results.get("overall_score", 0) < 7.0:
                 self.logger.info("Step 6: Refining course based on feedback...")
@@ -122,17 +131,16 @@ class ShikshaOrchestrator(BaseAgent):
             # Step 7: Final validation
             self.logger.info("Step 7: Final validation...")
             validation_results = self.qa_agent.validate_final_course(course_data, course_name)
-        
+    
             if not validation_results.get("is_valid", True):
                 self.logger.warning(f"Validation issues found: {validation_results.get('issues', [])}")
 
             self.logger.info(f"Course creation completed successfully for: {course_name}")
             return course_data
-        
+    
         except Exception as e:
             self.logger.error(f"Error creating course: {str(e)}")
             raise
-
 
     
     def _generate_meta_content(self, course_name: str, description: str, 
