@@ -1,7 +1,7 @@
 """Project Content Agent for generating engaging, mentor-like content with Indian context."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 

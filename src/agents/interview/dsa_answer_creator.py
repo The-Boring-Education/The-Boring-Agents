@@ -1,7 +1,7 @@
 """DSA Answer Creator Agent - Specialized agent for Data Structures and Algorithms interview questions."""
 
 from typing import Dict, Any, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 
