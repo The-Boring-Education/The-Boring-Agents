@@ -8,9 +8,7 @@ All operations are logged comprehensively for monitoring and debugging.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .quiz_routes import router as quiz_router
-from .interview_routes import router as interview_router
-from .sessions_routes import router as sessions_router
+from .routes import quiz_router, interview_prep_router, session_router
 from .middleware import RequestLoggingMiddleware
 from .logging_config import setup_api_logging
 from ..core.env import get_env_manager
@@ -54,8 +52,8 @@ def create_app() -> FastAPI:
     
     # Include routers
     app.include_router(quiz_router, prefix="/api/v1")
-    app.include_router(interview_router, prefix="/api/v1")
-    app.include_router(sessions_router, prefix="/api/v1")
+    app.include_router(interview_prep_router, prefix="/api/v1")
+    app.include_router(session_router, prefix="/api/v1")
     
     # Health check endpoint
     @app.get("/health")

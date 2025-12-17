@@ -80,7 +80,7 @@ export OPENAI_API_KEY=...  # set at least one provider key, or use .env
 export AGENTS_API_HOST=0.0.0.0
 export AGENTS_API_PORT=8088
 
-python3 run.py  # FastAPI on http://localhost:8088
+python run.py  # FastAPI on http://localhost:8088
 # Swagger UI: http://localhost:8088/docs
 ```
 
