@@ -80,7 +80,7 @@ export OPENAI_API_KEY=...  # set at least one provider key, or use .env
 export AGENTS_API_HOST=0.0.0.0
 export AGENTS_API_PORT=8088
 
-python3 run_api.py  # FastAPI on http://localhost:8088
+python3 run.py  # FastAPI on http://localhost:8088
 # Swagger UI: http://localhost:8088/docs
 
 # Health check
@@ -100,6 +100,28 @@ curl -sS -X POST http://localhost:8088/api/v1/interview/create-sheet \
   -d '{"mdx_file":"lab/interview-prep/python/python_requirements.mdx","agent_type":"generic","save":true}'
 ```
 
+### Start the Agents API with Docker
+
+```bash
+# Build and start the container
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up -d --build
+
+# Access the API
+curl http://localhost:8088/health
+curl http://localhost:8088/api/v1/ping
+```
+
+**Note**: Make sure to set your API keys in the `.env` file or in `docker-compose.yml` environment variables before starting the container.
+
 ## 📁 File Structure
 
 ```
@@ -115,10 +137,15 @@ The-Boring-Agents/
 │   │   ├── interview/          # Interview preparation agents
 │   │   ├── project/           # Project generation agents
 │   │   └── shiksha/           # Course creation agents
+│   ├── cli/                   # CLI module with command groups
+│   │   └── commands/          # Individual command modules
 │   ├── core/                  # Core functionality
 │   └── utils/                 # Utility functions
 ├── output/                    # Generated content output
 ├── main.py                    # CLI entry point
+├── run.py                     # API server entry point
+├── Dockerfile                 # Docker configuration
+├── docker-compose.yml         # Docker Compose configuration
 └── requirements.txt           # Python dependencies
 ```
 
