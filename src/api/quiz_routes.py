@@ -40,6 +40,7 @@ def get_available_topics():
 def generate_quiz(payload: GenerateQuizRequest):
     # Log environment information for tracking
     env_info = f"env:{payload.environment or 'unknown'}"
+    action_type = "generate_quiz"
     logger.info(f"Generating quiz for topic '{payload.topic}' with {payload.question_count} questions, target: {payload.target_audience}, {env_info}")
     
     orchestrator = QuizOrchestrator()

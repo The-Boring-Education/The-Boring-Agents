@@ -5,7 +5,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 from rich.progress import Progress, TaskID
 

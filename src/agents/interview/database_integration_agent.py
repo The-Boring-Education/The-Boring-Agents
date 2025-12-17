@@ -4,7 +4,7 @@ import json
 import requests
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timezone
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 
 from ...core.base_agent import BaseAgent
@@ -18,10 +18,11 @@ console = Console()
 class DatabaseIntegrationAgent(BaseAgent):
     """Agent responsible for integrating with the database to save interview sheets and questions."""
     
-    def __init__(self, **kwargs):
+    def __init__(self, admin_secret: Optional[str] = None, **kwargs):
         """Initialize the database integration agent."""
         super().__init__(**kwargs)
         self.api_base_url = config.api_v1_url
+        self.admin_secret = admin_secret or "TBEAdmin"
         self.logger.info("Database Integration Agent initialized")
     
     def _get_prompt_templates(self) -> Dict[str, PromptTemplate]:
@@ -172,13 +173,15 @@ Return the formatted data as JSON."""
             # Add each question to the sheet
             added_questions = []
             for question in questions:
+                # Format question data for API (camelCase for companyTypes, include title)
                 question_data = {
+                    "title": question.get("title", question.get("question", ""))[:100],  # Limit title to 100 chars
                     "question": question.get("question", ""),
                     "answer": question.get("answer", ""),
                     "difficulty": question.get("difficulty", "Medium"),
                     "frequency": question.get("frequency", "Medium"),
                     "priority": question.get("priority", "Medium"),
-                    "company_types": question.get("company_types", ["Startup", "MNC"])
+                    "companyTypes": question.get("company_types", question.get("companyTypes", ["Startup", "MNC"]))
                 }
                 
                 # Make API call to add question
@@ -205,7 +208,10 @@ Return the formatted data as JSON."""
         """Check if a sheet exists in the database."""
         try:
             url = f"{self.api_base_url}/interview-prep/{sheet_id}"
-            response = requests.get(url, timeout=10)
+            headers = {
+                "x-admin-secret": self.admin_secret
+            }
+            response = requests.get(url, headers=headers, timeout=10)
             return response.status_code == 200
         except Exception as e:
             console.print(f"[yellow]Warning: Could not check if sheet exists: {str(e)}[/yellow]")
@@ -216,7 +222,8 @@ Return the formatted data as JSON."""
         try:
             url = f"{self.api_base_url}/interview-prep/{sheet_id}/question"
             headers = {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "x-admin-secret": self.admin_secret
             }
             
             response = requests.post(url, json=question_data, headers=headers, timeout=30)

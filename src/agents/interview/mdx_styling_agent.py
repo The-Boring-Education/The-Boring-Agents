@@ -1,7 +1,7 @@
 """MDX Styling Agent for improving the formatting and readability of interview answers."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import re
 
 from ...core.base_agent import BaseAgent

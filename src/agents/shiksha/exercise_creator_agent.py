@@ -1,7 +1,7 @@
 """Exercise Creator Agent for generating hands-on exercises and projects."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 

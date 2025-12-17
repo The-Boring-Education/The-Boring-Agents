@@ -3,7 +3,7 @@
 from typing import Dict, Any, List, Optional
 import requests
 import json
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 

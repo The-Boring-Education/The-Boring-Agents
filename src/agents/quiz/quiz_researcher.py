@@ -2,7 +2,7 @@
 
 import json
 from typing import Dict, List, Any
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 
 from ...core.base_agent import BaseAgent

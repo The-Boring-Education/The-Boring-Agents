@@ -6,7 +6,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 from rich.progress import Progress, TaskID
 
@@ -123,7 +123,7 @@ Provide your analysis in a structured format.
 """
             ),
             "generate_questions_from_requirements": PromptTemplate(
-                input_variables=["requirements_content", "topic"],
+                input_variables=["requirements_content", "topic", "question_count"],
                 template="""
 You are an expert interview question generator for The Boring Education. Generate comprehensive interview questions based on the following requirements.
 
@@ -145,7 +145,7 @@ Please generate questions in a numbered list format:
 3. [Question 3]
 ...and so on
 
-Generate 50-100 questions covering all the topics comprehensively. Make sure questions are:
+Generate exactly {question_count} questions covering all the topics comprehensively. Make sure questions are:
 - Clear and specific
 - Interview-appropriate
 - Practical and job-relevant
@@ -244,17 +244,19 @@ Questions:
             with open(mdx_filepath, 'r', encoding='utf-8') as f:
                 mdx_content = f.read()
             
-            # Extract topic from requirements
+            # Extract topic and question count from requirements
             topic = self._extract_topic_from_mdx(mdx_content)
+            question_count = self._extract_question_count_from_mdx(mdx_content)
             
             # Generate questions using appropriate agent
             questions_prompt = self._format_prompt("generate_questions_from_requirements", 
                                                  requirements_content=mdx_content,
-                                                 topic=topic)
+                                                 topic=topic,
+                                                 question_count=question_count)
             questions_result = self._generate_with_prompt(questions_prompt)
             
-            # Parse generated questions
-            questions = self._parse_generated_questions(questions_result)
+            # Parse generated questions with the requested count limit
+            questions = self._parse_generated_questions(questions_result, max_questions=question_count)
             
             # Create output filepath
             base_name = os.path.splitext(os.path.basename(mdx_filepath))[0]
@@ -704,6 +706,16 @@ Questions:
         
         return "General Tech"
     
+    def _extract_question_count_from_mdx(self, mdx_content: str) -> int:
+        """Extract question count from MDX frontmatter."""
+        import re
+        # Look for questionCount in frontmatter
+        match = re.search(r'questionCount:\s*(\d+)', mdx_content)
+        if match:
+            return int(match.group(1))
+        # Default fallback
+        return 20
+    
     def _parse_questions_from_mdx(self, mdx_content: str) -> List[Dict[str, Any]]:
         """Parse questions from MDX content."""
         questions = []
@@ -770,7 +782,7 @@ Questions:
         """Generate cover image URL."""
         return f"https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&h=400&fit=crop&crop=center"
     
-    def _parse_generated_questions(self, questions_text: str) -> List[str]:
+    def _parse_generated_questions(self, questions_text: str, max_questions: int = None) -> List[str]:
         """Parse generated questions from AI response."""
         questions = []
         lines = questions_text.strip().split('\n')
@@ -793,7 +805,10 @@ Questions:
                 if question:
                     questions.append(question)
         
-        return questions[:100]  # Limit to 100 questions
+        # Return requested number of questions, or all if not specified
+        if max_questions is not None:
+            return questions[:max_questions]
+        return questions[:100]  # Default limit to prevent excessive parsing
     
     def _format_questions_as_mdx(self, questions: List[str], topic: str) -> str:
         """Format questions list as MDX content."""

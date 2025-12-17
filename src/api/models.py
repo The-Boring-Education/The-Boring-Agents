@@ -37,3 +37,10 @@ class QuizTopicsResponse(BaseModel):
     """Response model for available quiz topics."""
     topics: List[str]
 
+
+class UploadInterviewSheetRequest(BaseModel):
+    sheet_id: str = Field(..., description="Interview sheet ID in the database")
+    sheet: dict = Field(..., description="Interview sheet data with questions and answers")
+    api_url: Optional[str] = None
+    admin_secret: Optional[str] = Field(default="TBEAdmin")
+    environment: Optional[str] = Field(None, description="Environment where request originated (local, dev, prod)")

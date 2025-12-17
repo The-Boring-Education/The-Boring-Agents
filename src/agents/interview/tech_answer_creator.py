@@ -6,7 +6,7 @@ covering languages, frameworks, tools, and DevOps technologies.
 """
 
 from typing import Dict, List, Any, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from src.core.base_agent import BaseAgent
 
 

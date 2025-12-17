@@ -1,7 +1,7 @@
 """Answer Creator Agent - Generates world-class interview answers with Indian context and humor."""
 
 from typing import Dict, Any, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 

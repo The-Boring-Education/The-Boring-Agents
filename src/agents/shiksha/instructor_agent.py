@@ -1,7 +1,7 @@
 """Instructor Agent for creating engaging content with Indian context and humor."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 
