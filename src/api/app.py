@@ -1,15 +1,43 @@
+"""
+FastAPI application for The Boring Agents API.
+
+This is the main API application that handles all requests from the Admin UI.
+All operations are logged comprehensively for monitoring and debugging.
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .quiz_routes import router as quiz_router
 from .interview_routes import router as interview_router
 from .sessions_routes import router as sessions_router
+from .middleware import RequestLoggingMiddleware
+from .logging_config import setup_api_logging
+from ..core.env import get_env_manager
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="The Boring Agents API", version="0.1.0")
-
-    # CORS for admin UI and local testing
+    """
+    Create and configure the FastAPI application.
+    
+    Returns:
+        Configured FastAPI application instance
+    """
+    # Set up logging first
+    setup_api_logging()
+    
+    # Get environment
+    env_manager = get_env_manager()
+    environment = env_manager.get("ENVIRONMENT", "dev")
+    
+    # Create FastAPI app
+    app = FastAPI(
+        title="The Boring Agents API",
+        version="0.1.0",
+        description="AI-powered content generation API for The Boring Education platform"
+    )
+    
+    # Add CORS middleware for admin UI and local testing
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -17,22 +45,36 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"]
     )
-
+    
+    # Add request logging middleware
+    app.add_middleware(
+        RequestLoggingMiddleware,
+        environment=environment
+    )
+    
+    # Include routers
     app.include_router(quiz_router, prefix="/api/v1")
     app.include_router(interview_router, prefix="/api/v1")
     app.include_router(sessions_router, prefix="/api/v1")
     
+    # Health check endpoint
     @app.get("/health")
     def health():
-        return {"ok": True}
-
-    # Admin UI ping endpoint to ensure Agents are up
+        """Health check endpoint for monitoring."""
+        return {"ok": True, "service": "agents"}
+    
+    # Admin UI ping endpoint
     @app.get("/api/v1/ping")
     def ping():
-        return {"ok": True, "service": "agents", "version": app.version}
-
+        """Ping endpoint to verify service is running."""
+        return {
+            "ok": True,
+            "service": "agents",
+            "version": app.version,
+            "environment": environment
+        }
+    
     return app
 
 
 app = create_app()
-

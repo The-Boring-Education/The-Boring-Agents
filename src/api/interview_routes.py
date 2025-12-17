@@ -1,16 +1,27 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+"""
+Interview preparation API routes.
+
+All operations are logged comprehensively for Admin UI monitoring.
+"""
+
+import json
+import logging
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List, Dict, Any
 import uuid
 import asyncio
-import json
 import os
 from datetime import datetime, timezone
 
 from ..agents.interview.interview_sheet_manager import InterviewSheetManager
 from ..agents.interview.types import AnswerAgentType
 from ..core.config import config
+from ..core.env import get_env_manager
 from ..utils.session_logger import append_log, read_logs
+
+logger = logging.getLogger(__name__)
+env_manager = get_env_manager()
 
 
 # Session management
@@ -126,6 +137,52 @@ class RoadmapSuggestion(BaseModel):
 router = APIRouter(prefix="/interview", tags=["interview"])
 
 
+# Logging helper
+def _get_request_id(request: Request) -> str:
+    """Get request ID from request state."""
+    return getattr(request.state, "request_id", "unknown")
+
+
+def _log_action(
+    request: Optional[Request],
+    action: str,
+    level: str = "INFO",
+    session_id: Optional[str] = None,
+    **kwargs
+) -> None:
+    """
+    Log an action with structured format.
+    
+    Args:
+        request: FastAPI request object (optional for background tasks)
+        action: Action name
+        level: Log level
+        session_id: Session ID if available
+        **kwargs: Additional log fields
+    """
+    log_data = {
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "level": level,
+        "action": action,
+        "environment": env_manager.get("ENVIRONMENT", "dev"),
+    }
+    
+    if request:
+        log_data["request_id"] = _get_request_id(request)
+    if session_id:
+        log_data["session_id"] = session_id
+    
+    log_data.update(kwargs)
+    log_message = json.dumps(log_data)
+    
+    if level == "ERROR":
+        logger.error(log_message)
+    elif level == "WARNING":
+        logger.warning(log_message)
+    else:
+        logger.info(log_message)
+
+
 # Helper functions
 def create_session(topic: str, agent_type: str, **kwargs) -> str:
     session_id = str(uuid.uuid4())
@@ -156,8 +213,15 @@ def create_session(topic: str, agent_type: str, **kwargs) -> str:
 async def generate_questions_background(session_id: str, payload: TopicGenerationRequest):
     """Background task to generate questions for a topic"""
     try:
-        # Log the received payload
-        print(f"🔍 DEBUG: Received request - Topic: {payload.topic}, Question Count: {payload.question_count}")
+        _log_action(
+            None,
+            "generate_questions_background_start",
+            session_id=session_id,
+            topic=payload.topic,
+            question_count=payload.question_count,
+            agent_type=payload.agent_type.value
+        )
+        
         append_log(session_id, "request_received", {
             "topic": payload.topic, 
             "question_count": payload.question_count,
@@ -290,7 +354,17 @@ Generate comprehensive interview questions for {payload.topic} topic covering va
                 except Exception as e:
                     print(f"⚠️ Failed to cleanup temp file {temp_file}: {str(e)}")
             
-        append_log(session_id, "generation_completed", {"topic": payload.topic, "questions": questions_result.get("questions_count", 0)})
+        questions_count = questions_result.get("questions_count", 0)
+        append_log(session_id, "generation_completed", {"topic": payload.topic, "questions": questions_count})
+        
+        _log_action(
+            None,
+            "generate_questions_background_completed",
+            session_id=session_id,
+            topic=payload.topic,
+            questions_count=questions_count,
+            status="success"
+        )
         
     except Exception as e:
         # Update session with error
@@ -299,6 +373,16 @@ Generate comprehensive interview questions for {payload.topic} topic covering va
         active_sessions[session_id]["progress"]["current_step"] = f"Failed: {str(e)}"
         active_sessions[session_id]["completedAt"] = datetime.now().isoformat()
         append_log(session_id, "generation_failed", {"error": str(e)})
+        
+        _log_action(
+            None,
+            "generate_questions_background_failed",
+            level="ERROR",
+            session_id=session_id,
+            topic=payload.topic,
+            error=str(e),
+            error_type=type(e).__name__
+        )
 
 
 async def bulk_generate_background(session_ids: List[str], payload: BulkGenerationRequest):
@@ -324,25 +408,48 @@ async def bulk_generate_background(session_ids: List[str], payload: BulkGenerati
 # API Routes
 
 @router.post("/create-sheet", response_model=InterviewSheetResponse)
-def create_sheet(payload: GenerateInterviewSheetRequest):
+def create_sheet(payload: GenerateInterviewSheetRequest, request: Request):
     """Legacy endpoint for MDX-based sheet creation"""
-    manager = InterviewSheetManager(agent_type=payload.agent_type)
-    try:
-        result = manager.create_sheet_from_mdx(mdx_filepath=payload.mdx_file)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    output_file = result.get("output_file") if payload.save else None
-    return InterviewSheetResponse(
-        ok=True,
-        message="Interview sheet created",
-        output_file=output_file,
-        sheet=result.get("sheet"),
+    _log_action(
+        request,
+        "create_interview_sheet",
+        mdx_file=payload.mdx_file,
+        agent_type=payload.agent_type.value,
+        technology=payload.technology
     )
+    
+    try:
+        manager = InterviewSheetManager(agent_type=payload.agent_type)
+        result = manager.create_sheet_from_mdx(mdx_filepath=payload.mdx_file)
+        
+        output_file = result.get("output_file") if payload.save else None
+        
+        _log_action(
+            request,
+            "create_interview_sheet",
+            status="success",
+            output_file=output_file
+        )
+        
+        return InterviewSheetResponse(
+            ok=True,
+            message="Interview sheet created",
+            output_file=output_file,
+            sheet=result.get("sheet"),
+        )
+    except Exception as e:
+        _log_action(
+            request,
+            "create_interview_sheet",
+            level="ERROR",
+            error=str(e),
+            error_type=type(e).__name__
+        )
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/generate-topic", response_model=SessionResponse)
-async def generate_topic(payload: TopicGenerationRequest, background_tasks: BackgroundTasks):
+async def generate_topic(payload: TopicGenerationRequest, background_tasks: BackgroundTasks, request: Request):
     """Generate questions for a single topic"""
     session_id = create_session(
         topic=payload.topic,
@@ -350,6 +457,19 @@ async def generate_topic(payload: TopicGenerationRequest, background_tasks: Back
         technology=payload.technology,
         roadmap=payload.roadmap,
         question_count=payload.question_count
+    )
+    
+    _log_action(
+        request,
+        "generate_topic",
+        session_id=session_id,
+        topic=payload.topic,
+        agent_type=payload.agent_type.value,
+        technology=payload.technology,
+        question_count=payload.question_count,
+        roadmap=payload.roadmap,
+        difficulty=payload.difficulty,
+        generate_answers=payload.generate_answers
     )
     
     # Start background generation
@@ -362,7 +482,7 @@ async def generate_topic(payload: TopicGenerationRequest, background_tasks: Back
 
 
 @router.post("/bulk-generate")
-async def bulk_generate(payload: BulkGenerationRequest, background_tasks: BackgroundTasks):
+async def bulk_generate(payload: BulkGenerationRequest, background_tasks: BackgroundTasks, request: Request):
     """Start bulk generation for multiple topics"""
     session_ids = []
     
@@ -376,6 +496,15 @@ async def bulk_generate(payload: BulkGenerationRequest, background_tasks: Backgr
         )
         session_ids.append(session_id)
     
+    _log_action(
+        request,
+        "bulk_generate",
+        session_ids=session_ids,
+        topics_count=len(payload.topics),
+        generate_answers=payload.generate_answers,
+        auto_publish=payload.auto_publish
+    )
+    
     # Start background bulk generation
     background_tasks.add_task(bulk_generate_background, session_ids, payload)
     
@@ -386,7 +515,7 @@ async def bulk_generate(payload: BulkGenerationRequest, background_tasks: Backgr
 
 
 @router.get("/sessions")
-def list_sessions(status: Optional[str] = None):
+def list_sessions(status: Optional[str] = None, request: Request = None):
     """List all active/recent sessions"""
     sessions = list(active_sessions.values())
     
@@ -396,22 +525,45 @@ def list_sessions(status: Optional[str] = None):
     # Sort by start time (newest first)
     sessions.sort(key=lambda x: x["startedAt"], reverse=True)
     
+    if request:
+        _log_action(
+            request,
+            "list_interview_sessions",
+            sessions_count=len(sessions),
+            status_filter=status
+        )
+    
     return sessions
 
 
 @router.get("/session/{session_id}/progress")
-def get_session_progress(session_id: str):
+def get_session_progress(session_id: str, request: Request):
     """Get progress for a specific session"""
+    _log_action(request, "get_session_progress", session_id=session_id)
+    
     if session_id not in active_sessions:
+        _log_action(request, "get_session_progress", level="ERROR", session_id=session_id, error="Session not found")
         raise HTTPException(status_code=404, detail="Session not found")
     
-    return active_sessions[session_id]
+    session = active_sessions[session_id]
+    _log_action(
+        request,
+        "get_session_progress",
+        session_id=session_id,
+        status=session.get("status"),
+        percent=session.get("progress", {}).get("percent", 0)
+    )
+    
+    return session
 
 
 @router.post("/session/{session_id}/cancel")
-def cancel_session(session_id: str):
+def cancel_session(session_id: str, request: Request):
     """Cancel a running session"""
+    _log_action(request, "cancel_session", session_id=session_id)
+    
     if session_id not in active_sessions:
+        _log_action(request, "cancel_session", level="ERROR", session_id=session_id, error="Session not found")
         raise HTTPException(status_code=404, detail="Session not found")
     
     session = active_sessions[session_id]
@@ -421,18 +573,30 @@ def cancel_session(session_id: str):
         session["completedAt"] = datetime.now().isoformat()
         session["progress"]["current_step"] = "Cancelled"
         append_log(session_id, "session_cancelled", {})
+        
+        _log_action(
+            request,
+            "cancel_session",
+            session_id=session_id,
+            status="cancelled",
+            topic=session.get("topic")
+        )
     
     return {"message": "Session cancelled"}
 
 
 @router.post("/session/{session_id}/retry")
-async def retry_session(session_id: str, background_tasks: BackgroundTasks):
+async def retry_session(session_id: str, background_tasks: BackgroundTasks, request: Request):
     """Retry a failed session"""
+    _log_action(request, "retry_session", session_id=session_id)
+    
     if session_id not in active_sessions:
+        _log_action(request, "retry_session", level="ERROR", session_id=session_id, error="Session not found")
         raise HTTPException(status_code=404, detail="Session not found")
     
     session = active_sessions[session_id]
     if session["status"] != "failed":
+        _log_action(request, "retry_session", level="ERROR", session_id=session_id, error="Can only retry failed sessions")
         raise HTTPException(status_code=400, detail="Can only retry failed sessions")
     
     # Create new session with same parameters
@@ -455,6 +619,14 @@ async def retry_session(session_id: str, background_tasks: BackgroundTasks):
         generate_answers=True
     )
     
+    _log_action(
+        request,
+        "retry_session",
+        old_session_id=session_id,
+        new_session_id=new_session_id,
+        topic=session["topic"]
+    )
+    
     # Start background generation
     background_tasks.add_task(generate_questions_background, new_session_id, retry_payload)
     
@@ -465,8 +637,9 @@ async def retry_session(session_id: str, background_tasks: BackgroundTasks):
 
 
 @router.get("/topic-templates")
-def get_topic_templates():
+def get_topic_templates(request: Request):
     """Get available topic templates"""
+    _log_action(request, "get_topic_templates")
     templates = [
         {
             "name": "React.js",
@@ -543,8 +716,9 @@ def get_topic_templates():
 
 
 @router.get("/roadmap-suggestions")
-def get_roadmap_suggestions():
+def get_roadmap_suggestions(request: Request):
     """Get roadmap suggestions"""
+    _log_action(request, "get_roadmap_suggestions")
     roadmaps = [
         {
             "name": "Frontend Developer",
@@ -583,11 +757,24 @@ def get_roadmap_suggestions():
 
 
 @router.delete("/session/{session_id}")
-def delete_session(session_id: str):
+def delete_session(session_id: str, request: Request):
     """Delete a session"""
+    _log_action(request, "delete_interview_session", session_id=session_id)
+    
     if session_id not in active_sessions:
+        _log_action(request, "delete_interview_session", level="ERROR", session_id=session_id, error="Session not found")
         raise HTTPException(status_code=404, detail="Session not found")
     
+    topic = active_sessions[session_id].get("topic")
     del active_sessions[session_id]
+    
+    _log_action(
+        request,
+        "delete_interview_session",
+        session_id=session_id,
+        topic=topic,
+        status="success"
+    )
+    
     return {"message": "Session deleted"}
 
