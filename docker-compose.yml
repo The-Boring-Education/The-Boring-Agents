@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  agents-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: the-boring-agents
+    ports:
+      - "8088:8088"
+    environment:
+      - AGENTS_API_HOST=0.0.0.0
+      - AGENTS_API_PORT=8088
+      - RELOAD=0
+      # Add your API keys here or use .env file
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+    volumes:
+      # Mount output directory to persist generated content
+      - ./output:/app/output
+      - ./temp:/app/temp
+      - ./logs:/app/logs
+      # Mount lab directory if you want to access MDX files
+      - ./lab:/app/lab
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8088/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

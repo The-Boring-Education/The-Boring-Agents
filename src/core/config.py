@@ -1,10 +1,16 @@
-"""Core configuration management for The Boring Agents."""
+"""
+Configuration management for The Boring Agents.
+
+This module provides a Pydantic-based configuration class that uses
+the EnvironmentManager for loading and validating environment variables.
+"""
 
 import os
 from typing import Optional
-from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .env import get_env_manager, validate_api_keys as env_validate_api_keys
 
 
 class Config(BaseSettings):
@@ -54,8 +60,21 @@ class Config(BaseSettings):
         return f"{self.api_base_url}/api/v1"
     
     def __init__(self, **kwargs):
-        # Load environment variables from .env file
-        load_dotenv()
+        """
+        Initialize configuration.
+        
+        Environment variables are loaded via EnvironmentManager before
+        Pydantic processes them.
+        """
+        # Ensure environment is loaded first
+        env_manager = get_env_manager()
+        
+        # Log environment summary on first initialization
+        if not hasattr(Config, '_initialized'):
+            env_manager.log_summary()
+            Config._initialized = True
+        
+        # Initialize Pydantic settings
         super().__init__(**kwargs)
         
         # Create directories if they don't exist
@@ -63,13 +82,35 @@ class Config(BaseSettings):
         os.makedirs(self.temp_dir, exist_ok=True)
     
     def validate_api_keys(self) -> bool:
-        """Validate that at least one API key is configured."""
-        return any([
-            self.openai_api_key,
-            self.anthropic_api_key,
-            self.huggingface_api_key
-        ])
+        """
+        Validate that at least one API key is configured.
+        
+        Uses the EnvironmentManager for validation with proper logging.
+        """
+        return env_validate_api_keys()
 
 
 # Global configuration instance
-config = Config()
+# This is initialized lazily to ensure environment is loaded first
+_config: Optional[Config] = None
+
+
+def get_config() -> Config:
+    """
+    Get the global configuration instance.
+    
+    This function ensures the config is initialized after environment
+    variables are loaded, providing proper initialization order.
+    
+    Returns:
+        Config instance
+    """
+    global _config
+    if _config is None:
+        _config = Config()
+    return _config
+
+
+# For backward compatibility, provide direct access
+# But prefer using get_config() for better control
+config = get_config()
