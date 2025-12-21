@@ -3,10 +3,10 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 import logging
-from langchain.llms.base import LLM
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.schema import BaseOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import BaseOutputParser
 
 from .config import config
 
@@ -48,13 +48,13 @@ class BaseAgent(ABC):
         console.print(f"[blue]🤖 {self.__class__.__name__} initialized - Model: {self.model_name}, Temperature: {config.temperature}[/blue]")
     
     @property
-    def llm(self) -> LLM:
+    def llm(self) -> BaseChatModel:
         """Get the language model instance, initializing if needed."""
         if self._llm is None:
             self._llm = self._initialize_llm(**self.model_kwargs)
         return self._llm
     
-    def _initialize_llm(self, **kwargs) -> LLM:
+    def _initialize_llm(self, **kwargs) -> BaseChatModel:
         """Initialize the language model based on configuration.
         
         Returns:

@@ -1,7 +1,7 @@
 """Project Planner Agent for structuring real-life projects into comprehensive learning paths."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import json
 import uuid
 

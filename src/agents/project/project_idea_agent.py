@@ -1,7 +1,7 @@
 """Project Idea Agent for generating real-life project ideas for Indian students and professionals."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 

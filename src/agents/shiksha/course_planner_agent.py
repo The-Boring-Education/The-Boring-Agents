@@ -1,7 +1,7 @@
 """Course Planning Agent for creating comprehensive course structures."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import json
 import re
 

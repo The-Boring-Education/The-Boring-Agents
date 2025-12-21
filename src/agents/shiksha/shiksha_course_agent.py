@@ -1,7 +1,7 @@
 """Shiksha Course Generation Agent for creating complete tech courses."""
 
 from typing import Dict, Any, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import json
 import os
 from datetime import datetime, timedelta

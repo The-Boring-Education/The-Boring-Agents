@@ -1,7 +1,7 @@
 """Answer Creator Agent - Generates world-class interview answers with Indian context and humor."""
 
 from typing import Dict, Any, Optional
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from ...core.base_agent import BaseAgent
 
@@ -153,7 +153,7 @@ Make this answer so good that students will:
             raise ValueError(f"Unknown content type: {content_type}")
     
     def generate_answer(self, question: str, topic: str, difficulty: str = "Medium",
-                       frequency: str = "Medium", priority: str = "Medium", 
+                       frequency: str = "Asked Sometimes", priority: str = "Medium", 
                        company_types: list = None) -> str:
         """Generate a world-class answer for an interview question."""
         if company_types is None:

@@ -4,7 +4,7 @@ import json
 import requests
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timezone
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 from rich.table import Table
 
