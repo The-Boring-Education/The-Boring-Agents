@@ -9,7 +9,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import HTTPException, Query
 
 from ...agents.quiz.quiz_orchestrator import QuizOrchestrator
-from ...agents.interview.interview_sheet_manager import InterviewSheetManager
+from ...agents.interview.session.session_manager import InterviewSessionManager
 from ...utils.session_logger import read_logs, get_log_file_path
 from ...utils.helpers import load_json_file
 from ...core.config import config
@@ -21,18 +21,30 @@ class SessionController:
     def __init__(self):
         """Initialize the session controller."""
         self.quiz_orchestrator = QuizOrchestrator()
-        self.interview_manager = InterviewSheetManager()
+        self.interview_session_manager = InterviewSessionManager()
     
     def list_active_sessions(self) -> Dict[str, Any]:
         """Return active sessions from both interview and quiz workflows."""
         try:
             quiz_sessions = self.quiz_orchestrator.list_active_sessions()
-            interview_sessions = self.interview_manager.list_active_sessions()
+            interview_sessions = self.interview_session_manager.list_sessions()
+            
+            # Format interview sessions to match expected structure
+            formatted_interview_sessions = []
+            for session in interview_sessions:
+                formatted_interview_sessions.append({
+                    "session_id": session["session_id"],
+                    "name": session["name"],
+                    "status": session["status"],
+                    "progress": session["progress"],
+                    "created_at": session["created_at"],
+                    "updated_at": session["updated_at"]
+                })
             
             return {
                 "ok": True,
                 "quiz": quiz_sessions.get("sessions", []),
-                "interview": interview_sessions.get("sessions", []),
+                "interview": formatted_interview_sessions,
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to list active sessions: {str(e)}")
@@ -56,7 +68,12 @@ class SessionController:
                         data = load_json_file(os.path.join(quiz_progress_dir, name))
                         return {"ok": True, "data": data}
 
-            # Check interview progress files
+            # Check interview sessions using new session manager
+            interview_session = self.interview_session_manager.get_session(session_id)
+            if interview_session:
+                return {"ok": True, "data": interview_session}
+
+            # Fallback: Check old interview progress files (for backward compatibility)
             if os.path.isdir(config.temp_dir):
                 for name in os.listdir(config.temp_dir):
                     if name.startswith("progress_") and name.endswith(".json"):
@@ -82,12 +99,14 @@ class SessionController:
             if quiz_result.get("status") != "error":
                 return {"ok": True, "result": quiz_result}
 
-            # Try interview by locating filepath
-            sessions = self.interview_manager.list_active_sessions().get("sessions", [])
-            match = next((s for s in sessions if s.get("session_id") == session_id), None)
-            if match:
-                result = self.interview_manager.resume_session(match.get("filepath"))
-                if result.get("status") != "error":
+            # Try interview using new session manager
+            session = self.interview_session_manager.get_session(session_id)
+            if session:
+                # Use the workflow orchestrator to resume
+                from ...agents.interview.workflow.orchestrator import InterviewWorkflowOrchestrator
+                orchestrator = InterviewWorkflowOrchestrator()
+                result = orchestrator.resume_session(session_id)
+                if result.get("status") != "failed":
                     return {"ok": True, "result": result}
 
             raise HTTPException(status_code=404, detail="Unable to resume session")
@@ -116,7 +135,14 @@ class SessionController:
                         except Exception:
                             pass
 
-            # Delete interview progress files that match session_id in JSON content
+            # Delete interview session using new session manager
+            try:
+                self.interview_session_manager.delete_session(session_id)
+                removed["progress_files"].append(f"interview_session_{session_id}.json")
+            except Exception:
+                pass
+
+            # Also check old interview progress files (for backward compatibility)
             if os.path.isdir(config.temp_dir):
                 for name in os.listdir(config.temp_dir):
                     if name.startswith("progress_") and name.endswith(".json"):

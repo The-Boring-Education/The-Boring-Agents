@@ -8,6 +8,24 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 from ...agents.interview.types import AnswerAgentType
 
 
+class CreateSheetRequest(BaseModel):
+    """Request model for creating interview sheet with title and description."""
+    model_config = ConfigDict(populate_by_name=True)
+    
+    name: str = Field(..., description="Sheet name/title")
+    description: str = Field(..., description="Sheet description")
+    agent_type: AnswerAgentType = Field(default=AnswerAgentType.GENERIC, alias="agentType")
+    roadmap: str = Field(default="Tech", description="Roadmap type: Frontend, Backend, Fullstack, Tech")
+    technology: Optional[str] = Field(default=None, description="Technology name for tech agent type")
+    
+    @field_validator("agent_type", mode="before")
+    @classmethod
+    def _normalize_agent_type(cls, value):
+        if isinstance(value, str):
+            return value.lower()
+        return value
+
+
 class GenerateInterviewSheetRequest(BaseModel):
     """Request model for creating interview sheet from MDX."""
     mdx_file: str = Field(..., description="Path to MDX requirements or questions file")

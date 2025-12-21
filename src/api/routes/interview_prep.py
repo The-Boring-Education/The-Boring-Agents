@@ -7,12 +7,13 @@ All operations are logged via middleware.
 
 import json
 import logging
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Request, HTTPException
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from ..controllers.interview_prep_controller import InterviewPrepController
 from ..models.interview_prep_models import (
+    CreateSheetRequest,
     GenerateInterviewSheetRequest,
     TopicGenerationRequest,
     BulkGenerationRequest,
@@ -68,12 +69,46 @@ def _log_action(
         logger.info(log_message)
 
 
-@router.post("/create-sheet", response_model=InterviewSheetResponse)
-def create_sheet(payload: GenerateInterviewSheetRequest, request: Request):
-    """Legacy endpoint for MDX-based sheet creation."""
+@router.post("/create-sheet-new", response_model=SessionResponse)
+async def create_sheet_new(payload: CreateSheetRequest, background_tasks: BackgroundTasks, request: Request):
+    """Create interview sheet with title and description using new workflow."""
     _log_action(
         request,
-        "create_interview_sheet",
+        "create_sheet_new",
+        name=payload.name,
+        agent_type=payload.agent_type.value,
+        roadmap=payload.roadmap,
+        technology=payload.technology
+    )
+    
+    try:
+        result = controller.create_sheet_new(payload, background_tasks)
+        
+        _log_action(
+            request,
+            "create_sheet_new",
+            status="success",
+            session_id=result.sessionId
+        )
+        
+        return result
+    except Exception as e:
+        _log_action(
+            request,
+            "create_sheet_new",
+            level="ERROR",
+            error=str(e),
+            error_type=type(e).__name__
+        )
+        raise
+
+
+@router.post("/create-sheet", response_model=InterviewSheetResponse)
+def create_sheet(payload: GenerateInterviewSheetRequest, request: Request):
+    """Legacy endpoint for MDX-based sheet creation (DEPRECATED)."""
+    _log_action(
+        request,
+        "create_interview_sheet_deprecated",
         mdx_file=payload.mdx_file,
         agent_type=payload.agent_type.value,
         technology=payload.technology
@@ -81,19 +116,13 @@ def create_sheet(payload: GenerateInterviewSheetRequest, request: Request):
     
     try:
         result = controller.create_sheet(payload)
-        
-        _log_action(
-            request,
-            "create_interview_sheet",
-            status="success",
-            output_file=result.output_file
-        )
-        
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         _log_action(
             request,
-            "create_interview_sheet",
+            "create_interview_sheet_deprecated",
             level="ERROR",
             error=str(e),
             error_type=type(e).__name__
@@ -194,7 +223,7 @@ def get_session_progress(session_id: str, request: Request):
             "get_session_progress",
             session_id=session_id,
             status=result.get("status"),
-            percent=result.get("progress", {}).get("percent", 0)
+            progress=result.get("progress", {})
         )
         
         return result
@@ -208,6 +237,50 @@ def get_session_progress(session_id: str, request: Request):
             error_type=type(e).__name__
         )
         raise
+
+
+@router.get("/session/{session_id}/output")
+def get_session_output(session_id: str, request: Request):
+    """Get final output JSON for a completed session."""
+    _log_action(request, "get_session_output", session_id=session_id)
+    
+    try:
+        import json
+        import os
+        
+        status = controller.get_session_progress(session_id)
+        output_file = status.get("output_file")
+        
+        if not output_file or not os.path.exists(output_file):
+            raise HTTPException(status_code=404, detail="Output file not found")
+        
+        with open(output_file, 'r', encoding='utf-8') as f:
+            sheet_data = json.load(f)
+        
+        _log_action(
+            request,
+            "get_session_output",
+            session_id=session_id,
+            status="success"
+        )
+        
+        return {
+            "status": "success",
+            "session_id": session_id,
+            "sheet_data": sheet_data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        _log_action(
+            request,
+            "get_session_output",
+            level="ERROR",
+            session_id=session_id,
+            error=str(e),
+            error_type=type(e).__name__
+        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/session/{session_id}/cancel")
@@ -238,9 +311,37 @@ def cancel_session(session_id: str, request: Request):
         raise
 
 
+@router.post("/session/{session_id}/resume")
+async def resume_session(session_id: str, background_tasks: BackgroundTasks, request: Request):
+    """Resume a session from where it left off."""
+    _log_action(request, "resume_session", session_id=session_id)
+    
+    try:
+        result = controller.retry_session(session_id, background_tasks)
+        
+        _log_action(
+            request,
+            "resume_session",
+            session_id=session_id,
+            status="resumed"
+        )
+        
+        return result
+    except Exception as e:
+        _log_action(
+            request,
+            "resume_session",
+            level="ERROR",
+            session_id=session_id,
+            error=str(e),
+            error_type=type(e).__name__
+        )
+        raise
+
+
 @router.post("/session/{session_id}/retry")
 async def retry_session(session_id: str, background_tasks: BackgroundTasks, request: Request):
-    """Retry a failed session."""
+    """Retry a failed session (alias for resume)."""
     _log_action(request, "retry_session", session_id=session_id)
     
     try:
