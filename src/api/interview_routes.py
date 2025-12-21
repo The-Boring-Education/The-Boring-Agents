@@ -123,6 +123,60 @@ class RoadmapSuggestion(BaseModel):
     estimatedTime: Optional[str] = None
 
 
+# ==================== NEW MODELS FOR QUESTION MANAGEMENT ====================
+
+class InterviewQuestion(BaseModel):
+    """Single interview question with all metadata."""
+    
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique question ID")
+    question: str = Field(..., description="The actual question text")
+    difficulty: str = Field(default="Medium", description="Easy, Medium, Hard, or Intermediate")
+    category: Optional[str] = Field(default=None, description="Topic category")
+    answer: Optional[str] = Field(default=None, description="Full answer with explanation")
+    # explanation: Optional[str] = Field(default=None, description="Additional explanation")
+    frequency: Optional[str] = Field(default="Asked Sometimes", description="How frequently asked: Most Asked, Asked Frequently, Asked Sometimes")
+    priority: Optional[str] = Field(default="Medium", description="Priority level: High, Medium, Low")
+    company_types: Optional[List[str]] = Field(
+        default=["Startup", "MNC"], 
+        description="Relevant company types: Startup, MidSize, MNC, FAANG")
+    followup_questions: Optional[List[str]] = Field(default=None, description="Related follow-up questions")
+    created_at: Optional[str] = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: Optional[str] = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class UpdateQuestionRequest(BaseModel):
+    """Request model for updating a single question."""
+    
+    question: Optional[str] = Field(default=None, description="Updated question text")
+    difficulty: Optional[str] = Field(default=None, description="Updated difficulty level")
+    category: Optional[str] = Field(default=None, description="Updated category")
+    answer: Optional[str] = Field(default=None, description="Updated answer")
+    # explanation: Optional[str] = Field(default=None, description="Updated explanation")
+    followup_questions: Optional[List[str]] = Field(default=None, description="Updated follow-up questions")
+    frequency: Optional[str] = Field(default=None, description="Updated frequency")
+    priority: Optional[str] = Field(default=None, description="Updated priority")
+
+
+class QuestionManagementResponse(BaseModel):
+    """Standard response for question management operations."""
+    
+    success: bool = Field(..., description="Operation success status")
+    message: str = Field(..., description="Response message")
+    data: Optional[Dict[str, Any]] = Field(default=None, description="Response data")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
+
+
+class PaginatedQuestionsResponse(BaseModel):
+    """Paginated questions response."""
+    
+    total: int = Field(..., description="Total questions in sheet")
+    skip: int = Field(..., description="Skip count")
+    limit: int = Field(..., description="Limit per page")
+    count: int = Field(..., description="Questions in this page")
+    questions: List[Dict[str, Any]] = Field(..., description="Paginated questions")
+
+
+
 router = APIRouter(prefix="/interview", tags=["interview"])
 
 
@@ -406,6 +460,273 @@ def get_session_progress(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     
     return active_sessions[session_id]
+
+
+# ==================== NEW ENDPOINTS FOR QUESTION MANAGEMENT ====================
+
+@router.get("/session/{session_id}/sheet")
+def get_session_sheet(session_id: str):
+    """
+    Retrieve the complete interview sheet for a session.
+    
+    Returns the sheet with all questions for frontend display and editing.
+    This is called after generation completes to load questions into the editor.
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session = active_sessions[session_id]
+    sheet_data = session.get("sheetData", {})
+    
+    if not sheet_data:
+        raise HTTPException(status_code=404, detail="Sheet data not found for session")
+    
+    return sheet_data
+
+
+@router.get("/session/{session_id}/questions", response_model=PaginatedQuestionsResponse)
+def get_session_questions(session_id: str, skip: int = 0, limit: int = 100):
+    """
+    Get paginated list of questions from a session.
+    
+    Useful for infinite scroll or pagination in the UI.
+    
+    Query Parameters:
+    - skip: Number of questions to skip (default: 0)
+    - limit: Number of questions to return (default: 100)
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    sheet_data = active_sessions[session_id].get("sheetData", {})
+    questions = sheet_data.get("questions", [])
+    
+    paginated = questions[skip : skip + limit]
+    
+    return PaginatedQuestionsResponse(
+        total=len(questions),
+        skip=skip,
+        limit=limit,
+        count=len(paginated),
+        questions=paginated
+    )
+
+
+@router.get("/session/{session_id}/questions/{question_id}")
+def get_question(session_id: str, question_id: str):
+    """
+    Get a specific question by ID from a session.
+    
+    Used when editing a single question in a modal or separate editor.
+    
+    Path Parameters:
+    - session_id: Session ID
+    - question_id: Question ID
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    sheet_data = active_sessions[session_id].get("sheetData", {})
+    questions = sheet_data.get("questions", [])
+    
+    question = next((q for q in questions if q.get("id") == question_id), None)
+    
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    return question
+
+
+@router.put("/session/{session_id}/questions/{question_id}", response_model=QuestionManagementResponse)
+def update_question(session_id: str, question_id: str, update: UpdateQuestionRequest):
+    """
+    Update a specific question in the session.
+    
+    Modifies question in memory. Changes persist only until session ends.
+    To save permanently, export and send to MongoDB API.
+    
+    Path Parameters:
+    - session_id: Session ID
+    - question_id: Question ID to update
+    
+    Request Body: UpdateQuestionRequest (partial update - only provide fields to change)
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    sheet_data = active_sessions[session_id].get("sheetData", {})
+    questions = sheet_data.get("questions", [])
+    
+    question_index = next(
+        (i for i, q in enumerate(questions) if q.get("id") == question_id),
+        None
+    )
+    
+    if question_index is None:
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    question = questions[question_index]
+    
+    # Update only provided fields
+    update_data = update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        if value is not None:
+            question[field] = value
+    
+    # Update timestamp
+    question["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Update in session
+    questions[question_index] = question
+    sheet_data["questions"] = questions
+    sheet_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    active_sessions[session_id]["sheetData"] = sheet_data
+    
+    append_log(session_id, "question_updated", {"question_id": question_id})
+    
+    return QuestionManagementResponse(
+        success=True,
+        message=f"Question updated successfully",
+        data={"question": question}
+    )
+
+
+@router.delete("/session/{session_id}/questions/{question_id}", response_model=QuestionManagementResponse)
+def delete_question(session_id: str, question_id: str):
+    """
+    Delete a specific question from the session.
+    
+    Removes question from memory. Changes persist only until session ends.
+    To save permanently, export and send to MongoDB API.
+    
+    Path Parameters:
+    - session_id: Session ID
+    - question_id: Question ID to delete
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    sheet_data = active_sessions[session_id].get("sheetData", {})
+    questions = sheet_data.get("questions", [])
+    
+    initial_count = len(questions)
+    questions = [q for q in questions if q.get("id") != question_id]
+    final_count = len(questions)
+    
+    if initial_count == final_count:
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    # Update sheet data
+    sheet_data["questions"] = questions
+    sheet_data["question_count"] = final_count
+    sheet_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    active_sessions[session_id]["sheetData"] = sheet_data
+    
+    append_log(session_id, "question_deleted", {
+        "question_id": question_id,
+        "remaining_questions": final_count
+    })
+    
+    return QuestionManagementResponse(
+        success=True,
+        message=f"Question deleted successfully. Remaining: {final_count}",
+        data={"remaining_questions": final_count, "question_count": final_count}
+    )
+
+
+@router.post("/session/{session_id}/questions", response_model=QuestionManagementResponse)
+def add_question(session_id: str, question: InterviewQuestion):
+    """
+    Add a new question to the session.
+    
+    Allows users to manually add new questions to the sheet.
+    Changes persist only until session ends.
+    To save permanently, export and send to MongoDB API.
+    
+    Path Parameters:
+    - session_id: Session ID
+    
+    Request Body: InterviewQuestion object
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    sheet_data = active_sessions[session_id].get("sheetData", {})
+    questions = sheet_data.get("questions", [])
+    
+    # Ensure question has unique ID
+    if not question.id:
+        question.id = str(uuid.uuid4())
+    
+    question_dict = question.dict()
+    question_dict["created_at"] = datetime.now(timezone.utc).isoformat()
+    question_dict["updated_at"] = question_dict["created_at"]
+    
+    questions.append(question_dict)
+    
+    # Update sheet data
+    sheet_data["questions"] = questions
+    sheet_data["question_count"] = len(questions)
+    sheet_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    active_sessions[session_id]["sheetData"] = sheet_data
+    
+    append_log(session_id, "question_added", {"question_id": question.id})
+    
+    return QuestionManagementResponse(
+        success=True,
+        message=f"Question added successfully",
+        data={"question": question_dict, "total_questions": len(questions)}
+    )
+
+
+@router.post("/session/{session_id}/sheet", response_model=QuestionManagementResponse)
+def save_sheet_locally(session_id: str):
+    """
+    Save the current sheet to local JSON file.
+    
+    Useful for backup or exporting to external MongoDB API.
+    File is saved to output/ directory with session_id in filename.
+    
+    Path Parameters:
+    - session_id: Session ID
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    sheet_data = active_sessions[session_id].get("sheetData", {})
+    
+    if not sheet_data:
+        raise HTTPException(status_code=404, detail="No sheet data available")
+    
+    try:
+        # Create backup filename
+        topic = sheet_data.get("topic", "interview_sheet").replace(" ", "_").lower()
+        filename = f"sheet_{topic}_{session_id}.json"
+        filepath = os.path.join(config.output_dir, filename)
+        
+        # Save to file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(sheet_data, f, indent=2, ensure_ascii=False)
+        
+        append_log(session_id, "sheet_saved_locally", {"filepath": filepath})
+        
+        return QuestionManagementResponse(
+            success=True,
+            message=f"Sheet saved to {filepath}",
+            data={
+                "filepath": filepath,
+                "filename": filename,
+                "question_count": len(sheet_data.get("questions", [])),
+                "sheet_id": sheet_data.get("id")
+            }
+        )
+        
+    except Exception as e:
+        append_log(session_id, "sheet_save_failed", {"error": str(e)})
+        raise HTTPException(status_code=500, detail=f"Failed to save sheet: {str(e)}")
+
+
+# ==================== END QUESTION MANAGEMENT ENDPOINTS ====================
 
 
 @router.post("/session/{session_id}/cancel")

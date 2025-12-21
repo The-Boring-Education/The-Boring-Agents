@@ -242,7 +242,7 @@ Make it practical and actionable for interview scenarios.
             return {"status": "error", "message": f"Unknown content type: {content_type}"}
 
     def generate_answer(self, question: str, topic: str, difficulty: str = "Medium",
-                       frequency: str = "Medium", priority: str = "Medium", 
+                       frequency: str = "Asked Sometimes", priority: str = "Medium", 
                        company_types: list = None) -> str:
         """Generate a tech-specific interview answer."""
         return self.generate_tech_answer(
@@ -251,7 +251,7 @@ Make it practical and actionable for interview scenarios.
         )
 
     def generate_tech_answer(self, question: str, topic: str, difficulty: str = "Medium",
-                            frequency: str = "Medium", priority: str = "Medium", 
+                            frequency: str = "Asked Sometimes", priority: str = "Medium", 
                             company_types: list = None, technology: str = None) -> str:
         """Generate comprehensive tech interview answer."""
         

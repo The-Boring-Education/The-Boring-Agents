@@ -215,13 +215,13 @@ Make this answer so good that students will:
             raise ValueError(f"Unknown content type: {content_type}")
     
     def generate_answer(self, question: str, topic: str, difficulty: str = "Medium",
-                       frequency: str = "Medium", priority: str = "Medium", 
+                       frequency: str = "Asked Sometimes", priority: str = "Medium", 
                        company_types: list = None) -> str:
         """Generate answer - main interface method for compatibility."""
         return self.generate_dsa_answer(question, topic, difficulty, frequency, priority, company_types)
     
     def generate_dsa_answer(self, question: str, topic: str, difficulty: str = "Medium",
-                           frequency: str = "Medium", priority: str = "Medium", 
+                           frequency: str = "Asked Sometimes", priority: str = "Medium", 
                            company_types: list = None) -> str:
         """Generate a world-class DSA answer following the structured format."""
         if company_types is None:

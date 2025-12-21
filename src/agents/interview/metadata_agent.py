@@ -49,14 +49,13 @@ Based on your extensive experience, determine:
    - "Most Asked" (asked in 80%+ of interviews)
    - "Asked Frequently" (asked in 50-80% of interviews) 
    - "Asked Sometimes" (asked in 20-50% of interviews)
-   - "Rarely Asked" (asked in <20% of interviews)
 
 2. **Priority**: How important this question is for interview success
    - "High" (critical for passing the interview)
    - "Medium" (important but not critical)
    - "Low" (nice to know but not essential)
 
-3. **Company Types**: Which types of companies typically ask this question
+3. **Company Types**: Which types of companies typically ask this question (can select multiple)
    - "Startup" (early-stage companies, fast-paced)
    - "MidSize" (growing companies, established processes)
    - "MNC" (multinational corporations, formal processes)
@@ -68,7 +67,7 @@ Based on your extensive experience, determine:
    - "Hard" (advanced concepts, senior-level)
 
 Provide your analysis in this exact format:
-Frequency: [Most Asked/Asked Frequently/Asked Sometimes/Rarely Asked]
+Frequency: [Most Asked/Asked Frequently/Asked Sometimes]
 Priority: [High/Medium/Low]
 Company Types: [Startup, MidSize, MNC, FAANG] (select relevant ones)
 Difficulty: [Easy/Medium/Hard]
@@ -88,7 +87,7 @@ Questions:
 For each question, provide metadata in this exact format:
 
 Question: [question text]
-- Frequency: [Most Asked/Asked Frequently/Asked Sometimes/Rarely Asked]
+- Frequency: [Most Asked/Asked Frequently/Asked Sometimes]
 - Priority: [High/Medium/Low] 
 - Company Types: [Startup, MidSize, MNC, FAANG]
 - Difficulty: [Easy/Medium/Hard]
