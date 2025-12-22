@@ -3,9 +3,9 @@
 from typing import Dict, Any, List
 from langchain_core.prompts import PromptTemplate
 
-from ...core.base_agent import BaseAgent
-from ..types import AnswerAgentType
-from .schema_utils import generate_slug
+from src.core.base_agent import BaseAgent
+from src.agents.interview.types import AnswerAgentType
+from src.agents.interview.common.schema_utils import generate_slug
 
 
 class QuestionGenerator(BaseAgent):

@@ -3,29 +3,29 @@
 from typing import Dict, Any
 import logging
 
-from .state import InterviewWorkflowState
-from ..common.metadata_generator import MetadataGenerator
-from ..common.question_generator import QuestionGenerator
-from ..common.workflow_utils import (
+from src.agents.interview.workflow.state import InterviewWorkflowState
+from src.agents.interview.common.metadata_generator import MetadataGenerator
+from src.agents.interview.common.question_generator import QuestionGenerator
+from src.agents.interview.common.workflow_utils import (
     handle_node_errors,
     check_skip_condition,
     log_node_execution,
     get_progress_update,
     create_error_state
 )
-from ..common.state_utils import (
+from src.agents.interview.common.state_utils import (
     get_questions_needing_answers,
     count_completed_answers,
     normalize_question_metadata
 )
-from ..generators.base_generator import BaseAnswerGenerator
-from ..generators.generic_generator import GenericAnswerGenerator
-from ..generators.dsa_generator import DSAAnswerGenerator
-from ..generators.tech_generator import TechAnswerGenerator
-from ..generators.system_design_generator import SystemDesignAnswerGenerator
-from ..types import AnswerAgentType
-from ..session.session_manager import InterviewSessionManager
-from ...core.config import config
+from src.agents.interview.generators.base_generator import BaseAnswerGenerator
+from src.agents.interview.generators.generic_generator import GenericAnswerGenerator
+from src.agents.interview.generators.dsa_generator import DSAAnswerGenerator
+from src.agents.interview.generators.tech_generator import TechAnswerGenerator
+from src.agents.interview.generators.system_design_generator import SystemDesignAnswerGenerator
+from src.agents.interview.types import AnswerAgentType
+from src.agents.interview.session.session_manager import InterviewSessionManager
+from src.core.config import config
 
 logger = logging.getLogger(__name__)
 

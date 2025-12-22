@@ -1,5 +1,5 @@
 """Session management for interview agents."""
 
-from .session_manager import InterviewSessionManager
+from src.agents.interview.session.session_manager import InterviewSessionManager
 
 __all__ = ["InterviewSessionManager"]

@@ -30,12 +30,11 @@ The Boring Agents is a FastAPI-based service that provides AI-powered content ge
     python3 -m venv .venv
     source .venv/bin/activate
 
-    # Install dependencies
-    pip install -r requirements.txt
-
-    # If you see "ModuleNotFoundError: pydantic_settings"
-    pip install pydantic-settings
+    # Install the package in editable mode (recommended)
+    pip install -e .
     ```
+
+    > **Note:** The project uses `pyproject.toml` for package management. Installing with `-e .` installs all dependencies and makes the `src` package available for absolute imports.
 
 2. **Configure environment**:
 

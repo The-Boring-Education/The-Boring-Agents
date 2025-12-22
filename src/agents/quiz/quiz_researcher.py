@@ -5,9 +5,9 @@ from typing import Dict, List, Any
 from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 
-from ...core.base_agent import BaseAgent
-from ...core.config import config
-from .types import QuizTopic, QuizDifficulty
+from src.core.base_agent import BaseAgent
+from src.core.config import config
+from src.agents.quiz.types import QuizTopic, QuizDifficulty
 
 console = Console()
 

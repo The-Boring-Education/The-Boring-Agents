@@ -1,9 +1,9 @@
 """Agents module for The Boring Agents."""
 
-from .content_agent import ContentAgent
-from .interview import AnswerAgentType, InterviewWorkflowOrchestrator
-from .project import ProjectAgent
-from .shiksha import (
+from src.agents.content_agent import ContentAgent
+from src.agents.interview import AnswerAgentType, InterviewWorkflowOrchestrator
+from src.agents.project import ProjectAgent
+from src.agents.shiksha import (
     ShikshaCourseAgent,
     CoursePlannerAgent,
     ContentCreatorAgent,

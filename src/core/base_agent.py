@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import BaseOutputParser
 
-from .config import config
+from src.core.config import config
 
 class BaseAgent(ABC):
     """Abstract base class for all content generation agents."""

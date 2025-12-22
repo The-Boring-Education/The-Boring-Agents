@@ -11,8 +11,8 @@ from fastapi import APIRouter, BackgroundTasks, Request, HTTPException
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-from ..controllers.interview_prep_controller import InterviewPrepController
-from ..models.interview_prep_models import (
+from src.api.controllers.interview_prep_controller import InterviewPrepController
+from src.api.models.interview_prep_models import (
     CreateSheetRequest,
     GenerateInterviewSheetRequest,
     TopicGenerationRequest,
@@ -22,7 +22,7 @@ from ..models.interview_prep_models import (
     TopicTemplate,
     RoadmapSuggestion,
 )
-from ...core.env import get_env_manager
+from src.core.env import get_env_manager
 
 logger = logging.getLogger(__name__)
 env_manager = get_env_manager()

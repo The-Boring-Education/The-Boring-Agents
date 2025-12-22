@@ -8,10 +8,10 @@ All operations are logged comprehensively for monitoring and debugging.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import quiz_router, interview_prep_router, session_router
-from .middleware import RequestLoggingMiddleware
-from .logging_config import setup_api_logging
-from ..core.env import get_env_manager
+from src.api.routes import quiz_router, interview_prep_router, session_router
+from src.api.middleware import RequestLoggingMiddleware
+from src.api.logging_config import setup_api_logging
+from src.core.env import get_env_manager
 
 
 def create_app() -> FastAPI:

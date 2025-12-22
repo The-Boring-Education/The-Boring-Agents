@@ -1,8 +1,8 @@
 """Core module initialization."""
 
-from .config import Config, config, get_config
-from .base_agent import BaseAgent
-from .env import (
+from src.core.config import Config, config, get_config
+from src.core.base_agent import BaseAgent
+from src.core.env import (
     EnvironmentManager,
     get_env_manager,
     get_env,

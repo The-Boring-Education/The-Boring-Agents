@@ -9,8 +9,8 @@ import json
 import logging
 from fastapi import APIRouter, Request
 
-from ..controllers.quiz_controller import QuizController
-from ..models.quiz_models import (
+from src.api.controllers.quiz_controller import QuizController
+from src.api.models.quiz_models import (
     GenerateQuizRequest,
     GenerateQuizAPIResponse,
     ValidateQuizRequest,
@@ -18,7 +18,7 @@ from ..models.quiz_models import (
     SimpleStatus,
     QuizTopicsResponse,
 )
-from ...core.env import get_env_manager
+from src.core.env import get_env_manager
 
 logger = logging.getLogger(__name__)
 env_manager = get_env_manager()

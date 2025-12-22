@@ -6,10 +6,10 @@ import os
 from datetime import datetime, timedelta
 import uuid
 
-from ...core.base_agent import BaseAgent
-from .project_idea_agent import ProjectIdeaAgent
-from .project_planner_agent import ProjectPlannerAgent
-from .project_content_agent import ProjectContentAgent
+from src.core.base_agent import BaseAgent
+from src.agents.project.project_idea_agent import ProjectIdeaAgent
+from src.agents.project.project_planner_agent import ProjectPlannerAgent
+from src.agents.project.project_content_agent import ProjectContentAgent
 
 
 class ProjectOrchestratorAgent(BaseAgent):

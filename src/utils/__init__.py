@@ -1,6 +1,6 @@
 """Utilities module initialization."""
 
-from .helpers import (
+from src.utils.helpers import (
     setup_logging,
     load_json_file,
     save_json_file,
@@ -12,7 +12,7 @@ from .helpers import (
     validate_content_structure,
     format_duration
 )
-from .validation import InterviewQuestionValidator
+from src.utils.validation import InterviewQuestionValidator
 
 __all__ = [
     "setup_logging",

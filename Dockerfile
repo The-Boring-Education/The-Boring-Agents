@@ -15,14 +15,14 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy project files
+COPY pyproject.toml .
 COPY requirements.txt .
+COPY src/ ./src/
+COPY run.py .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
+# Install the package in editable mode
+RUN pip install --no-cache-dir -e .
 
 # Create necessary directories
 RUN mkdir -p output temp logs

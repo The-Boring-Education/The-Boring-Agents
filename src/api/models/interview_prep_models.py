@@ -5,7 +5,7 @@ Interview preparation API request/response models.
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
-from ...agents.interview.types import AnswerAgentType
+from src.agents.interview.types import AnswerAgentType
 
 
 class CreateSheetRequest(BaseModel):

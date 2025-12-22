@@ -10,7 +10,7 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from .env import get_env_manager, validate_api_keys as env_validate_api_keys
+from src.core.env import get_env_manager, validate_api_keys as env_validate_api_keys
 
 
 class Config(BaseSettings):

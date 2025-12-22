@@ -3,8 +3,8 @@
 from typing import Dict, Any, List, Optional
 from langchain_core.prompts import PromptTemplate
 
-from ...core.base_agent import BaseAgent
-from .schema_utils import (
+from src.core.base_agent import BaseAgent
+from src.agents.interview.common.schema_utils import (
     INTERVIEW_QUESTION_FREQUENCY,
     PRIORITY_LEVELS,
     COMPANY_TYPES,

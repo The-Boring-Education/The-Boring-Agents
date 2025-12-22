@@ -2,8 +2,8 @@
 
 from langgraph.graph import StateGraph, END
 
-from .state import InterviewWorkflowState
-from .nodes import (
+from src.agents.interview.workflow.state import InterviewWorkflowState
+from src.agents.interview.workflow.nodes import (
     generate_metadata_node,
     generate_questions_node,
     generate_answers_node,

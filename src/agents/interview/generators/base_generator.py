@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 from langchain_core.prompts import PromptTemplate
 
-from ...core.base_agent import BaseAgent
-from ..common.mdx_utils import format_answer_as_mdx
+from src.core.base_agent import BaseAgent
+from src.agents.interview.common.mdx_utils import format_answer_as_mdx
 
 
 class BaseAnswerGenerator(BaseAgent, ABC):

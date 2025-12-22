@@ -10,14 +10,14 @@ import os
 from typing import Optional, List, Dict, Any
 from fastapi import HTTPException
 
-from ...agents.quiz.quiz_orchestrator import QuizOrchestrator
-from ...agents.quiz.quiz_uploader import QuizUploader
-from ...agents.quiz.types import QuizTopic
-from ...utils.helpers import generate_filename, load_json_file
-from ...utils.session_logger import read_logs
-from ...core.config import config
-from ...core.env import get_env_manager
-from ..models.quiz_models import (
+from src.agents.quiz.quiz_orchestrator import QuizOrchestrator
+from src.agents.quiz.quiz_uploader import QuizUploader
+from src.agents.quiz.types import QuizTopic
+from src.utils.helpers import generate_filename, load_json_file
+from src.utils.session_logger import read_logs
+from src.core.config import config
+from src.core.env import get_env_manager
+from src.api.models.quiz_models import (
     GenerateQuizRequest,
     GenerateQuizAPIResponse,
     ValidateQuizRequest,

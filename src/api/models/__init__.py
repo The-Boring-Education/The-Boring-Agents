@@ -2,7 +2,7 @@
 API models for request/response schemas.
 """
 
-from .quiz_models import (
+from src.api.models.quiz_models import (
     GenerateQuizRequest,
     GenerateQuizAPIResponse,
     ValidateQuizRequest,
@@ -11,7 +11,7 @@ from .quiz_models import (
     QuizTopicsResponse,
 )
 
-from .interview_prep_models import (
+from src.api.models.interview_prep_models import (
     GenerateInterviewSheetRequest,
     TopicGenerationRequest,
     BulkTopicRequest,

@@ -1,6 +1,6 @@
 """Workflow utility functions for node execution."""
 
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable, Optional, Tuple, List
 import logging
 from functools import wraps
 
@@ -118,3 +118,40 @@ def create_error_state(
         "error": error_message,
         "current_step": f"Failed: {error_message}"
     }
+
+
+def update_state_safely(
+    state: Dict[str, Any],
+    updates: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Safely update state without modifying the original.
+    
+    Args:
+        state: Current state dictionary
+        updates: Dictionary of updates to apply
+        
+    Returns:
+        New state dictionary with updates applied
+    """
+    # Create a copy of the state to avoid mutating the original
+    new_state = state.copy()
+    new_state.update(updates)
+    return new_state
+
+
+def validate_state_fields(
+    state: Dict[str, Any],
+    required_fields: List[str]
+) -> Tuple[bool, List[str]]:
+    """Validate that state contains all required fields.
+    
+    Args:
+        state: State dictionary to validate
+        required_fields: List of required field names
+        
+    Returns:
+        Tuple of (is_valid, missing_fields)
+    """
+    missing = [field for field in required_fields if field not in state or state[field] is None]
+    is_valid = len(missing) == 0
+    return (is_valid, missing)

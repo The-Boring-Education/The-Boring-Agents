@@ -3,8 +3,8 @@
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
-from ....core.session.base_session_manager import BaseSessionManager
-from ....core.session.session_types import SessionStatus, ProgressInfo
+from src.core.session.base_session_manager import BaseSessionManager
+from src.core.session.session_types import SessionStatus, ProgressInfo
 
 
 class InterviewSessionManager(BaseSessionManager):

@@ -1,7 +1,7 @@
 """State utility functions for workflow state management."""
 
 from typing import Dict, Any, List
-from ..workflow.state import InterviewWorkflowState
+from src.agents.interview.workflow.state import InterviewWorkflowState
 
 
 def create_initial_state(
@@ -101,6 +101,34 @@ def determine_resume_status(state: InterviewWorkflowState) -> str:
         return "questions_generating"
     else:
         return "metadata_generating"
+
+
+# Valid state transitions for the workflow
+VALID_TRANSITIONS = {
+    "pending": ["pending", "metadata_generating", "failed"],
+    "metadata_generating": ["metadata_generating", "questions_generating", "failed"],
+    "questions_generating": ["questions_generating", "answers_generating", "failed"],
+    "answers_generating": ["answers_generating", "finalizing", "failed"],
+    "finalizing": ["finalizing", "completed", "failed"],
+    "completed": ["completed"],
+    "failed": ["failed"],
+}
+
+
+def validate_state_transition(from_status: str, to_status: str) -> bool:
+    """Validate if a state transition is allowed.
+    
+    Args:
+        from_status: Current status
+        to_status: Target status
+        
+    Returns:
+        True if transition is valid, False otherwise
+    """
+    if from_status not in VALID_TRANSITIONS:
+        return False
+    
+    return to_status in VALID_TRANSITIONS[from_status]
 
 
 def get_questions_needing_answers(questions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

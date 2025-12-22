@@ -6,7 +6,7 @@ import json
 import os
 from datetime import datetime, timedelta
 
-from ...core.base_agent import BaseAgent
+from src.core.base_agent import BaseAgent
 
 
 class ShikshaCourseAgent(BaseAgent):

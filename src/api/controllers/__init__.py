@@ -2,9 +2,9 @@
 API controllers for business logic.
 """
 
-from .quiz_controller import QuizController
-from .interview_prep_controller import InterviewPrepController
-from .session_controller import SessionController
+from src.api.controllers.quiz_controller import QuizController
+from src.api.controllers.interview_prep_controller import InterviewPrepController
+from src.api.controllers.session_controller import SessionController
 
 __all__ = [
     "QuizController",

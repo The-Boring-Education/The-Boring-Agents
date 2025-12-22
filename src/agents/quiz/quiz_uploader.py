@@ -8,10 +8,10 @@ from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 from rich.table import Table
 
-from ...core.base_agent import BaseAgent
-from ...core.config import config
-from ...utils.helpers import load_json_file
-from .types import QuizModel, QuizQuestionModel, QuizDifficulty
+from src.core.base_agent import BaseAgent
+from src.core.config import config
+from src.utils.helpers import load_json_file
+from src.agents.quiz.types import QuizModel, QuizQuestionModel, QuizDifficulty
 
 console = Console()
 

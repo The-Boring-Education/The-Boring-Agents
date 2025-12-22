@@ -9,14 +9,14 @@ from langchain_core.prompts import PromptTemplate
 from rich.console import Console
 from rich.progress import Progress, TaskID
 
-from ...core.base_agent import BaseAgent
-from ...core.config import config
-from ...utils.helpers import generate_filename, save_json_file, load_json_file
-from ...utils.session_logger import append_log
-from .quiz_researcher import QuizResearcher
-from .quiz_question_creator import QuizQuestionCreator
-from .quiz_uploader import QuizUploader
-from .types import QuizTopic, QuizDifficulty, QuizModel, QuizQuestionModel
+from src.core.base_agent import BaseAgent
+from src.core.config import config
+from src.utils.helpers import generate_filename, save_json_file, load_json_file
+from src.utils.session_logger import append_log
+from src.agents.quiz.quiz_researcher import QuizResearcher
+from src.agents.quiz.quiz_question_creator import QuizQuestionCreator
+from src.agents.quiz.quiz_uploader import QuizUploader
+from src.agents.quiz.types import QuizTopic, QuizDifficulty, QuizModel, QuizQuestionModel
 
 console = Console()
 

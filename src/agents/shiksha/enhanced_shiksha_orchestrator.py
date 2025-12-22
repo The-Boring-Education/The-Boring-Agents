@@ -6,13 +6,13 @@ import os
 from datetime import datetime, timedelta
 import uuid
 
-from ...core.base_agent import BaseAgent
-from .research_agent import ResearchAgent
-from .instructor_agent import InstructorAgent
-from .exercise_creator_agent import ExerciseCreatorAgent
-from .course_planner_agent import CoursePlannerAgent
-from .content_creator_agent import ContentCreatorAgent
-from .quality_assurance_agent import QualityAssuranceAgent
+from src.core.base_agent import BaseAgent
+from src.agents.shiksha.research_agent import ResearchAgent
+from src.agents.shiksha.instructor_agent import InstructorAgent
+from src.agents.shiksha.exercise_creator_agent import ExerciseCreatorAgent
+from src.agents.shiksha.course_planner_agent import CoursePlannerAgent
+from src.agents.shiksha.content_creator_agent import ContentCreatorAgent
+from src.agents.shiksha.quality_assurance_agent import QualityAssuranceAgent
 
 
 class EnhancedShikshaOrchestrator(BaseAgent):

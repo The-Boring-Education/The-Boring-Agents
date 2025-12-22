@@ -11,8 +11,8 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
-from ...core.config import config
-from .session_types import SessionStatus, ProgressInfo, BaseSessionData
+from src.core.config import config
+from src.core.session.session_types import SessionStatus, ProgressInfo, BaseSessionData
 
 
 class BaseSessionManager(ABC):

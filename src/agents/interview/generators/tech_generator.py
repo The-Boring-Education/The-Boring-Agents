@@ -3,7 +3,7 @@
 from typing import Dict, Optional, List
 from langchain_core.prompts import PromptTemplate
 
-from .base_generator import BaseAnswerGenerator
+from src.agents.interview.generators.base_generator import BaseAnswerGenerator
 
 
 class TechAnswerGenerator(BaseAnswerGenerator):

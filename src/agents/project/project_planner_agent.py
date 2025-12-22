@@ -5,7 +5,7 @@ from langchain_core.prompts import PromptTemplate
 import json
 import uuid
 
-from ...core.base_agent import BaseAgent
+from src.core.base_agent import BaseAgent
 
 
 class ProjectPlannerAgent(BaseAgent):

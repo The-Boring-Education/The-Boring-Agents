@@ -10,8 +10,8 @@ import logging
 from typing import Optional
 from fastapi import APIRouter, Query, Request
 
-from ..controllers.session_controller import SessionController
-from ...core.env import get_env_manager
+from src.api.controllers.session_controller import SessionController
+from src.core.env import get_env_manager
 
 logger = logging.getLogger(__name__)
 env_manager = get_env_manager()
