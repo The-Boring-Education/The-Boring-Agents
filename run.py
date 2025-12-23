@@ -22,7 +22,7 @@ def main():
     env_manager = get_env_manager()
     
     host = env_manager.get("AGENTS_API_HOST", "0.0.0.0")
-    port = env_manager.get_int("AGENTS_API_PORT", 8088)
+    port = env_manager.get_int("AGENTS_API_PORT", 8000)
     reload = env_manager.get_bool("RELOAD", True)
     
     logger.info(f"Starting The Boring Agents API server on {host}:{port}")
