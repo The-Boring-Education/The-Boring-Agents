@@ -12,6 +12,7 @@ class InterviewWorkflowState(TypedDict):
     description: str
     agent_type: str
     roadmap: str
+    question_count: int  # Number of questions to generate
     
     # Status tracking
     status: str  # pending, metadata_generating, questions_generating, answers_generating, completed, failed

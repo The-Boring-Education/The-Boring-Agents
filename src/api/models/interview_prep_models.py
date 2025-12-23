@@ -17,6 +17,7 @@ class CreateSheetRequest(BaseModel):
     agent_type: AnswerAgentType = Field(default=AnswerAgentType.GENERIC, alias="agentType")
     roadmap: str = Field(default="Tech", description="Roadmap type: Frontend, Backend, Fullstack, Tech")
     technology: Optional[str] = Field(default=None, description="Technology name for tech agent type")
+    question_count: int = Field(default=20, ge=1, le=100, alias="questionCount")
     
     @field_validator("agent_type", mode="before")
     @classmethod

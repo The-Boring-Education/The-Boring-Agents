@@ -63,7 +63,8 @@ class InterviewPrepController:
                 description=payload.description,
                 agent_type=payload.agent_type.value,
                 roadmap=payload.roadmap,
-                technology=payload.technology
+                technology=payload.technology,
+                question_count=payload.question_count
             )
             
             # Execute workflow in background
@@ -355,13 +356,13 @@ class InterviewPrepController:
                         description=description,
                         agent_type=topic_request.agent_type.value,
                         roadmap=topic_request.roadmap,
-                        technology=topic_request.technology
+                        technology=topic_request.technology,
+                        question_count=topic_request.question_count
                     )
                     
                     # Store additional metadata in session
                     session_data = self.orchestrator.session_manager.get_session(session_id)
                     if session_data:
-                        session_data["question_count"] = topic_request.question_count
                         session_data["difficulty"] = topic_request.difficulty
                         session_data["generate_answers"] = payload.generate_answers
                         session_data["auto_publish"] = payload.auto_publish

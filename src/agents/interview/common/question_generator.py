@@ -76,7 +76,7 @@ Questions:
         name: str,
         description: str,
         agent_type: str,
-        question_count: int = 20,
+        question_count:int = 20,
         roadmap: str = "Tech"
     ) -> List[str]:
         """Generate questions for an interview sheet.

@@ -32,7 +32,8 @@ class InterviewWorkflowOrchestrator:
         description: str,
         agent_type: str,
         roadmap: str = "Tech",
-        technology: Optional[str] = None
+        technology: Optional[str] = None,
+        question_count: int = 20
     ) -> str:
         """Start a new sheet generation workflow.
         
@@ -42,6 +43,7 @@ class InterviewWorkflowOrchestrator:
             agent_type: Agent type (generic, dsa, tech, system_design)
             roadmap: Roadmap type (Frontend, Backend, Fullstack, Tech)
             technology: Optional technology name for tech agent
+            question_count: Number of questions to generate (default: 20)
             
         Returns:
             Session ID
@@ -57,7 +59,8 @@ class InterviewWorkflowOrchestrator:
             name=name,
             description=description,
             agent_type=agent_type.lower(),
-            roadmap=roadmap
+            roadmap=roadmap,
+            question_count=question_count
         )
         
         # Initialize workflow state using utility
@@ -66,7 +69,8 @@ class InterviewWorkflowOrchestrator:
             name=name,
             description=description,
             agent_type=agent_type.lower(),
-            roadmap=roadmap
+            roadmap=roadmap,
+            question_count=question_count
         )
         
         # Store technology in session if provided
