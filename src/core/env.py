@@ -55,7 +55,7 @@ class EnvironmentManager:
         
         # Server Configuration
         "AGENTS_API_HOST": "0.0.0.0",
-        "AGENTS_API_PORT": 8088,
+        "AGENTS_API_PORT": 8000,
         "RELOAD": "1",
     }
     

@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir -e .
 RUN mkdir -p output temp logs
 
 # Expose the API port
-EXPOSE 8088
+EXPOSE 8000
 
 # Default command (can be overridden)
 CMD ["python", "run.py"]

@@ -12,61 +12,61 @@ The Boring Agents is a FastAPI-based service that provides AI-powered content ge
 
 1. **Python 3.9+** installed (recommended to use a virtualenv)
 2. **API Keys** configured in `.env` file:
-    ```bash
-    OPENAI_API_KEY=your_openai_key
-    ANTHROPIC_API_KEY=your_anthropic_key
-    HUGGINGFACE_API_KEY=your_huggingface_key
-    ```
+   ```bash
+   OPENAI_API_KEY=your_openai_key
+   ANTHROPIC_API_KEY=your_anthropic_key
+   HUGGINGFACE_API_KEY=your_huggingface_key
+   ```
 
 ### Installation
 
 1. **Clone and setup**:
 
-    ```bash
-    git clone <repository-url>
-    cd The-Boring-Agents
+   ```bash
+   git clone <repository-url>
+   cd The-Boring-Agents
 
-    # Create & activate virtualenv (macOS/Linux)
-    python3 -m venv .venv
-    source .venv/bin/activate
+   # Create & activate virtualenv (macOS/Linux)
+   python3 -m venv .venv
+   source .venv/bin/activate
 
-    # Install the package in editable mode (recommended)
-    pip install -e .
-    ```
+   # Install the package in editable mode (recommended)
+   pip install -e .
+   ```
 
-    > **Note:** The project uses `pyproject.toml` for package management. Installing with `-e .` installs all dependencies and makes the `src` package available for absolute imports.
+   > **Note:** The project uses `pyproject.toml` for package management. Installing with `-e .` installs all dependencies and makes the `src` package available for absolute imports.
 
 2. **Configure environment**:
 
-    Create a `.env` file in the repo root (at least one provider key is required):
+   Create a `.env` file in the repo root (at least one provider key is required):
 
-    ```bash
-    cat > .env <<'EOF'
-    # AI Provider Keys (provide at least one)
-    OPENAI_API_KEY=your_openai_key
-    ANTHROPIC_API_KEY=your_anthropic_key
-    HUGGINGFACE_API_KEY=your_huggingface_key
+   ```bash
+   cat > .env <<'EOF'
+   # AI Provider Keys (provide at least one)
+   OPENAI_API_KEY=your_openai_key
+   ANTHROPIC_API_KEY=your_anthropic_key
+   HUGGINGFACE_API_KEY=your_huggingface_key
 
-    # App behavior
-    ENVIRONMENT=dev
-    DEFAULT_MODEL=gpt-4o-mini
-    MAX_TOKENS=4000
-    TEMPERATURE=0.8
-    OUTPUT_DIR=./output
-    TEMP_DIR=./temp
-    LOG_DIR=./logs
+   # App behavior
+   ENVIRONMENT=dev
+   DEFAULT_MODEL=gpt-4o-mini
+   MAX_TOKENS=4000
+   TEMPERATURE=0.8
+   OUTPUT_DIR=./output
+   TEMP_DIR=./temp
+   LOG_DIR=./logs
 
-    # Local Agents API server controls
-    AGENTS_API_HOST=0.0.0.0
-    AGENTS_API_PORT=8088
-    RELOAD=1
+   # Local Agents API server controls
+   AGENTS_API_HOST=0.0.0.0
+   AGENTS_API_PORT=8000
+   RELOAD=1
 
-    # Backend URLs used for uploads (optional)
-    LOCAL_API_BASE_URL=http://localhost:3000
-    DEV_API_BASE_URL=https://tbe-dev-git-development-tbe.vercel.app
-    PROD_API_BASE_URL=https://www.theboringeducation.com
-    EOF
-    ```
+   # Backend URLs used for uploads (optional)
+   LOCAL_API_BASE_URL=http://localhost:3000
+   DEV_API_BASE_URL=https://tbe-dev-git-development-tbe.vercel.app
+   PROD_API_BASE_URL=https://www.theboringeducation.com
+   EOF
+   ```
 
 ### Start the Agents API (FastAPI)
 
@@ -77,10 +77,10 @@ export OPENAI_API_KEY=...  # set at least one provider key, or use .env
 
 # Optional: override host/port
 export AGENTS_API_HOST=0.0.0.0
-export AGENTS_API_PORT=8088
+export AGENTS_API_PORT=8000
 
-python run.py  # FastAPI on http://localhost:8088
-# Swagger UI: http://localhost:8088/docs
+python run.py  # FastAPI on http://localhost:8000
+# Swagger UI: http://localhost:8000/docs
 ```
 
 ### Start the Agents API with Docker
@@ -99,8 +99,8 @@ docker-compose down
 docker-compose up -d --build
 
 # Access the API
-curl http://localhost:8088/health
-curl http://localhost:8088/api/v1/ping
+curl http://localhost:8000/health
+curl http://localhost:8000/api/v1/ping
 ```
 
 **Note**: Make sure to set your API keys in the `.env` file or in `docker-compose.yml` environment variables before starting the container.
@@ -143,7 +143,7 @@ The-Boring-Agents/
 
 ### Base URL
 
-- **Local**: `http://localhost:8088`
+- **Local**: `http://localhost:8000`
 - **Development**: Configure via `DEV_API_BASE_URL`
 - **Production**: Configure via `PROD_API_BASE_URL`
 
@@ -193,7 +193,7 @@ The-Boring-Agents/
 #### Generate a Quiz
 
 ```bash
-curl -X POST http://localhost:8088/api/v1/quiz/generate \
+curl -X POST http://localhost:8000/api/v1/quiz/generate \
   -H 'Content-Type: application/json' \
   -d '{
     "topic": "React",
@@ -207,7 +207,7 @@ curl -X POST http://localhost:8088/api/v1/quiz/generate \
 #### Generate Interview Questions
 
 ```bash
-curl -X POST http://localhost:8088/api/v1/interview/generate-topic \
+curl -X POST http://localhost:8000/api/v1/interview/generate-topic \
   -H 'Content-Type: application/json' \
   -d '{
     "topic": "Python",
@@ -223,13 +223,13 @@ curl -X POST http://localhost:8088/api/v1/interview/generate-topic \
 #### Check Session Progress
 
 ```bash
-curl http://localhost:8088/api/v1/quiz/progress/{session_id}
+curl http://localhost:8000/api/v1/quiz/progress/{session_id}
 ```
 
 #### Get Session Logs
 
 ```bash
-curl http://localhost:8088/api/v1/sessions/logs/{session_id}?limit=100
+curl http://localhost:8000/api/v1/sessions/logs/{session_id}?limit=100
 ```
 
 ## Logging
@@ -268,6 +268,7 @@ All logs follow a structured JSON format:
 ### Request Tracking
 
 Every API request receives a unique `request_id` that is:
+
 - Included in all logs related to that request
 - Returned in response headers as `X-Request-ID`
 - Used for tracing requests through the system
@@ -312,7 +313,7 @@ See `src/core/README.md` for detailed environment variable documentation.
 - `ENVIRONMENT` - Environment: `local`, `dev`, or `prod`
 - `LOG_LEVEL` - Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR`
 - `AGENTS_API_HOST` - API server host (default: `0.0.0.0`)
-- `AGENTS_API_PORT` - API server port (default: `8088`)
+- `AGENTS_API_PORT` - API server port (default: `8000`)
 - `RELOAD` - Enable auto-reload for development (default: `1`)
 
 ## Configuration
@@ -352,24 +353,24 @@ python3 run.py
 
 ### API Documentation
 
-- **Swagger UI**: `http://localhost:8088/docs`
-- **ReDoc**: `http://localhost:8088/redoc`
-- **OpenAPI JSON**: `http://localhost:8088/openapi.json`
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **OpenAPI JSON**: `http://localhost:8000/openapi.json`
 
 ### Testing API Endpoints
 
 ```bash
 # Health check
-curl http://localhost:8088/health
+curl http://localhost:8000/health
 
 # Ping
-curl http://localhost:8088/api/v1/ping
+curl http://localhost:8000/api/v1/ping
 
 # Get available quiz topics
-curl http://localhost:8088/api/v1/quiz/topics
+curl http://localhost:8000/api/v1/quiz/topics
 
 # List active sessions
-curl http://localhost:8088/api/v1/sessions/active
+curl http://localhost:8000/api/v1/sessions/active
 ```
 
 ## Docker Deployment
@@ -382,7 +383,7 @@ docker build -t the-boring-agents .
 
 # Run container
 docker run -d \
-  -p 8088:8088 \
+  -p 8000:8000 \
   -v $(pwd)/output:/app/output \
   -v $(pwd)/logs:/app/logs \
   -e OPENAI_API_KEY=your_key \
@@ -412,15 +413,16 @@ The API provides health check endpoints for monitoring:
 
 ```bash
 # Basic health check
-curl http://localhost:8088/health
+curl http://localhost:8000/health
 
 # Service ping with version
-curl http://localhost:8088/api/v1/ping
+curl http://localhost:8000/api/v1/ping
 ```
 
 ### Log Monitoring
 
 Monitor logs for:
+
 - Request/response patterns
 - Error rates
 - Performance metrics (duration_ms)
@@ -433,7 +435,7 @@ Use the `X-Request-ID` header to track requests:
 
 ```bash
 # Make request and capture request ID
-curl -i -X POST http://localhost:8088/api/v1/quiz/generate \
+curl -i -X POST http://localhost:8000/api/v1/quiz/generate \
   -H 'Content-Type: application/json' \
   -d '{"topic": "React", "question_count": 10}'
 
@@ -447,7 +449,7 @@ cat logs/api.log | jq 'select(.request_id == "request-id-from-header")'
 
 1. Check environment variables are set
 2. Verify API keys are configured
-3. Check port 8088 is available
+3. Check port 8000 is available
 4. Review logs for errors
 
 ### No Logs Appearing
@@ -480,7 +482,7 @@ All operations are called via REST APIs from the Admin UI. No CLI interface is a
 
 For issues or questions:
 
-1. Check the API health: `curl http://localhost:8088/health`
+1. Check the API health: `curl http://localhost:8000/health`
 2. Review logs: `tail -f logs/api.log`
 3. Check environment configuration: Review `.env` file
 4. Verify API keys are configured correctly

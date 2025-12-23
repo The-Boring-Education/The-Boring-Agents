@@ -24,7 +24,7 @@ from src.core.env import get_env, get_env_int, get_env_bool
 log_level = get_env("LOG_LEVEL", "INFO")
 
 # Get integer value
-port = get_env_int("AGENTS_API_PORT", 8088)
+port = get_env_int("AGENTS_API_PORT", 8000)
 
 # Get boolean value
 reload = get_env_bool("RELOAD", True)
@@ -38,7 +38,7 @@ from src.core.env import get_env_manager
 env_manager = get_env_manager()
 
 # Get values with type conversion
-port = env_manager.get_int("AGENTS_API_PORT", 8088)
+port = env_manager.get_int("AGENTS_API_PORT", 8000)
 debug = env_manager.get_bool("DEBUG", False)
 
 # Validate API keys
@@ -73,30 +73,35 @@ The environment manager loads variables in the following order (later files over
 ### Available Environment Variables
 
 #### API Keys (At least one required)
+
 - `OPENAI_API_KEY`
 - `ANTHROPIC_API_KEY`
 - `HUGGINGFACE_API_KEY`
 
 #### Application Settings
+
 - `LOG_LEVEL` (default: "INFO")
 - `OUTPUT_DIR` (default: "./output")
 - `TEMP_DIR` (default: "./temp")
 - `ENVIRONMENT` (default: "dev") - Options: "local", "dev", "prod"
 
 #### Content Generation Settings
+
 - `DEFAULT_MODEL` (default: "gpt-4o-mini")
 - `MAX_TOKENS` (default: 4000)
 - `TEMPERATURE` (default: 0.8)
 - `MAX_CONTEXT_LENGTH` (default: 16000)
 
 #### API Configuration
+
 - `LOCAL_API_BASE_URL` (default: "http://localhost:3000")
 - `DEV_API_BASE_URL` (default: "https://tbe-dev-git-development-tbe.vercel.app")
 - `PROD_API_BASE_URL` (default: "https://www.theboringeducation.com")
 
 #### Server Configuration
+
 - `AGENTS_API_HOST` (default: "0.0.0.0")
-- `AGENTS_API_PORT` (default: 8088)
+- `AGENTS_API_PORT` (default: 8000)
 - `RELOAD` (default: "1") - Enable auto-reload for development
 
 ### Logging
@@ -142,22 +147,25 @@ if not env_manager.validate_required():
 If you're updating existing code:
 
 **Before:**
+
 ```python
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-port = int(os.getenv("PORT", "8088"))
+port = int(os.getenv("PORT", "8000"))
 ```
 
 **After:**
+
 ```python
 from src.core.env import get_env_int
 
-port = get_env_int("AGENTS_API_PORT", 8088)
+port = get_env_int("AGENTS_API_PORT", 8000)
 ```
 
 **Before:**
+
 ```python
 from src.core.config import config
 
@@ -166,6 +174,7 @@ if not config.validate_api_keys():
 ```
 
 **After:**
+
 ```python
 from src.core.env import validate_api_keys
 
@@ -174,4 +183,3 @@ if not validate_api_keys():
 ```
 
 The `config` object still works for backward compatibility, but using the env module directly provides better logging and control.
-
