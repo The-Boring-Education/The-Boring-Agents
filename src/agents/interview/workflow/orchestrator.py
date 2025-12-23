@@ -168,7 +168,7 @@ class InterviewWorkflowOrchestrator:
         self.session_manager.save_session(session_id, session_data)
     
     def get_session_status(self, session_id: str) -> Dict[str, Any]:
-        """Get current session status.
+        """Get current session status with auto-fix for missing question_count.
         
         Args:
             session_id: Session ID
@@ -180,6 +180,16 @@ class InterviewWorkflowOrchestrator:
         if not session_data:
             raise ValueError(f"Session {session_id} not found")
         
+        # get_session already auto-fixes, but ensure question_count is definitely set
+        question_count = session_data.get("question_count")
+        if not question_count or question_count is None:
+            questions = session_data.get("questions", [])
+            progress = session_data.get("progress", {})
+            question_count = progress.get("total") or len(questions) or 20
+            session_data["question_count"] = question_count
+            self.session_manager.save_session(session_id, session_data)
+        
+        # Ensure question_count is always in response (never None/undefined)
         return {
             "session_id": session_id,
             "name": session_data.get("name"),
@@ -187,7 +197,12 @@ class InterviewWorkflowOrchestrator:
             "progress": session_data.get("progress", {}),
             "output_file": session_data.get("output_file"),
             "created_at": session_data.get("created_at"),
-            "updated_at": session_data.get("updated_at")
+            "updated_at": session_data.get("updated_at"),
+            "question_count": question_count,  # Always include, never None
+            "questions": session_data.get("questions", []),  # Include questions for validation
+            "agent_type": session_data.get("agent_type"),
+            "roadmap": session_data.get("roadmap"),
+            "description": session_data.get("description")
         }
     
     def resume_session(self, session_id: str) -> Dict[str, Any]:

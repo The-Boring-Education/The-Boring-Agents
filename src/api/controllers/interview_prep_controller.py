@@ -33,6 +33,15 @@ class InterviewPrepController:
     def __init__(self):
         """Initialize the interview prep controller."""
         self.orchestrator = InterviewWorkflowOrchestrator()
+        # Force auto-fix all existing sessions on first initialization
+        try:
+            # First, trigger list_sessions which auto-fixes all sessions
+            _ = self.orchestrator.session_manager.list_sessions()
+            # Then run explicit migration
+            fixed = self.orchestrator.session_manager.fix_all_sessions_question_count()
+            logger.info(f"✅ Auto-fixed question_count for sessions on startup (explicit fix: {fixed} sessions)")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to auto-fix sessions on initialization: {e}", exc_info=True)
     
     def create_sheet_new(
         self,
@@ -88,20 +97,43 @@ class InterviewPrepController:
     
     def list_sessions(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """List all active/recent sessions."""
-        # Get sessions from orchestrator
+        # Get sessions from orchestrator (this already auto-fixes question_count)
         orchestrator_sessions = self.orchestrator.session_manager.list_sessions(status)
         
         # Convert to expected format
         formatted_sessions = []
         for session in orchestrator_sessions:
+            progress = session.get("progress", {})
+            questions = session.get("questions", [])
+            
+            # Get question_count - should already be fixed by list_sessions
+            question_count = session.get("question_count")
+            
+            # Double-check: if still missing, calculate from available data
+            if not question_count or question_count is None:
+                # Fallback to progress.total or questions array length
+                question_count = progress.get("total") or len(questions)
+            if not question_count:
+                question_count = 20  # Default fallback
+                # Update session with calculated value
+                session["question_count"] = question_count
+                try:
+                    self.orchestrator.session_manager.save_session(session["session_id"], session)
+                except Exception as e:
+                    logger.warning(f"Failed to save calculated question_count for session {session['session_id']}: {e}")
+            
+            # Ensure question_count is never None/undefined in response (GUARANTEED)
+            final_question_count = int(question_count) if question_count else 20
+            
             formatted_sessions.append({
                 "sessionId": session["session_id"],
                 "topic": session.get("name", "Unknown"),  # Map name to topic for compatibility
                 "agentType": session.get("agent_type", "generic"),
                 "roadmap": session.get("roadmap", "Tech"),
-                "questionCount": session.get("question_count", session["progress"].get("total", 0)),
+                "questionCount": final_question_count,  # camelCase for frontend (ALWAYS a number, NEVER None/undefined)
+                "question_count": final_question_count,  # snake_case for compatibility with validation (ALWAYS a number, NEVER None/undefined)
                 "status": session["status"],
-                "progress": session["progress"],
+                "progress": progress,
                 "startedAt": session["created_at"],
                 "completedAt": session.get("updated_at") if session["status"] == "completed" else None,
                 "outputFile": session.get("output_file"),
@@ -114,7 +146,20 @@ class InterviewPrepController:
     def get_session_progress(self, session_id: str) -> Dict[str, Any]:
         """Get progress for a specific session."""
         try:
-            return self.orchestrator.get_session_status(session_id)
+            session_status = self.orchestrator.get_session_status(session_id)
+            # Ensure both questionCount (camelCase) and question_count (snake_case) are present
+            question_count = session_status.get("question_count")
+            if question_count is not None:
+                # Add camelCase version for frontend compatibility
+                session_status["questionCount"] = question_count
+            elif "questionCount" not in session_status:
+                # Fallback: calculate from questions array
+                questions = session_status.get("questions", [])
+                progress = session_status.get("progress", {})
+                question_count = progress.get("total") or len(questions) or 20
+                session_status["question_count"] = question_count
+                session_status["questionCount"] = question_count
+            return session_status
         except ValueError:
             raise HTTPException(status_code=404, detail="Session not found")
     
@@ -239,6 +284,114 @@ class InterviewPrepController:
             }
         ]
         return [TopicTemplate(**t) for t in templates]
+    
+    def generate_topic(
+        self,
+        payload: TopicGenerationRequest,
+        background_tasks: BackgroundTasks
+    ) -> SessionResponse:
+        """Generate questions for a single topic.
+        
+        Args:
+            payload: Topic generation request
+            background_tasks: FastAPI background tasks
+            
+        Returns:
+            Session response
+        """
+        try:
+            # Create description from topic if not provided
+            description = f"Interview questions for {payload.topic}. Difficulty: {payload.difficulty}. Roadmap: {payload.roadmap}."
+            
+            # Start generation workflow with question_count
+            session_id = self.orchestrator.session_manager.create_session(
+                name=payload.topic,
+                description=description,
+                agent_type=payload.agent_type.value,
+                roadmap=payload.roadmap,
+                question_count=payload.question_count,
+                technology=payload.technology,
+                difficulty=payload.difficulty,
+                generate_answers=payload.generate_answers
+            )
+            
+            # Execute workflow in background
+            background_tasks.add_task(self._execute_workflow_background, session_id)
+            
+            return SessionResponse(
+                sessionId=session_id,
+                message=f"Started generating questions for topic: {payload.topic}"
+            )
+        except Exception as e:
+            logger.error(f"Error generating topic: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    def bulk_generate(
+        self,
+        payload: BulkGenerationRequest,
+        background_tasks: BackgroundTasks
+    ) -> Dict[str, Any]:
+        """Start bulk generation for multiple topics.
+        
+        Args:
+            payload: Bulk generation request
+            background_tasks: FastAPI background tasks
+            
+        Returns:
+            Dictionary with session IDs and status
+        """
+        try:
+            session_ids = []
+            errors = []
+            
+            for topic_request in payload.topics:
+                try:
+                    # Create description from topic
+                    description = f"Interview questions for {topic_request.name}. Difficulty: {topic_request.difficulty}. Roadmap: {topic_request.roadmap}."
+                    
+                    # Start generation workflow
+                    session_id = self.orchestrator.start_generation(
+                        name=topic_request.name,
+                        description=description,
+                        agent_type=topic_request.agent_type.value,
+                        roadmap=topic_request.roadmap,
+                        technology=topic_request.technology
+                    )
+                    
+                    # Store additional metadata in session
+                    session_data = self.orchestrator.session_manager.get_session(session_id)
+                    if session_data:
+                        session_data["question_count"] = topic_request.question_count
+                        session_data["difficulty"] = topic_request.difficulty
+                        session_data["generate_answers"] = payload.generate_answers
+                        session_data["auto_publish"] = payload.auto_publish
+                        self.orchestrator.session_manager.save_session(session_id, session_data)
+                    
+                    # Execute workflow in background
+                    background_tasks.add_task(self._execute_workflow_background, session_id)
+                    
+                    session_ids.append({
+                        "sessionId": session_id,
+                        "topic": topic_request.name,
+                        "status": "started"
+                    })
+                except Exception as e:
+                    logger.error(f"Error generating topic {topic_request.name}: {e}")
+                    errors.append({
+                        "topic": topic_request.name,
+                        "error": str(e)
+                    })
+            
+            return {
+                "sessions": session_ids,
+                "errors": errors,
+                "total": len(payload.topics),
+                "started": len(session_ids),
+                "failed": len(errors)
+            }
+        except Exception as e:
+            logger.error(f"Error in bulk generate: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
     
     def get_roadmap_suggestions(self) -> List[RoadmapSuggestion]:
         """Get roadmap suggestions."""
