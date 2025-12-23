@@ -99,7 +99,7 @@ def generate_questions_node(state: InterviewWorkflowState) -> Dict[str, Any]:
         name=state["name"],
         description=state["description"],
         agent_type=state["agent_type"],
-        question_count=20,  # Default, can be made configurable
+        question_count=state.get("question_count", 20),
         roadmap=state["roadmap"]
     )
     

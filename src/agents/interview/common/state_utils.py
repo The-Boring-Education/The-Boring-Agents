@@ -9,7 +9,8 @@ def create_initial_state(
     name: str,
     description: str,
     agent_type: str,
-    roadmap: str
+    roadmap: str,
+    question_count: int = 20
 ) -> InterviewWorkflowState:
     """Create initial workflow state.
     
@@ -19,6 +20,7 @@ def create_initial_state(
         description: Sheet description
         agent_type: Agent type
         roadmap: Roadmap type
+        question_count: Number of questions to generate (default: 20)
         
     Returns:
         Initial workflow state
@@ -29,6 +31,7 @@ def create_initial_state(
         "description": description,
         "agent_type": agent_type,
         "roadmap": roadmap,
+        "question_count": question_count,
         "status": "pending",
         "current_step": "Initializing...",
         "error": None,
@@ -60,6 +63,7 @@ def state_from_session(session_data: Dict[str, Any]) -> InterviewWorkflowState:
         "description": session_data.get("description", ""),
         "agent_type": session_data.get("agent_type", "generic"),
         "roadmap": session_data.get("roadmap", "Tech"),
+        "question_count": session_data.get("question_count", 20),
         "status": session_data.get("status", "pending"),
         "current_step": session_data.get("progress", {}).get("current_step", "Initializing..."),
         "error": None,
