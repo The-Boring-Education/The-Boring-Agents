@@ -60,7 +60,7 @@ def generate_metadata_node(state: InterviewWorkflowState) -> Dict[str, Any]:
     )
     
     # Update session
-    session_manager = InterviewInterviewSessionManager()
+    session_manager = InterviewSessionManager()
     session_manager.set_meta(session_id, meta)
     
     return {
@@ -319,11 +319,12 @@ def finalize_node(state: InterviewWorkflowState) -> Dict[str, Any]:
         
         # Update session
         session_manager = InterviewSessionManager()
-        session_manager.set_output_file(state["session_id"], output_file)
-        session_manager.update_session_status(
+        from src.core.session.session_types import SessionStatus
+        session_manager.set_output_file(state["session_id"], output_file, sheet_data)
+        session_manager.update_status(
             state["session_id"],
-            "completed",
-            "Sheet finalized and saved"
+            SessionStatus.COMPLETED,
+            current_step="Sheet finalized and saved"
         )
         
         return {
