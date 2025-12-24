@@ -175,7 +175,6 @@ The-Boring-Agents/
 
 - `POST /api/v1/interview/sheets` - Create interview sheet with name and description
 - `POST /api/v1/interview/topics` - Generate questions for a single topic
-- `POST /api/v1/interview/topics/bulk` - Bulk generate for multiple topics
 - `GET /api/v1/interview/sessions` - List interview sessions
 - `GET /api/v1/interview/sessions/{session_id}` - Get session progress
 - `GET /api/v1/interview/sessions/{session_id}/output` - Get session output
@@ -183,8 +182,6 @@ The-Boring-Agents/
 - `POST /api/v1/interview/sessions/{session_id}/resume` - Resume a paused session
 - `POST /api/v1/interview/sessions/{session_id}/retry` - Retry a failed session
 - `DELETE /api/v1/interview/sessions/{session_id}` - Delete a session
-- `GET /api/v1/interview/templates` - Get available topic templates
-- `GET /api/v1/interview/roadmaps` - Get roadmap suggestions
 
 #### Session Management
 

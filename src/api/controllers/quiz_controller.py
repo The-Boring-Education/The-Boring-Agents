@@ -2,28 +2,29 @@
 Quiz generation controller.
 
 Handles all business logic for quiz operations.
+Matches the Interview Prep controller pattern for consistency.
+
+NOTE: This controller references QuizWorkflowOrchestrator which you need to implement
+in src/agents/quiz/workflow/orchestrator.py using LangGraph.
 """
 
-import json
 import logging
-import os
 from typing import Optional, List, Dict, Any
-from fastapi import HTTPException
+from fastapi import HTTPException, BackgroundTasks
 
-from src.agents.quiz.quiz_orchestrator import QuizOrchestrator
-from src.agents.quiz.quiz_uploader import QuizUploader
-from src.agents.quiz.types import QuizTopic
-from src.utils.helpers import generate_filename, load_json_file
-from src.utils.session_logger import read_logs
-from src.core.config import config
+# TODO: Implement QuizWorkflowOrchestrator in src/agents/quiz/workflow/orchestrator.py
+# Uncomment the import below once implemented:
+from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
+
+from src.core.session.session_types import SessionStatus
 from src.core.env import get_env_manager
 from src.api.models.quiz_models import (
-    GenerateQuizRequest,
-    GenerateQuizAPIResponse,
-    ValidateQuizRequest,
+    CreateQuizRequest,
+    TopicGenerationRequest,
     UploadQuizRequest,
+    ValidateQuizRequest,
+    SessionResponse,
     SimpleStatus,
-    QuizTopicsResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,212 +32,372 @@ env_manager = get_env_manager()
 
 
 class QuizController:
-    """Controller for quiz generation operations."""
+    """Controller for quiz generation operations.
+    
+    Pattern matches InterviewPrepController for consistency.
+    """
     
     def __init__(self):
         """Initialize the quiz controller."""
-        self.orchestrator = QuizOrchestrator()
-        self.uploader = QuizUploader()
+        self.orchestrator = QuizWorkflowOrchestrator()
     
-    def get_available_topics(self) -> QuizTopicsResponse:
-        """Get list of available quiz topics."""
-        topics = [t.value for t in QuizTopic]
-        return QuizTopicsResponse(topics=topics)
+    def _check_orchestrator(self):
+        """Check if orchestrator is available."""
+        if not self.orchestrator:
+            raise HTTPException(
+                status_code=501,
+                detail="QuizWorkflowOrchestrator not implemented yet. Implement it in src/agents/quiz/workflow/orchestrator.py"
+            )
     
-    def generate_quiz(self, payload: GenerateQuizRequest) -> GenerateQuizAPIResponse:
-        """Generate a complete quiz for a technology topic."""
-        environment = payload.environment or env_manager.get("ENVIRONMENT", "dev")
+    # =========================================================================
+    # Quiz Creation
+    # =========================================================================
+    
+    def create_quiz(
+        self,
+        payload: CreateQuizRequest,
+        background_tasks: BackgroundTasks
+    ) -> SessionResponse:
+        """
+        Create quiz using workflow orchestrator.
+        
+        Args:
+            payload: Create quiz request
+            background_tasks: FastAPI background tasks
+            
+        Returns:
+            Session response
+        """
+        self._check_orchestrator()
         
         try:
-            result = self.orchestrator.generate_complete_quiz(
+            # Create description if not provided
+            description = payload.description or f"Quiz for {payload.topic}. Difficulty: {payload.difficulty.value}."
+            
+            session_id = self.orchestrator.start_generation(
                 topic=payload.topic,
+                description=description,
+                agent_type=payload.agent_type.value,
                 question_count=payload.question_count,
                 target_audience=payload.target_audience,
-            )
-
-            # Save if requested
-            output_file: Optional[str] = None
-            if payload.save and result:
-                filename = generate_filename(prefix=f"quiz_{payload.topic.lower()}")
-                self.orchestrator.save_content(result, filename)
-                output_file = filename
-
-            quiz_dict = result.get("quiz")
-            if not quiz_dict:
-                raise HTTPException(status_code=500, detail="Quiz generation failed - no quiz data returned")
-
-            session_id = result.get("session_id", "unknown")
-            
-            return GenerateQuizAPIResponse(
-                session_id=session_id,
-                output_file=output_file or result.get("output_file"),
-                quiz=quiz_dict,
+                difficulty=payload.difficulty.value
             )
             
+            # Execute workflow in background
+            background_tasks.add_task(self._execute_workflow_background, session_id)
+            
+            return SessionResponse(
+                sessionId=session_id,
+                message=f"Started generating quiz: {payload.topic}"
+            )
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Quiz generation failed: {str(e)}")
+            logger.error(f"Error creating quiz: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
     
-    def validate_quiz(self, payload: ValidateQuizRequest) -> SimpleStatus:
-        """Validate a quiz structure and content."""
+    def _execute_workflow_background(self, session_id: str):
+        """
+        Execute workflow in background.
+        
+        Args:
+            session_id: Session ID
+        """
         try:
-            validation = self.uploader.validate_quiz(payload.quiz)
-            status = validation.get("status")
-            ok = status == "success"
-            message = "Validation complete" if ok else "Validation failed"
-            
-            return SimpleStatus(ok=ok, message=message)
-            
+            self.orchestrator.execute_workflow(session_id)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+            logger.error(f"Error executing quiz workflow for session {session_id}: {e}")
     
-    def upload_quiz(self, payload: UploadQuizRequest) -> SimpleStatus:
-        """Upload a quiz to the database."""
-        environment = payload.environment or env_manager.get("ENVIRONMENT", "dev")
+    # =========================================================================
+    # Session Management
+    # =========================================================================
+    
+    def list_sessions(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List all active/recent quiz sessions."""
+        self._check_orchestrator()
+        
+        # Get sessions from orchestrator
+        orchestrator_sessions = self.orchestrator.session_manager.list_sessions(status)
+        
+        # Convert to expected format (matching Interview Prep pattern)
+        formatted_sessions = []
+        for session in orchestrator_sessions:
+            progress = session.get("progress", {})
+            questions = session.get("questions", [])
+            
+            # Get question_count with fallbacks
+            question_count = session.get("question_count")
+            if not question_count or question_count is None:
+                question_count = progress.get("total") or len(questions) or 20
+                session["question_count"] = question_count
+                try:
+                    self.orchestrator.session_manager.save_session(session["session_id"], session)
+                except Exception as e:
+                    logger.warning(f"Failed to save question_count for session {session['session_id']}: {e}")
+            
+            final_question_count = int(question_count) if question_count else 20
+            
+            formatted_sessions.append({
+                "sessionId": session["session_id"],
+                "topic": session.get("topic", session.get("name", "Unknown")),
+                "agentType": session.get("agent_type", "generic"),
+                "targetAudience": session.get("target_audience", "developers"),
+                "questionCount": final_question_count,
+                "question_count": final_question_count,  # snake_case for compatibility
+                "status": session["status"],
+                "progress": progress,
+                "startedAt": session["created_at"],
+                "completedAt": session.get("updated_at") if session["status"] == "completed" else None,
+                "outputFile": session.get("output_file"),
+                "quizData": session.get("quiz_data"),
+                "error": session.get("error")
+            })
+        
+        return formatted_sessions
+    
+    def get_session_progress(self, session_id: str) -> Dict[str, Any]:
+        """Get progress for a specific quiz session."""
+        self._check_orchestrator()
         
         try:
-            uploader = QuizUploader(api_url=payload.api_url, admin_secret=payload.admin_secret or "TBEAdmin")
-            result = uploader.upload_quiz(payload.quiz)
-            ok = result.get("status") == "success"
-            message = result.get("message", "Upload complete")
+            session_status = self.orchestrator.get_session_status(session_id)
             
-            if not ok:
-                raise HTTPException(status_code=400, detail=message)
+            # Ensure both camelCase and snake_case versions are present
+            question_count = session_status.get("question_count")
+            if question_count is not None:
+                session_status["questionCount"] = question_count
+            elif "questionCount" not in session_status:
+                questions = session_status.get("questions", [])
+                progress = session_status.get("progress", {})
+                question_count = progress.get("total") or len(questions) or 20
+                session_status["question_count"] = question_count
+                session_status["questionCount"] = question_count
             
-            return SimpleStatus(ok=True, message=message)
-            
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+            return session_status
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Session not found")
     
-    def list_sessions(self) -> Dict[str, Any]:
-        """List all active quiz generation sessions."""
+    def cancel_session(self, session_id: str) -> Dict[str, str]:
+        """Cancel a running quiz session."""
+        self._check_orchestrator()
+        
         try:
-            result = self.orchestrator.list_active_sessions()
-            return result
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to list sessions: {str(e)}")
+            session = self.orchestrator.get_session_status(session_id)
+            if session["status"] == "in_progress":
+                self.orchestrator.session_manager.update_status(
+                    session_id,
+                    SessionStatus.FAILED,
+                    current_step="Cancelled by user",
+                    error="Cancelled by user"
+                )
+                from ...utils.session_logger import append_log
+                append_log(session_id, "session_cancelled", {})
+            return {"message": "Session cancelled"}
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Session not found")
     
-    def get_progress(self, session_id: str) -> Dict[str, Any]:
-        """Get progress details for a quiz generation session."""
+    def retry_session(
+        self,
+        session_id: str,
+        background_tasks: BackgroundTasks
+    ) -> SessionResponse:
+        """Resume/retry a quiz session."""
+        self._check_orchestrator()
+        
         try:
-            progress_dir = os.path.join(config.temp_dir, "quiz_progress")
-            if not os.path.isdir(progress_dir):
-                raise HTTPException(status_code=404, detail="Progress not found")
-
-            progress_path: Optional[str] = None
-            for name in os.listdir(progress_dir):
-                if session_id in name and name.endswith(".json"):
-                    progress_path = os.path.join(progress_dir, name)
-                    break
-
-            if not progress_path or not os.path.isfile(progress_path):
-                raise HTTPException(status_code=404, detail="Progress not found")
-
-            data = load_json_file(progress_path)
-
-            # Derive counts
-            total = int(data.get("question_count") or 0)
-            generated = len(data.get("questions", []) or [])
-
-            # Compute percent
-            steps_completed: List[str] = data.get("steps_completed", []) or []
-            current_step = data.get("current_step") or ""
-            base_steps = {"research", "planning", "generation", "metadata"}
-            completed_steps = len([s for s in steps_completed if s in base_steps])
-            percent = completed_steps * 25.0
+            status = self.orchestrator.get_session_status(session_id)
+            if status["status"] == "completed":
+                raise HTTPException(status_code=400, detail="Session already completed")
             
-            if current_step == "generation" and total > 0:
-                percent = 50.0 + min(25.0, (generated / total) * 25.0)
-            if data.get("status") == "completed" or current_step == "completed":
-                percent = 100.0
-
+            # Execute workflow in background
+            background_tasks.add_task(self._execute_workflow_background, session_id)
+            
+            return SessionResponse(
+                sessionId=session_id,
+                message=f"Resuming quiz session: {session_id}"
+            )
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Session not found")
+    
+    def delete_session(self, session_id: str) -> Dict[str, str]:
+        """Delete a quiz session."""
+        self._check_orchestrator()
+        
+        try:
+            self.orchestrator.session_manager.delete_session(session_id)
+            return {"message": "Session deleted"}
+        except Exception:
+            raise HTTPException(status_code=404, detail="Session not found")
+    
+    # =========================================================================
+    # Topic Generation
+    # =========================================================================
+    
+    def generate_topic(
+        self,
+        payload: TopicGenerationRequest,
+        background_tasks: BackgroundTasks
+    ) -> SessionResponse:
+        """
+        Generate quiz for a single topic.
+        
+        Args:
+            payload: Topic generation request
+            background_tasks: FastAPI background tasks
+            
+        Returns:
+            Session response
+        """
+        self._check_orchestrator()
+        
+        try:
+            description = f"Quiz for {payload.topic}. Difficulty: {payload.difficulty.value}."
+            
+            session_id = self.orchestrator.session_manager.create_session(
+                topic=payload.topic,
+                description=description,
+                agent_type=payload.agent_type.value,
+                question_count=payload.question_count,
+                target_audience=payload.target_audience,
+                difficulty=payload.difficulty.value
+            )
+            
+            # Execute workflow in background
+            background_tasks.add_task(self._execute_workflow_background, session_id)
+            
+            return SessionResponse(
+                sessionId=session_id,
+                message=f"Started generating quiz for topic: {payload.topic}"
+            )
+        except Exception as e:
+            logger.error(f"Error generating quiz topic: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    # =========================================================================
+    # Output & Upload
+    # =========================================================================
+    
+    def get_session_output(self, session_id: str) -> Dict[str, Any]:
+        """Get final output for a completed quiz session."""
+        self._check_orchestrator()
+        
+        import os
+        import json
+        
+        try:
+            status = self.orchestrator.get_session_status(session_id)
+            output_file = status.get("output_file")
+            
+            if not output_file or not os.path.exists(output_file):
+                raise HTTPException(status_code=404, detail="Output file not found")
+            
+            with open(output_file, 'r', encoding='utf-8') as f:
+                quiz_data = json.load(f)
+            
             return {
-                "session_id": data.get("session_id"),
-                "topic": data.get("topic"),
-                "status": data.get("status"),
-                "current_step": current_step,
-                "steps_completed": steps_completed,
-                "question_count": total,
-                "questions_generated": generated,
-                "percent": percent,
-                "last_updated": data.get("last_updated"),
-                "created_at": data.get("created_at"),
+                "status": "success",
+                "session_id": session_id,
+                "quiz_data": quiz_data
             }
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get progress: {str(e)}")
-    
-    def get_logs(self, session_id: str, limit: int = 200) -> Dict[str, Any]:
-        """Get session logs for a quiz."""
-        try:
-            logs = read_logs(session_id=session_id, limit=max(1, min(limit, 2000)))
-            return {"session_id": session_id, "logs": logs}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get logs: {str(e)}")
-    
-    def list_pending_quizzes(self) -> Dict[str, Any]:
-        """List quiz JSON files in the output directory as pending items for upload."""
-        try:
-            pending: List[Dict[str, Any]] = []
-            out_dir = config.output_dir
-            if not os.path.isdir(out_dir):
-                return {"pending": pending}
-
-            for name in os.listdir(out_dir):
-                if not name.endswith(".json"):
-                    continue
-                if not name.startswith("quiz_"):
-                    continue
-                path = os.path.join(out_dir, name)
-                try:
-                    content = load_json_file(path)
-                    quiz = content.get("quiz", {}) if isinstance(content, dict) else {}
-                    meta = content.get("metadata", {}) if isinstance(content, dict) else {}
-                    pending.append({
-                        "filename": name,
-                        "session_id": meta.get("session_id"),
-                        "topic": meta.get("topic"),
-                        "question_count": len((quiz.get("questions") or [])),
-                        "categoryId": quiz.get("categoryId"),
-                        "categoryName": quiz.get("categoryName"),
-                    })
-                except Exception:
-                    continue
-
-            pending.sort(key=lambda x: x.get("filename", ""), reverse=True)
-            return {"pending": pending}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to list pending quizzes: {str(e)}")
-    
-    def delete_pending_quiz(self, filename: str) -> Dict[str, bool]:
-        """Delete a pending quiz file."""
-        try:
-            out_path = os.path.join(config.output_dir, filename)
-            if not os.path.isfile(out_path):
-                raise HTTPException(status_code=404, detail="File not found")
-            
-            os.remove(out_path)
-            return {"ok": True}
-        except HTTPException:
-            raise
-        except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     
-    def get_pending_quiz_content(self, filename: str) -> Dict[str, Any]:
-        """Get the content of a pending quiz file."""
+    def validate_quiz(self, payload: ValidateQuizRequest) -> SimpleStatus:
+        """Validate quiz structure and content against DB schema."""
         try:
-            out_path = os.path.join(config.output_dir, filename)
-            if not os.path.isfile(out_path):
-                raise HTTPException(status_code=404, detail="File not found")
+            quiz_data = payload.quiz
+            errors = []
             
-            content = load_json_file(out_path)
-            return content
-        except HTTPException:
-            raise
+            # Required fields matching Quiz.ts schema
+            required_fields = ["categoryName", "categoryDescription", "categoryIcon", "questions"]
+            for field in required_fields:
+                if field not in quiz_data:
+                    errors.append(f"Missing required field: {field}")
+            
+            # Validate questions
+            questions = quiz_data.get("questions", [])
+            if not questions:
+                errors.append("Quiz must have at least one question")
+            else:
+                for i, question in enumerate(questions):
+                    q_errors = self._validate_question(question, i)
+                    errors.extend(q_errors)
+            
+            if errors:
+                return SimpleStatus(ok=False, message=f"Validation failed: {'; '.join(errors[:5])}")
+            
+            return SimpleStatus(ok=True, message="Validation successful")
+            
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-
+            raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+    
+    def _validate_question(self, question: Dict[str, Any], index: int) -> List[str]:
+        """Validate a single quiz question against QuizQuestionModel schema."""
+        errors = []
+        prefix = f"Question {index + 1}"
+        
+        # Required fields matching QuizQuestionModel in Quiz.ts
+        required = ["question", "options", "correctAnswer", "explanation", "detailedExplanation", "difficulty"]
+        for field in required:
+            if field not in question:
+                errors.append(f"{prefix}: Missing field '{field}'")
+        
+        # Validate options (min 2 required per schema)
+        options = question.get("options", [])
+        if len(options) < 2:
+            errors.append(f"{prefix}: At least 2 options required (found {len(options)})")
+        
+        # Validate correct answer
+        correct_answer = question.get("correctAnswer")
+        if correct_answer is not None:
+            if not isinstance(correct_answer, int):
+                errors.append(f"{prefix}: correctAnswer must be an integer")
+            elif correct_answer < 0 or correct_answer >= len(options):
+                errors.append(f"{prefix}: correctAnswer index out of range")
+        
+        # Validate difficulty
+        difficulty = question.get("difficulty", "").lower()
+        if difficulty not in ["easy", "medium", "hard"]:
+            errors.append(f"{prefix}: Invalid difficulty '{difficulty}' (must be easy/medium/hard)")
+        
+        return errors
+    
+    def upload_quiz(self, payload: UploadQuizRequest) -> SimpleStatus:
+        """Upload quiz to database via API."""
+        import requests
+        
+        try:
+            # Convert Pydantic model to dict for validation
+            quiz_dict = payload.quiz.model_dump() if hasattr(payload.quiz, 'model_dump') else payload.quiz
+            
+            # Validate first
+            validation = self.validate_quiz(ValidateQuizRequest(quiz=quiz_dict))
+            if not validation.ok:
+                return SimpleStatus(ok=False, message=f"Validation failed: {validation.message}")
+            
+            # Get API URL from config or payload
+            from src.core.config import config
+            api_url = (payload.api_url or config.api_base_url).rstrip('/')
+            
+            # Prepare request
+            url = f"{api_url}/api/v1/quiz"
+            headers = {
+                'x-admin-secret': payload.admin_secret or 'TBEAdmin',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.post(url, json=quiz_dict, headers=headers, timeout=30)
+            
+            if response.status_code in [200, 201]:
+                return SimpleStatus(ok=True, message="Quiz uploaded successfully")
+            else:
+                return SimpleStatus(ok=False, message=f"Upload failed: HTTP {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            return SimpleStatus(ok=False, message="Upload timeout - API server may be slow")
+        except requests.exceptions.ConnectionError:
+            return SimpleStatus(ok=False, message="Connection error - check if API server is running")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")

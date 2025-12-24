@@ -19,7 +19,7 @@ def create_workflow_graph() -> StateGraph:
         Configured StateGraph
     """
     # Create the graph
-    workflow = StateGraph(InterviewWorkflowState)
+    workflow = StateGraph[InterviewWorkflowState, None, InterviewWorkflowState, InterviewWorkflowState](InterviewWorkflowState)
     
     # Add nodes
     workflow.add_node("generate_metadata", generate_metadata_node)

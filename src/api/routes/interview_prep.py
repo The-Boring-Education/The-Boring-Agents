@@ -26,7 +26,6 @@ from src.api.controllers.interview_prep_controller import InterviewPrepControlle
 from src.api.models.interview_prep_models import (
     CreateSheetRequest,
     TopicGenerationRequest,
-    BulkGenerationRequest,
     SessionResponse,
 )
 from src.utils.request_logging import log_action
@@ -104,31 +103,6 @@ async def generate_topic(payload: TopicGenerationRequest, background_tasks: Back
         log_action(
             request,
             "generate_topic",
-            level="ERROR",
-            error=str(e),
-            error_type=type(e).__name__
-        )
-        raise
-
-
-@router.post("/topics/bulk")
-async def bulk_generate(payload: BulkGenerationRequest, background_tasks: BackgroundTasks, request: Request):
-    """Start bulk generation for multiple topics."""
-    log_action(
-        request,
-        "bulk_generate",
-        topics_count=len(payload.topics),
-        generate_answers=payload.generate_answers,
-        auto_publish=payload.auto_publish
-    )
-    
-    try:
-        result = controller.bulk_generate(payload, background_tasks)
-        return result
-    except Exception as e:
-        log_action(
-            request,
-            "bulk_generate",
             level="ERROR",
             error=str(e),
             error_type=type(e).__name__
@@ -342,48 +316,6 @@ def delete_session(session_id: str, request: Request):
             "delete_session",
             level="ERROR",
             session_id=session_id,
-            error=str(e),
-            error_type=type(e).__name__
-        )
-        raise
-
-
-# =============================================================================
-# Templates & Roadmaps
-# =============================================================================
-
-@router.get("/templates")
-def get_topic_templates(request: Request):
-    """Get available topic templates."""
-    log_action(request, "get_templates")
-    
-    try:
-        result = controller.get_topic_templates()
-        return result
-    except Exception as e:
-        log_action(
-            request,
-            "get_templates",
-            level="ERROR",
-            error=str(e),
-            error_type=type(e).__name__
-        )
-        raise
-
-
-@router.get("/roadmaps")
-def get_roadmap_suggestions(request: Request):
-    """Get roadmap suggestions."""
-    log_action(request, "get_roadmaps")
-    
-    try:
-        result = controller.get_roadmap_suggestions()
-        return result
-    except Exception as e:
-        log_action(
-            request,
-            "get_roadmaps",
-            level="ERROR",
             error=str(e),
             error_type=type(e).__name__
         )
