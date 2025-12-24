@@ -9,7 +9,6 @@ Matches Interview Prep API pattern for consistency.
 API Naming Conventions (REST-compliant):
 - POST /quizzes           - Create a new quiz
 - POST /topics            - Generate quiz for a single topic
-- POST /topics/bulk       - Bulk generate quizzes
 - GET /sessions           - List all sessions
 - GET /sessions/{id}      - Get session progress
 - GET /sessions/{id}/output - Get session output
@@ -31,7 +30,6 @@ from src.api.controllers.quiz_controller import QuizController
 from src.api.models.quiz_models import (
     CreateQuizRequest,
     TopicGenerationRequest,
-    BulkGenerationRequest,
     UploadQuizRequest,
     ValidateQuizRequest,
     SessionResponse,
@@ -116,34 +114,6 @@ async def generate_topic(
         log_action(
             request,
             "generate_quiz_topic",
-            level="ERROR",
-            error=str(e),
-            error_type=type(e).__name__
-        )
-        raise
-
-
-@router.post("/topics/bulk")
-async def bulk_generate(
-    payload: BulkGenerationRequest,
-    background_tasks: BackgroundTasks,
-    request: Request
-):
-    """Start bulk quiz generation for multiple topics."""
-    log_action(
-        request,
-        "bulk_generate_quizzes",
-        topics_count=len(payload.topics),
-        auto_upload=payload.auto_upload
-    )
-    
-    try:
-        result = controller.bulk_generate(payload, background_tasks)
-        return result
-    except Exception as e:
-        log_action(
-            request,
-            "bulk_generate_quizzes",
             level="ERROR",
             error=str(e),
             error_type=type(e).__name__
@@ -366,7 +336,7 @@ def delete_session(session_id: str, request: Request):
 
 @router.post("/validate", response_model=SimpleStatus)
 def validate_quiz(payload: ValidateQuizRequest, request: Request):
-    """Validate a quiz structure and content."""
+    """Validate a quiz structure and content against DB schema."""
     log_action(request, "validate_quiz")
     
     try:

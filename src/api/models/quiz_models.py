@@ -2,6 +2,7 @@
 Quiz generation API request/response models.
 
 Matches the Interview Prep API pattern for consistency.
+Output models match the Quiz.ts database schema.
 """
 
 from enum import Enum
@@ -14,7 +15,7 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 # =============================================================================
 
 class QuizDifficulty(str, Enum):
-    """Quiz difficulty levels."""
+    """Quiz difficulty levels - matches DB schema."""
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
@@ -26,6 +27,45 @@ class QuizAgentType(str, Enum):
     TECH = "tech"
     DSA = "dsa"
     CONCEPTUAL = "conceptual"
+
+
+# =============================================================================
+# Database Schema Models (matches Quiz.ts)
+# =============================================================================
+
+class QuizQuestionModel(BaseModel):
+    """Quiz question model - matches QuizQuestionModel in Quiz.ts."""
+    question: str = Field(..., description="The question text")
+    options: List[str] = Field(..., description="Array of options (min 2)")
+    correctAnswer: int = Field(..., ge=0, le=3, description="Index of correct answer (0-3)")
+    explanation: str = Field(..., description="Brief explanation of the answer")
+    detailedExplanation: str = Field(..., description="Detailed explanation with context")
+    difficulty: QuizDifficulty = Field(..., description="Question difficulty level")
+    
+    @field_validator("options")
+    @classmethod
+    def validate_options(cls, v):
+        if len(v) < 2:
+            raise ValueError("At least 2 options are required")
+        return v
+    
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def normalize_difficulty(cls, v):
+        if isinstance(v, str):
+            return v.lower()
+        return v
+
+
+class QuizOutputModel(BaseModel):
+    """Quiz output model - matches QuizModel in Quiz.ts."""
+    model_config = ConfigDict(populate_by_name=True)
+    
+    categoryName: str = Field(..., description="Category/quiz name")
+    categoryDescription: str = Field(..., description="Category description")
+    categoryIcon: str = Field(..., description="Category icon (emoji or icon name)")
+    questions: List[QuizQuestionModel] = Field(..., description="List of quiz questions")
+    isActive: bool = Field(default=True, description="Whether quiz is active")
 
 
 # =============================================================================
@@ -74,37 +114,20 @@ class TopicGenerationRequest(BaseModel):
         if isinstance(value, str):
             return value.lower()
         return value
-
-
-class BulkTopicRequest(BaseModel):
-    """Topic definition for bulk quiz generation."""
-    model_config = ConfigDict(populate_by_name=True)
-
-    topic: str
-    agent_type: QuizAgentType = Field(default=QuizAgentType.TECH, alias="agentType")
-    question_count: int = Field(default=20, ge=1, le=100, alias="questionCount")
-    target_audience: str = Field(default="developers", alias="targetAudience")
-    difficulty: QuizDifficulty = Field(default=QuizDifficulty.MEDIUM)
-
-    @field_validator("agent_type", mode="before")
+    
+    @field_validator("difficulty", mode="before")
     @classmethod
-    def _normalize_agent_type(cls, value):
+    def _normalize_difficulty(cls, value):
         if isinstance(value, str):
             return value.lower()
         return value
 
 
-class BulkGenerationRequest(BaseModel):
-    """Request payload for bulk quiz generation."""
-    model_config = ConfigDict(populate_by_name=True)
-
-    topics: List[BulkTopicRequest]
-    auto_upload: bool = Field(default=False, alias="autoUpload")
-
-
 class UploadQuizRequest(BaseModel):
     """Request model for uploading quiz to database."""
-    quiz: Dict[str, Any]
+    model_config = ConfigDict(populate_by_name=True)
+    
+    quiz: QuizOutputModel = Field(..., description="Quiz data matching DB schema")
     api_url: Optional[str] = Field(default=None, alias="apiUrl")
     admin_secret: Optional[str] = Field(default="TBEAdmin", alias="adminSecret")
 
@@ -136,7 +159,7 @@ class QuizGenerationSession(BaseModel):
     startedAt: str
     completedAt: Optional[str] = None
     outputFile: Optional[str] = None
-    quizData: Optional[Dict[str, Any]] = None
+    quizData: Optional[QuizOutputModel] = None
     error: Optional[str] = None
 
 
@@ -146,9 +169,11 @@ class SimpleStatus(BaseModel):
     message: str
 
 
-class QuizTopicsResponse(BaseModel):
-    """Response model for available quiz topics."""
-    topics: List[str]
+class QuizOutputResponse(BaseModel):
+    """Response model for quiz output."""
+    status: str
+    session_id: str
+    quiz_data: QuizOutputModel
 
 
 # =============================================================================

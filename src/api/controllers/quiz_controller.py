@@ -21,14 +21,13 @@ from src.core.env import get_env_manager
 from src.api.models.quiz_models import (
     CreateQuizRequest,
     TopicGenerationRequest,
-    BulkTopicRequest,
-    BulkGenerationRequest,
     UploadQuizRequest,
     ValidateQuizRequest,
     SessionResponse,
     SimpleStatus,
     QuizTopicTemplate,
     QuizCategorySuggestion,
+    QuizOutputModel,
 )
 
 logger = logging.getLogger(__name__)
@@ -291,72 +290,6 @@ class QuizController:
             logger.error(f"Error generating quiz topic: {e}")
             raise HTTPException(status_code=400, detail=str(e))
     
-    def bulk_generate(
-        self,
-        payload: BulkGenerationRequest,
-        background_tasks: BackgroundTasks
-    ) -> Dict[str, Any]:
-        """
-        Start bulk quiz generation for multiple topics.
-        
-        Args:
-            payload: Bulk generation request
-            background_tasks: FastAPI background tasks
-            
-        Returns:
-            Dictionary with session IDs and status
-        """
-        self._check_orchestrator()
-        
-        try:
-            session_ids = []
-            errors = []
-            
-            for topic_request in payload.topics:
-                try:
-                    description = f"Quiz for {topic_request.topic}. Difficulty: {topic_request.difficulty.value}."
-                    
-                    session_id = self.orchestrator.start_generation(
-                        topic=topic_request.topic,
-                        description=description,
-                        agent_type=topic_request.agent_type.value,
-                        question_count=topic_request.question_count,
-                        target_audience=topic_request.target_audience,
-                        difficulty=topic_request.difficulty.value
-                    )
-                    
-                    # Store additional metadata
-                    session_data = self.orchestrator.session_manager.get_session(session_id)
-                    if session_data:
-                        session_data["auto_upload"] = payload.auto_upload
-                        self.orchestrator.session_manager.save_session(session_id, session_data)
-                    
-                    # Execute workflow in background
-                    background_tasks.add_task(self._execute_workflow_background, session_id)
-                    
-                    session_ids.append({
-                        "sessionId": session_id,
-                        "topic": topic_request.topic,
-                        "status": "started"
-                    })
-                except Exception as e:
-                    logger.error(f"Error generating quiz for topic {topic_request.topic}: {e}")
-                    errors.append({
-                        "topic": topic_request.topic,
-                        "error": str(e)
-                    })
-            
-            return {
-                "sessions": session_ids,
-                "errors": errors,
-                "total": len(payload.topics),
-                "started": len(session_ids),
-                "failed": len(errors)
-            }
-        except Exception as e:
-            logger.error(f"Error in bulk generate: {e}")
-            raise HTTPException(status_code=400, detail=str(e))
-    
     # =========================================================================
     # Output & Upload
     # =========================================================================
@@ -389,13 +322,13 @@ class QuizController:
             raise HTTPException(status_code=500, detail=str(e))
     
     def validate_quiz(self, payload: ValidateQuizRequest) -> SimpleStatus:
-        """Validate quiz structure and content."""
+        """Validate quiz structure and content against DB schema."""
         try:
             quiz_data = payload.quiz
             errors = []
             
-            # Basic structure validation
-            required_fields = ["categoryName", "categoryDescription", "questions"]
+            # Required fields matching Quiz.ts schema
+            required_fields = ["categoryName", "categoryDescription", "categoryIcon", "questions"]
             for field in required_fields:
                 if field not in quiz_data:
                     errors.append(f"Missing required field: {field}")
@@ -418,26 +351,33 @@ class QuizController:
             raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
     
     def _validate_question(self, question: Dict[str, Any], index: int) -> List[str]:
-        """Validate a single quiz question."""
+        """Validate a single quiz question against QuizQuestionModel schema."""
         errors = []
         prefix = f"Question {index + 1}"
         
-        required = ["question", "options", "correctAnswer", "explanation", "difficulty"]
+        # Required fields matching QuizQuestionModel in Quiz.ts
+        required = ["question", "options", "correctAnswer", "explanation", "detailedExplanation", "difficulty"]
         for field in required:
             if field not in question:
                 errors.append(f"{prefix}: Missing field '{field}'")
         
+        # Validate options (min 2 required per schema)
         options = question.get("options", [])
-        if len(options) != 4:
-            errors.append(f"{prefix}: Must have exactly 4 options (found {len(options)})")
+        if len(options) < 2:
+            errors.append(f"{prefix}: At least 2 options required (found {len(options)})")
         
+        # Validate correct answer
         correct_answer = question.get("correctAnswer")
-        if correct_answer is not None and (not isinstance(correct_answer, int) or correct_answer < 0 or correct_answer > 3):
-            errors.append(f"{prefix}: correctAnswer must be 0-3")
+        if correct_answer is not None:
+            if not isinstance(correct_answer, int):
+                errors.append(f"{prefix}: correctAnswer must be an integer")
+            elif correct_answer < 0 or correct_answer >= len(options):
+                errors.append(f"{prefix}: correctAnswer index out of range")
         
+        # Validate difficulty
         difficulty = question.get("difficulty", "").lower()
         if difficulty not in ["easy", "medium", "hard"]:
-            errors.append(f"{prefix}: Invalid difficulty '{difficulty}'")
+            errors.append(f"{prefix}: Invalid difficulty '{difficulty}' (must be easy/medium/hard)")
         
         return errors
     
@@ -446,8 +386,11 @@ class QuizController:
         import requests
         
         try:
+            # Convert Pydantic model to dict for validation
+            quiz_dict = payload.quiz.model_dump() if hasattr(payload.quiz, 'model_dump') else payload.quiz
+            
             # Validate first
-            validation = self.validate_quiz(ValidateQuizRequest(quiz=payload.quiz))
+            validation = self.validate_quiz(ValidateQuizRequest(quiz=quiz_dict))
             if not validation.ok:
                 return SimpleStatus(ok=False, message=f"Validation failed: {validation.message}")
             
@@ -462,7 +405,7 @@ class QuizController:
                 'Content-Type': 'application/json'
             }
             
-            response = requests.post(url, json=payload.quiz, headers=headers, timeout=30)
+            response = requests.post(url, json=quiz_dict, headers=headers, timeout=30)
             
             if response.status_code in [200, 201]:
                 return SimpleStatus(ok=True, message="Quiz uploaded successfully")

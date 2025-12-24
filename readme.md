@@ -183,8 +183,6 @@ The-Boring-Agents/
 - `POST /api/v1/interview/sessions/{session_id}/resume` - Resume a paused session
 - `POST /api/v1/interview/sessions/{session_id}/retry` - Retry a failed session
 - `DELETE /api/v1/interview/sessions/{session_id}` - Delete a session
-- `GET /api/v1/interview/templates` - Get available topic templates
-- `GET /api/v1/interview/roadmaps` - Get roadmap suggestions
 
 #### Session Management
 

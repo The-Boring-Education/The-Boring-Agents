@@ -47,34 +47,6 @@ class TopicGenerationRequest(BaseModel):
         return value
 
 
-class BulkTopicRequest(BaseModel):
-    """Topic definition for bulk generation."""
-    model_config = ConfigDict(populate_by_name=True)
-
-    name: str
-    agent_type: AnswerAgentType = Field(alias="agentType")
-    technology: Optional[str] = None
-    question_count: int = Field(default=20, ge=1, le=100, alias="questionCount")
-    roadmap: str = Field(default="Tech")
-    difficulty: str = Field(default="Medium")
-
-    @field_validator("agent_type", mode="before")
-    @classmethod
-    def _normalize_agent_type(cls, value):
-        if isinstance(value, str):
-            return value.lower()
-        return value
-
-
-class BulkGenerationRequest(BaseModel):
-    """Request payload for bulk topic generation."""
-    model_config = ConfigDict(populate_by_name=True)
-
-    topics: List[BulkTopicRequest]
-    generate_answers: bool = Field(default=True, alias="generateAnswers")
-    auto_publish: bool = Field(default=False, alias="autoPublish")
-
-
 class InterviewGenerationSession(BaseModel):
     """Interview generation session model."""
     sessionId: str
