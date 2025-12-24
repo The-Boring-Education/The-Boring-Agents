@@ -13,6 +13,7 @@ from src.utils.helpers import (
     format_duration
 )
 from src.utils.validation import InterviewQuestionValidator
+from src.utils.request_logging import get_request_id, log_action
 
 __all__ = [
     "setup_logging",
@@ -25,5 +26,7 @@ __all__ = [
     "generate_filename",
     "validate_content_structure",
     "format_duration",
-    "InterviewQuestionValidator"
+    "InterviewQuestionValidator",
+    "get_request_id",
+    "log_action"
 ]

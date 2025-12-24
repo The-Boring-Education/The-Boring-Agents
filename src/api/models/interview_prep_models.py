@@ -27,14 +27,6 @@ class CreateSheetRequest(BaseModel):
         return value
 
 
-class GenerateInterviewSheetRequest(BaseModel):
-    """Request model for creating interview sheet from MDX."""
-    mdx_file: str = Field(..., description="Path to MDX requirements or questions file")
-    agent_type: AnswerAgentType = Field(default=AnswerAgentType.GENERIC)
-    technology: Optional[str] = Field(default=None)
-    save: bool = Field(default=True)
-
-
 class TopicGenerationRequest(BaseModel):
     """Request payload for single-topic generation."""
     model_config = ConfigDict(populate_by_name=True)
@@ -100,14 +92,6 @@ class InterviewGenerationSession(BaseModel):
     error: Optional[str] = None
 
 
-class InterviewSheetResponse(BaseModel):
-    """Response model for interview sheet operations."""
-    ok: bool
-    message: str
-    output_file: Optional[str] = None
-    sheet: Optional[dict] = None
-
-
 class SessionResponse(BaseModel):
     """Response model for session operations."""
     sessionId: str
@@ -134,4 +118,3 @@ class RoadmapSuggestion(BaseModel):
     technologies: List[str]
     difficulty: str
     estimatedTime: Optional[str] = None
-

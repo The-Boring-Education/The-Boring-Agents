@@ -56,18 +56,12 @@ def create_app() -> FastAPI:
     app.include_router(session_router, prefix="/api/v1")
     
     # Health check endpoint
-    @app.get("/health")
+    @app.get("/api/v1/health")
     def health():
         """Health check endpoint for monitoring."""
-        return {"ok": True, "service": "agents"}
-    
-    # Admin UI ping endpoint
-    @app.get("/api/v1/ping")
-    def ping():
-        """Ping endpoint to verify service is running."""
         return {
             "ok": True,
-            "service": "agents",
+            "service": "The Boring Agents API",
             "version": app.version,
             "environment": environment
         }

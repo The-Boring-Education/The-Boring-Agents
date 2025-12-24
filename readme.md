@@ -122,11 +122,15 @@ The-Boring-Agents/
 │   │   ├── quiz/              # Quiz generation agents
 │   │   └── shiksha/           # Course creation agents
 │   ├── api/                   # API routes and middleware
+│   │   ├── app.py             # FastAPI application setup
 │   │   ├── middleware.py      # Request/response logging middleware
 │   │   ├── logging_config.py  # Centralized logging configuration
-│   │   ├── quiz_routes.py     # Quiz generation endpoints
-│   │   ├── interview_routes.py # Interview preparation endpoints
-│   │   └── sessions_routes.py # Session management endpoints
+│   │   ├── controllers/       # Business logic controllers
+│   │   ├── models/            # Pydantic request/response models
+│   │   └── routes/            # API route definitions
+│   │       ├── quiz.py        # Quiz generation endpoints
+│   │       ├── interview_prep.py  # Interview preparation endpoints
+│   │       └── session.py     # Session management endpoints
 │   ├── core/                  # Core functionality
 │   │   ├── env.py             # Environment variable management
 │   │   └── config.py           # Configuration management
@@ -169,16 +173,18 @@ The-Boring-Agents/
 
 #### Interview Preparation
 
-- `POST /api/v1/interview/create-sheet` - Create interview sheet from MDX
-- `POST /api/v1/interview/generate-topic` - Generate questions for a topic
-- `POST /api/v1/interview/bulk-generate` - Bulk generate for multiple topics
+- `POST /api/v1/interview/sheets` - Create interview sheet with name and description
+- `POST /api/v1/interview/topics` - Generate questions for a single topic
+- `POST /api/v1/interview/topics/bulk` - Bulk generate for multiple topics
 - `GET /api/v1/interview/sessions` - List interview sessions
-- `GET /api/v1/interview/session/{session_id}/progress` - Get session progress
-- `POST /api/v1/interview/session/{session_id}/cancel` - Cancel a session
-- `POST /api/v1/interview/session/{session_id}/retry` - Retry a failed session
-- `DELETE /api/v1/interview/session/{session_id}` - Delete a session
-- `GET /api/v1/interview/topic-templates` - Get available topic templates
-- `GET /api/v1/interview/roadmap-suggestions` - Get roadmap suggestions
+- `GET /api/v1/interview/sessions/{session_id}` - Get session progress
+- `GET /api/v1/interview/sessions/{session_id}/output` - Get session output
+- `POST /api/v1/interview/sessions/{session_id}/cancel` - Cancel a session
+- `POST /api/v1/interview/sessions/{session_id}/resume` - Resume a paused session
+- `POST /api/v1/interview/sessions/{session_id}/retry` - Retry a failed session
+- `DELETE /api/v1/interview/sessions/{session_id}` - Delete a session
+- `GET /api/v1/interview/templates` - Get available topic templates
+- `GET /api/v1/interview/roadmaps` - Get roadmap suggestions
 
 #### Session Management
 
@@ -207,7 +213,7 @@ curl -X POST http://localhost:8000/api/v1/quiz/generate \
 #### Generate Interview Questions
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/interview/generate-topic \
+curl -X POST http://localhost:8000/api/v1/interview/topics \
   -H 'Content-Type: application/json' \
   -d '{
     "topic": "Python",
@@ -217,6 +223,21 @@ curl -X POST http://localhost:8000/api/v1/interview/generate-topic \
     "roadmap": "Backend",
     "difficulty": "Medium",
     "generateAnswers": true
+  }'
+```
+
+#### Create Interview Sheet
+
+```bash
+curl -X POST http://localhost:8000/api/v1/interview/sheets \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "React.js Interview",
+    "description": "Comprehensive React.js interview preparation",
+    "agentType": "tech",
+    "technology": "React",
+    "questionCount": 30,
+    "roadmap": "Frontend"
   }'
 ```
 

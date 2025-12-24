@@ -13,11 +13,9 @@ from src.core.session.session_types import SessionStatus
 from src.core.env import get_env_manager
 from src.api.models.interview_prep_models import (
     CreateSheetRequest,
-    GenerateInterviewSheetRequest,
     TopicGenerationRequest,
     BulkTopicRequest,
     BulkGenerationRequest,
-    InterviewSheetResponse,
     SessionResponse,
     TopicTemplate,
     RoadmapSuggestion,
@@ -43,12 +41,13 @@ class InterviewPrepController:
         except Exception as e:
             logger.warning(f"⚠️ Failed to auto-fix sessions on initialization: {e}", exc_info=True)
     
-    def create_sheet_new(
+    def create_sheet(
         self,
         payload: CreateSheetRequest,
         background_tasks: BackgroundTasks
     ) -> SessionResponse:
-        """Create interview sheet using new workflow orchestrator.
+        """
+        Create interview sheet using workflow orchestrator.
         
         Args:
             payload: Create sheet request
@@ -79,7 +78,8 @@ class InterviewPrepController:
             raise HTTPException(status_code=400, detail=str(e))
     
     def _execute_workflow_background(self, session_id: str):
-        """Execute workflow in background.
+        """
+        Execute workflow in background.
         
         Args:
             session_id: Session ID
@@ -88,13 +88,6 @@ class InterviewPrepController:
             self.orchestrator.execute_workflow(session_id)
         except Exception as e:
             logger.error(f"Error executing workflow for session {session_id}: {e}")
-    
-    def create_sheet(self, payload: GenerateInterviewSheetRequest) -> InterviewSheetResponse:
-        """Create interview sheet from MDX file (DEPRECATED - use create_sheet_new instead)."""
-        raise HTTPException(
-            status_code=410,
-            detail="This endpoint is deprecated. Please use /interview/create-sheet-new with name and description instead."
-        )
     
     def list_sessions(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """List all active/recent sessions."""
@@ -291,7 +284,8 @@ class InterviewPrepController:
         payload: TopicGenerationRequest,
         background_tasks: BackgroundTasks
     ) -> SessionResponse:
-        """Generate questions for a single topic.
+        """
+        Generate questions for a single topic.
         
         Args:
             payload: Topic generation request
@@ -332,7 +326,8 @@ class InterviewPrepController:
         payload: BulkGenerationRequest,
         background_tasks: BackgroundTasks
     ) -> Dict[str, Any]:
-        """Start bulk generation for multiple topics.
+        """
+        Start bulk generation for multiple topics.
         
         Args:
             payload: Bulk generation request
@@ -431,4 +426,3 @@ class InterviewPrepController:
             }
         ]
         return [RoadmapSuggestion(**r) for r in roadmaps]
-

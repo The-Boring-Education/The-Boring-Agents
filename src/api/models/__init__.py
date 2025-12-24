@@ -12,15 +12,11 @@ from src.api.models.quiz_models import (
 )
 
 from src.api.models.interview_prep_models import (
-    GenerateInterviewSheetRequest,
     TopicGenerationRequest,
     BulkTopicRequest,
     BulkGenerationRequest,
     InterviewGenerationSession,
-    InterviewSheetResponse,
     SessionResponse,
-    TopicTemplate,
-    RoadmapSuggestion,
 )
 
 __all__ = [
@@ -32,14 +28,10 @@ __all__ = [
     "SimpleStatus",
     "QuizTopicsResponse",
     # Interview prep models
-    "GenerateInterviewSheetRequest",
     "TopicGenerationRequest",
     "BulkTopicRequest",
     "BulkGenerationRequest",
     "InterviewGenerationSession",
-    "InterviewSheetResponse",
     "SessionResponse",
-    "TopicTemplate",
-    "RoadmapSuggestion",
 ]
 
