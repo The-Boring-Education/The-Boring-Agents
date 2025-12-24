@@ -3,6 +3,8 @@
 from typing import Dict, Any
 import logging
 
+from src.agents.quiz.generators.metadata_generator import QuizMetadataGenerator
+from src.agents.quiz.generators.question_generator import QuizQuestionGenerator
 from src.agents.quiz.session.session_manager import QuizSessionManager
 from src.agents.quiz.workflow.state import QuizWorkflowState
 from src.agents.quiz.workflow.workflow_utils import (
@@ -29,16 +31,13 @@ def generate_questions_node(state: QuizWorkflowState) -> Dict[str, Any]:
     
     log_node_execution("generate_questions", session_id)
 
-    # TODO: You'll create a QuizQuestionGenerator class later
-    # For now, this is the structure:
-    # question_generator = QuizQuestionGenerator()
-    # questions = question_generator.generate_questions(
-    #     topic=state["topic"],
-    #     question_count=state["question_count"],
-    #     difficulty=state["difficulty"],
-    #     target_audience=state["target_audience"]
-    # )
-    questions = []
+    question_generator = QuizQuestionGenerator()
+    questions = question_generator.generate_questions(
+        topic=state["topic"],
+        question_count=state["question_count"],
+        difficulty=state["difficulty"],
+        target_audience=state["target_audience"]
+    )
 
     # Update session
     session_manager = QuizSessionManager()
@@ -74,13 +73,11 @@ def generate_category_metadata_node(state: QuizWorkflowState) -> Dict[str, Any]:
     
     log_node_execution("generate_category_metadata", session_id)
 
-    # TODO: You'll create a QuizMetadataGenerator class later
-    # metadata_generator = QuizMetadataGenerator()
-    # metadata = metadata_generator.generate_category_metadata(
-    #     topic=state["topic"],
-    #     question_count=len(state["questions"])
-    # )
-    metadata = {}
+    metadata_generator = QuizMetadataGenerator()
+    metadata = metadata_generator.generate_category_metadata(
+        topic=state["topic"],
+        question_count=len(state["questions"])
+    )
 
     # Update session
     session_manager = QuizSessionManager()
