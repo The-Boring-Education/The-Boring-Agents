@@ -1,4 +1,4 @@
-"""Workflow nodes for interview sheet generation."""
+"""Workflow nodes for quiz generation."""
 
 from typing import Dict, Any
 import logging
@@ -38,6 +38,7 @@ def generate_questions_node(state: QuizWorkflowState) -> Dict[str, Any]:
     #     difficulty=state["difficulty"],
     #     target_audience=state["target_audience"]
     # )
+    questions = []
 
     # Update session
     session_manager = QuizSessionManager()
@@ -67,8 +68,8 @@ def generate_category_metadata_node(state: QuizWorkflowState) -> Dict[str, Any]:
     if check_skip_condition(state, "category_metadata"):
         log_node_execution("generate_category_metadata", session_id, "skipping (already generated)")
         return {
-            "status": "questions_generating",
-            "current_step": "Generating questions..."
+            "status": "finalizing",
+            "current_step": "Finalizing quiz..."
         }
     
     log_node_execution("generate_category_metadata", session_id)
@@ -79,6 +80,7 @@ def generate_category_metadata_node(state: QuizWorkflowState) -> Dict[str, Any]:
     #     topic=state["topic"],
     #     question_count=len(state["questions"])
     # )
+    metadata = {}
 
     # Update session
     session_manager = QuizSessionManager()

@@ -14,7 +14,7 @@ from fastapi import HTTPException, BackgroundTasks
 
 # TODO: Implement QuizWorkflowOrchestrator in src/agents/quiz/workflow/orchestrator.py
 # Uncomment the import below once implemented:
-# from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
+from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
 
 from src.core.session.session_types import SessionStatus
 from src.core.env import get_env_manager
@@ -39,29 +39,7 @@ class QuizController:
     
     def __init__(self):
         """Initialize the quiz controller."""
-        # TODO: Uncomment once you implement QuizWorkflowOrchestrator
-        # self.orchestrator = QuizWorkflowOrchestrator()
-        
-        # Placeholder until orchestrator is implemented
-        self.orchestrator = None
-        
-        # Auto-fix sessions on startup (like Interview Prep)
-        if self.orchestrator:
-            try:
-                _ = self.orchestrator.session_manager.list_sessions()
-                logger.info("✅ Quiz controller initialized with orchestrator")
-            except Exception as e:
-                logger.warning(f"⚠️ Failed to initialize quiz sessions: {e}")
-        else:
-            logger.warning("⚠️ QuizWorkflowOrchestrator not implemented yet. Quiz generation will not work.")
-    
-    def _check_orchestrator(self):
-        """Check if orchestrator is available."""
-        if not self.orchestrator:
-            raise HTTPException(
-                status_code=501,
-                detail="QuizWorkflowOrchestrator not implemented yet. Implement it in src/agents/quiz/workflow/orchestrator.py"
-            )
+        self.orchestrator = QuizWorkflowOrchestrator()
     
     # =========================================================================
     # Quiz Creation

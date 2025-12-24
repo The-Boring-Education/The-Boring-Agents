@@ -92,8 +92,8 @@ class QuizWorkflowOrchestrator:
             return
 
         # Update fields from state
-        if "meta" in state_update:
-            session_data["meta"] = state_update["meta"]
+        if "category_metadata" in state_update:
+            session_data["category_metadata"] = state_update["category_metadata"]
         
         if "questions" in state_update:
             session_data["questions"] = state_update["questions"]
