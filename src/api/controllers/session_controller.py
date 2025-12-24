@@ -8,7 +8,7 @@ import os
 from typing import Optional, List, Dict, Any
 from fastapi import HTTPException, Query
 
-from src.agents.quiz.quiz_orchestrator import QuizOrchestrator
+# from src.agents.quiz.quiz_orchestrator import QuizOrchestrator
 from src.agents.interview.session.session_manager import InterviewSessionManager
 from src.utils.session_logger import read_logs, get_log_file_path
 from src.utils.helpers import load_json_file
@@ -20,13 +20,13 @@ class SessionController:
     
     def __init__(self):
         """Initialize the session controller."""
-        self.quiz_orchestrator = QuizOrchestrator()
+        # self.quiz_orchestrator = QuizOrchestrator()
         self.interview_session_manager = InterviewSessionManager()
     
     def list_active_sessions(self) -> Dict[str, Any]:
         """Return active sessions from both interview and quiz workflows."""
         try:
-            quiz_sessions = self.quiz_orchestrator.list_active_sessions()
+            # quiz_sessions = self.quiz_orchestrator.list_active_sessions()
             interview_sessions = self.interview_session_manager.list_sessions()
             
             # Format interview sessions to match expected structure
@@ -43,7 +43,7 @@ class SessionController:
             
             return {
                 "ok": True,
-                "quiz": quiz_sessions.get("sessions", []),
+                # "quiz": quiz_sessions.get("sessions", []),
                 "interview": formatted_interview_sessions,
             }
         except Exception as e:
@@ -95,9 +95,9 @@ class SessionController:
         """Resume a paused session if possible (quiz or interview)."""
         try:
             # Try quiz first
-            quiz_result = self.quiz_orchestrator.resume_quiz_generation(session_id)
-            if quiz_result.get("status") != "error":
-                return {"ok": True, "result": quiz_result}
+            # quiz_result = self.quiz_orchestrator.resume_quiz_generation(session_id)
+            # if quiz_result.get("status") != "error":
+            #     return {"ok": True, "result": quiz_result}
 
             # Try interview using new session manager
             session = self.interview_session_manager.get_session(session_id)

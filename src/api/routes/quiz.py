@@ -18,8 +18,6 @@ API Naming Conventions (REST-compliant):
 - DELETE /sessions/{id}   - Delete session
 - POST /validate          - Validate quiz data
 - POST /upload            - Upload quiz to database
-- GET /templates          - Get topic templates
-- GET /categories         - Get category suggestions
 """
 
 import logging
@@ -383,48 +381,6 @@ def upload_quiz(payload: UploadQuizRequest, request: Request):
         log_action(
             request,
             "upload_quiz",
-            level="ERROR",
-            error=str(e),
-            error_type=type(e).__name__
-        )
-        raise
-
-
-# =============================================================================
-# Templates & Suggestions
-# =============================================================================
-
-@router.get("/templates")
-def get_topic_templates(request: Request):
-    """Get available quiz topic templates."""
-    log_action(request, "get_quiz_templates")
-    
-    try:
-        result = controller.get_topic_templates()
-        return result
-    except Exception as e:
-        log_action(
-            request,
-            "get_quiz_templates",
-            level="ERROR",
-            error=str(e),
-            error_type=type(e).__name__
-        )
-        raise
-
-
-@router.get("/categories")
-def get_category_suggestions(request: Request):
-    """Get quiz category suggestions."""
-    log_action(request, "get_quiz_categories")
-    
-    try:
-        result = controller.get_category_suggestions()
-        return result
-    except Exception as e:
-        log_action(
-            request,
-            "get_quiz_categories",
             level="ERROR",
             error=str(e),
             error_type=type(e).__name__

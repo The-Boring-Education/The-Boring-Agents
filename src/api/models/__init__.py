@@ -3,35 +3,46 @@ API models for request/response schemas.
 """
 
 from src.api.models.quiz_models import (
-    GenerateQuizRequest,
-    GenerateQuizAPIResponse,
+    CreateQuizRequest,
+    TopicGenerationRequest as QuizTopicGenerationRequest,
     ValidateQuizRequest,
     UploadQuizRequest,
     SimpleStatus,
-    QuizTopicsResponse,
+    SessionResponse,
+    QuizOutputModel,
+    QuizQuestionModel,
+    QuizOutputResponse,
+    QuizGenerationSession,
+    QuizDifficulty,
+    QuizAgentType,
 )
 
 from src.api.models.interview_prep_models import (
-    TopicGenerationRequest,
-    BulkTopicRequest,
-    BulkGenerationRequest,
+    CreateSheetRequest,
+    TopicGenerationRequest as InterviewTopicGenerationRequest,
     InterviewGenerationSession,
-    SessionResponse,
+    TopicTemplate,
+    RoadmapSuggestion,
 )
 
 __all__ = [
     # Quiz models
-    "GenerateQuizRequest",
-    "GenerateQuizAPIResponse",
+    "CreateQuizRequest",
+    "QuizTopicGenerationRequest",
     "ValidateQuizRequest",
     "UploadQuizRequest",
     "SimpleStatus",
-    "QuizTopicsResponse",
+    "SessionResponse",  # Shared between quiz and interview prep
+    "QuizOutputModel",
+    "QuizQuestionModel",
+    "QuizOutputResponse",
+    "QuizGenerationSession",
+    "QuizDifficulty",
+    "QuizAgentType",
     # Interview prep models
-    "TopicGenerationRequest",
-    "BulkTopicRequest",
-    "BulkGenerationRequest",
+    "CreateSheetRequest",
+    "InterviewTopicGenerationRequest",
     "InterviewGenerationSession",
-    "SessionResponse",
+    "TopicTemplate",
+    "RoadmapSuggestion",
 ]
-

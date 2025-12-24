@@ -175,7 +175,6 @@ The-Boring-Agents/
 
 - `POST /api/v1/interview/sheets` - Create interview sheet with name and description
 - `POST /api/v1/interview/topics` - Generate questions for a single topic
-- `POST /api/v1/interview/topics/bulk` - Bulk generate for multiple topics
 - `GET /api/v1/interview/sessions` - List interview sessions
 - `GET /api/v1/interview/sessions/{session_id}` - Get session progress
 - `GET /api/v1/interview/sessions/{session_id}/output` - Get session output
