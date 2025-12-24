@@ -615,35 +615,6 @@ curl http://localhost:8000/api/v1/interview/sessions/{session_id}
    - Controller updated to use QuizWorkflowOrchestrator
    - Routes ready for testing
 
-### ⚠️ Minor Issue to Fix
-
-**File**: `src/agents/quiz/workflow/nodes.py` (lines 35-40)
-
-**Issue**: 
-- Line 35 calls `generate_questions()` but should call `generate_batch_questions()` for multiple questions
-- Line 38 passes `difficulty` as string, but method expects `QuizDifficulty` enum
-
-**Fix Needed**:
-```python
-# Current (line 35-40):
-questions = question_generator.generate_questions(
-    topic=state["topic"],
-    question_count=state["question_count"],
-    difficulty=state["difficulty"],  # String, but needs enum
-    target_audience=state["target_audience"]
-)
-
-# Should be:
-from src.agents.quiz.types import QuizDifficulty
-
-questions = question_generator.generate_batch_questions(
-    topic=state["topic"],
-    question_count=state["question_count"],
-    difficulty=QuizDifficulty(state["difficulty"]),  # Convert string to enum
-    target_audience=state["target_audience"]
-)
-```
-
 ### 🎯 Next Steps
 
 1. **Fix the minor issue** in `nodes.py` (5 minutes)
@@ -688,6 +659,3 @@ Use this space to jot down questions as you learn:
 3. _Your question here..._
 
 ---
-
-**Last Updated**: 2024-12-XX - Quiz LangGraph implementation complete! Minor fix needed in nodes.py
-

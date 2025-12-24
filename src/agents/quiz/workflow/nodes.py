@@ -13,6 +13,7 @@ from src.agents.quiz.workflow.workflow_utils import (
     log_node_execution,
     get_progress_update,
 )
+from src.agents.quiz.types import QuizDifficulty
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,10 @@ def generate_questions_node(state: QuizWorkflowState) -> Dict[str, Any]:
     log_node_execution("generate_questions", session_id)
 
     question_generator = QuizQuestionGenerator()
-    questions = question_generator.generate_questions(
+    questions = question_generator.generate_batch_questions(
         topic=state["topic"],
         question_count=state["question_count"],
-        difficulty=state["difficulty"],
+        difficulty=QuizDifficulty(state["difficulty"]),
         target_audience=state["target_audience"]
     )
 

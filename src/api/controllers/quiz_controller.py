@@ -41,6 +41,14 @@ class QuizController:
         """Initialize the quiz controller."""
         self.orchestrator = QuizWorkflowOrchestrator()
     
+    def _check_orchestrator(self):
+        """Check if orchestrator is available."""
+        if not self.orchestrator:
+            raise HTTPException(
+                status_code=501,
+                detail="QuizWorkflowOrchestrator not implemented yet. Implement it in src/agents/quiz/workflow/orchestrator.py"
+            )
+    
     # =========================================================================
     # Quiz Creation
     # =========================================================================
