@@ -8,7 +8,7 @@ import json
 from unittest.mock import Mock, patch, MagicMock
 
 from src.agents.interview.workflow.orchestrator import InterviewWorkflowOrchestrator
-from src.agents.interview.session.session_manager import SessionManager
+from src.agents.interview.session.session_manager import InterviewSessionManager
 from src.agents.interview.workflow.state import InterviewWorkflowState
 
 
@@ -26,7 +26,7 @@ class TestWorkflowIntegration:
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
     
-    @patch('src.agents.interview.workflow.orchestrator.SessionManager')
+    @patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager')
     def test_orchestrator_initialization(self, mock_session_manager):
         """Test orchestrator can be initialized."""
         orchestrator = InterviewWorkflowOrchestrator()
@@ -38,7 +38,7 @@ class TestWorkflowIntegration:
     
     def test_start_generation_creates_session(self):
         """Test starting generation creates a session."""
-        with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+        with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
             mock_session = Mock()
             mock_session.create_session.return_value = "test-session-123"
             mock_session.get_session.return_value = {
@@ -92,7 +92,7 @@ class TestWorkflowIntegration:
         mock_create_graph.return_value = mock_graph
         
         # Mock session manager
-        with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+        with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
             mock_session = Mock()
             mock_session.get_session.return_value = {
                 "session_id": "test-123",
@@ -120,7 +120,7 @@ class TestWorkflowIntegration:
     
     def test_get_session_status(self):
         """Test getting session status."""
-        with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+        with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
             mock_session = Mock()
             mock_session.get_session.return_value = {
                 "session_id": "test-123",
@@ -145,7 +145,7 @@ class TestWorkflowIntegration:
     
     def test_get_session_status_not_found(self):
         """Test getting status for non-existent session."""
-        with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+        with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
             mock_session = Mock()
             mock_session.get_session.return_value = None
             mock_session_class.return_value = mock_session
@@ -166,7 +166,7 @@ class TestWorkflowIntegration:
             }
             mock_create_graph.return_value = mock_graph
             
-            with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+            with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_session.return_value = {
                     "session_id": "test-123",
@@ -217,7 +217,7 @@ class TestWorkflowResume:
             }
             mock_create_graph.return_value = mock_graph
             
-            with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+            with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_session.return_value = {
                     "session_id": "test-123",
@@ -255,7 +255,7 @@ class TestWorkflowResume:
             }
             mock_create_graph.return_value = mock_graph
             
-            with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+            with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_session.return_value = {
                     "session_id": "test-123",
@@ -294,7 +294,7 @@ class TestWorkflowResume:
             }
             mock_create_graph.return_value = mock_graph
             
-            with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+            with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_session.return_value = {
                     "session_id": "test-123",
@@ -323,7 +323,7 @@ class TestWorkflowResume:
     
     def test_resume_already_completed(self):
         """Test resuming an already completed session."""
-        with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+        with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
             mock_session = Mock()
             mock_session.get_session.return_value = {
                 "session_id": "test-123",
@@ -367,7 +367,7 @@ class TestWorkflowErrorHandling:
             mock_graph.invoke.side_effect = Exception("LLM API Error")
             mock_create_graph.return_value = mock_graph
             
-            with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+            with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_session.return_value = {
                     "session_id": "test-123",
@@ -391,14 +391,14 @@ class TestWorkflowErrorHandling:
                     orchestrator.execute_workflow("test-123")
                 
                 # Should have updated session status to failed
-                mock_session.update_session_status.assert_called_once()
+                mock_session.update_status.assert_called_once()
                 call_args = mock_session.update_session_status.call_args
                 assert call_args[0][0] == "test-123"
                 assert call_args[0][1] == "failed"
     
     def test_workflow_handles_missing_session(self):
         """Test that workflow handles missing session gracefully."""
-        with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+        with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
             mock_session = Mock()
             mock_session.get_session.return_value = None
             mock_session_class.return_value = mock_session
@@ -416,7 +416,7 @@ class TestWorkflowErrorHandling:
             mock_graph.invoke.side_effect = ValueError("Invalid state")
             mock_create_graph.return_value = mock_graph
             
-            with patch('src.agents.interview.workflow.orchestrator.SessionManager') as mock_session_class:
+            with patch('src.agents.interview.workflow.orchestrator.InterviewSessionManager') as mock_session_class:
                 mock_session = Mock()
                 mock_session.get_session.return_value = {
                     "session_id": "test-123",
@@ -440,5 +440,5 @@ class TestWorkflowErrorHandling:
                     orchestrator.execute_workflow("test-123")
                 
                 # Should have updated session status
-                mock_session.update_session_status.assert_called_once()
+                mock_session.update_status.assert_called_once()
 

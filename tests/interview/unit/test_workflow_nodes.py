@@ -43,7 +43,7 @@ class TestGenerateMetadataNode:
         assert "meta" not in result  # Should not regenerate
     
     @patch('src.agents.interview.workflow.nodes.MetadataGenerator')
-    @patch('src.agents.interview.workflow.nodes.SessionManager')
+    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
     def test_generate_metadata_success(self, mock_session_manager, mock_metadata_gen):
         """Test successful metadata generation."""
         state: InterviewWorkflowState = {
@@ -142,7 +142,7 @@ class TestGenerateQuestionsNode:
     
     @patch('src.agents.interview.workflow.nodes.QuestionGenerator')
     @patch('src.agents.interview.workflow.nodes.MetadataGenerator')
-    @patch('src.agents.interview.workflow.nodes.SessionManager')
+    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
     def test_generate_questions_success(self, mock_session_manager, mock_metadata_gen, mock_question_gen):
         """Test successful question generation."""
         state: InterviewWorkflowState = {
@@ -243,7 +243,7 @@ class TestGenerateAnswersNode:
         assert result["progress"]["completed"] == 2
     
     @patch('src.agents.interview.workflow.nodes._get_answer_generator')
-    @patch('src.agents.interview.workflow.nodes.SessionManager')
+    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
     def test_generate_answers_success(self, mock_session_manager, mock_get_generator):
         """Test successful answer generation."""
         state: InterviewWorkflowState = {
@@ -285,7 +285,7 @@ class TestGenerateAnswersNode:
 class TestPersistStateNode:
     """Tests for persist_state_node."""
     
-    @patch('src.agents.interview.workflow.nodes.SessionManager')
+    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
     def test_persist_state_success(self, mock_session_manager):
         """Test successful state persistence."""
         state: InterviewWorkflowState = {
@@ -319,7 +319,7 @@ class TestPersistStateNode:
         assert result == {}
         mock_session.save_session.assert_called_once()
     
-    @patch('src.agents.interview.workflow.nodes.SessionManager')
+    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
     def test_persist_state_error_handling(self, mock_session_manager):
         """Test error handling in state persistence."""
         state: InterviewWorkflowState = {
@@ -375,7 +375,7 @@ class TestFinalizeNode:
         
         assert result["status"] == "completed"
     
-    @patch('src.agents.interview.workflow.nodes.SessionManager')
+    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
     @patch('src.agents.interview.workflow.nodes.validate_sheet_structure')
     @patch('src.agents.interview.workflow.nodes.generate_slug')
     @patch('src.agents.interview.workflow.nodes.generate_cover_image_url')
