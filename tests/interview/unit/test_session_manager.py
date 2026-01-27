@@ -1,20 +1,21 @@
-"""Unit tests for session manager."""
+"""Unit tests for interview session manager."""
 
 import pytest
 import os
 import tempfile
 import shutil
 
-from src.agents.interview.session.session_manager import SessionManager
+from src.agents.interview.session.session_manager import InterviewSessionManager
+from src.core.session.session_types import SessionStatus
 
 
-class TestSessionManager:
-    """Tests for SessionManager."""
+class TestInterviewSessionManager:
+    """Tests for InterviewSessionManager."""
     
     def setup_method(self):
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
-        self.session_manager = SessionManager(sessions_dir=self.temp_dir)
+        self.session_manager = InterviewSessionManager(sessions_dir=self.temp_dir)
     
     def teardown_method(self):
         """Clean up test fixtures."""
@@ -53,7 +54,7 @@ class TestSessionManager:
             agent_type="generic"
         )
         
-        self.session_manager.update_session_status(session_id, "in_progress", "Processing...")
+        self.session_manager.update_status(session_id, SessionStatus.IN_PROGRESS, current_step="Processing...")
         
         session = self.session_manager.get_session(session_id)
         assert session["status"] == "in_progress"

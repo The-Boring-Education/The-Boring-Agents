@@ -6,7 +6,7 @@ import tempfile
 import shutil
 
 from src.agents.interview.workflow.orchestrator import InterviewWorkflowOrchestrator
-from src.agents.interview.session.session_manager import SessionManager
+from src.agents.interview.session.session_manager import InterviewSessionManager
 
 
 class TestWorkflowIntegration:
