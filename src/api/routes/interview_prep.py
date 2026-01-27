@@ -110,6 +110,13 @@ async def generate_topic(payload: TopicGenerationRequest, background_tasks: Back
         raise
 
 
+# Alias endpoint for dashboard compatibility
+@router.post("/generate-topic", response_model=SessionResponse)
+async def generate_topic_alias(payload: TopicGenerationRequest, background_tasks: BackgroundTasks, request: Request):
+    """Alias for /topics endpoint (dashboard calls this instead of /topics)."""
+    return await generate_topic(payload, background_tasks, request)
+
+
 # =============================================================================
 # Session Operations
 # =============================================================================
@@ -202,6 +209,53 @@ def get_session_output(session_id: str, request: Request):
         log_action(
             request,
             "get_session_output",
+            level="ERROR",
+            session_id=session_id,
+            error=str(e),
+            error_type=type(e).__name__
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Dashboard-compatible aliases
+@router.get("/session/{session_id}")
+def get_session_progress_alias(session_id: str, request: Request):
+    """Alias for /sessions/{id} endpoint (dashboard compatibility)."""
+    return get_session_progress(session_id, request)
+
+
+@router.get("/session/{session_id}/output")
+def get_session_output_alias(session_id: str, request: Request):
+    """Alias for /sessions/{id}/output endpoint (dashboard compatibility)."""
+    return get_session_output(session_id, request)
+
+
+@router.delete("/session/{session_id}")
+def delete_session_alias(session_id: str, request: Request):
+    """Delete a session (dashboard compatibility - singular 'session')."""
+    log_action(request, "delete_session", session_id=session_id)
+    
+    try:
+        session_manager = controller.session_manager
+        session_manager.delete_session(session_id)
+        
+        log_action(
+            request,
+            "delete_session",
+            session_id=session_id,
+            status="deleted"
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Session {session_id} deleted successfully"
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+    except Exception as e:
+        log_action(
+            request,
+            "delete_session",
             level="ERROR",
             session_id=session_id,
             error=str(e),

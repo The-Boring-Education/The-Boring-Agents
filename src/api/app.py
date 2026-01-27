@@ -55,10 +55,49 @@ def create_app() -> FastAPI:
     app.include_router(interview_prep_router, prefix="/api/v1")
     app.include_router(session_router, prefix="/api/v1")
     
+    # Root API endpoint 
+    @app.get("/api/v1")
+    def api_root():
+        """Root API endpoint providing documentation and available endpoints."""
+        return {
+            "service": "The Boring Agents API",
+            "version": app.version,
+            "environment": environment,
+            "status": "online",
+            "endpoints": {
+                "health": "/api/v1/health",
+                "ping": "/api/v1/ping",
+                "quiz": {
+                    "generate_topic": "POST /api/v1/quiz/topics",
+                    "get_topics": "GET /api/v1/quiz/topics",
+                    "get_session": "GET /api/v1/quiz/session/{id}",
+                    "get_session_output": "GET /api/v1/quiz/session/{id}/output"
+                },
+                "interview": {
+                    "generate_topic": "POST /api/v1/interview/generate-topic",
+                    "create_sheet": "POST /api/v1/interview/sheets",
+                    "get_session": "GET /api/v1/interview/session/{id}",
+                    "get_session_output": "GET /api/v1/interview/session/{id}/output"
+                }
+            },
+            "docs": "/docs"
+        }
+    
     # Health check endpoint
     @app.get("/api/v1/health")
     def health():
         """Health check endpoint for monitoring."""
+        return {
+            "ok": True,
+            "service": "The Boring Agents API",
+            "version": app.version,
+            "environment": environment
+        }
+    
+    # Ping endpoint
+    @app.get("/api/v1/ping")
+    def ping():
+        """Ping endpoint (alias for health check)."""
         return {
             "ok": True,
             "service": "The Boring Agents API",
