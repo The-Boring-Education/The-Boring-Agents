@@ -201,6 +201,82 @@ class InterviewPrepController:
         except Exception:
             raise HTTPException(status_code=404, detail="Session not found")
     
+    def update_question(
+        self,
+        session_id: str,
+        question_id: str,
+        updates: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update a question in a session."""
+        try:
+            # First verify session exists
+            session = self.orchestrator.session_manager.get_session(session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Session not found")
+                
+            return self.orchestrator.session_manager.update_question_in_session(
+                session_id,
+                question_id,
+                updates
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error updating question {question_id} in session {session_id}: {e}")
+            raise HTTPException(status_code=500, detail="Failed to update question")
+
+    def get_question(self, session_id: str, question_id: str) -> Dict[str, Any]:
+        """Get a single question from a session."""
+        try:
+            question = self.orchestrator.session_manager.get_question(session_id, question_id)
+            if not question:
+                raise HTTPException(status_code=404, detail="Question not found")
+            return question
+        except Exception as e:
+            logger.error(f"Error getting question {question_id} in session {session_id}: {e}")
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(status_code=500, detail="Failed to get question")
+
+    def delete_question(self, session_id: str, question_id: str) -> Dict[str, Any]:
+        """Delete a question from a session."""
+        try:
+            deleted = self.orchestrator.session_manager.delete_question(session_id, question_id)
+            if not deleted:
+                raise HTTPException(status_code=404, detail="Question not found")
+            
+            # Return remaining questions count or similar status
+            session = self.orchestrator.session_manager.get_session(session_id)
+            remaining = len(session.get("questions", [])) if session else 0
+            
+            return {
+                "message": "Question deleted",
+                "remaining_questions": remaining
+            }
+        except Exception as e:
+            logger.error(f"Error deleting question {question_id} in session {session_id}: {e}")
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(status_code=500, detail="Failed to delete question")
+
+    def add_question(self, session_id: str, question: Dict[str, Any]) -> Dict[str, Any]:
+        """Add a new question to a session."""
+        try:
+            added_question = self.orchestrator.session_manager.add_question(session_id, question)
+            
+            session = self.orchestrator.session_manager.get_session(session_id)
+            total = len(session.get("questions", [])) if session else 0
+            
+            return {
+                "question": added_question,
+                "total_questions": total
+            }
+        except ValueError as e:
+             raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error adding question to session {session_id}: {e}")
+            raise HTTPException(status_code=500, detail="Failed to add question")
+    
     def get_topic_templates(self) -> List[TopicTemplate]:
         """Get available topic templates."""
         templates = [
