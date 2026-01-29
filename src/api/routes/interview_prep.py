@@ -374,3 +374,92 @@ def delete_session(session_id: str, request: Request):
             error_type=type(e).__name__
         )
         raise
+
+@router.put("/session/{session_id}/questions/{question_id}")
+async def update_question(
+    session_id: str,
+    question_id: str,
+    updates: dict,
+    request: Request
+):
+    """
+    Update a generated question in a session.
+    """
+    log_action(
+        request,
+        "update_question",
+        session_id=session_id,
+        question_id=question_id,
+        updates_keys=list(updates.keys())
+    )
+    
+    try:
+        if not updates:
+            raise HTTPException(status_code=400, detail="No updates provided")
+            
+        result = controller.update_question(session_id, question_id, updates)
+        
+        log_action(
+            request,
+            "update_question",
+            session_id=session_id,
+            question_id=question_id,
+            status="success"
+        )
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_action(
+            request,
+            "update_question",
+            level="ERROR",
+            session_id=session_id,
+            question_id=question_id,
+            error=str(e),
+            error_type=type(e).__name__
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/session/{session_id}/questions/{question_id}")
+async def get_question(
+    session_id: str,
+    question_id: str,
+    request: Request
+):
+    """Get a single question from a session."""
+    try:
+        return controller.get_question(session_id, question_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/session/{session_id}/questions/{question_id}")
+async def delete_question(
+    session_id: str,
+    question_id: str,
+    request: Request
+):
+    """Delete a question from a session."""
+    try:
+        return controller.delete_question(session_id, question_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/session/{session_id}/questions")
+async def add_question(
+    session_id: str,
+    question: dict,
+    request: Request
+):
+    """Add a new question to a session."""
+    try:
+        return controller.add_question(session_id, question)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
