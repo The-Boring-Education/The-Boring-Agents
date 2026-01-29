@@ -130,10 +130,6 @@ class InterviewSessionManager(BaseSessionManager):
         
         # Ensure question has an ID
         if "id" not in question and "_id" not in question:
-            # Generate a temporary ID if one doesn't exist
-            # Use timestamp or index-based ID? 
-            # Frontend uses question_INDEX if missing, but for new questions we should probably generate one.
-            # But let's stick to simple ID generation for now.
             import uuid
             question["id"] = str(uuid.uuid4())
             question["created_at"] = datetime.now(timezone.utc).isoformat()
