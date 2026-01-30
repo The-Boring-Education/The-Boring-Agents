@@ -206,5 +206,6 @@ def normalize_question_metadata(question: Dict[str, Any]) -> Dict[str, Any]:
         "answer": question.get("answer", ""),
         "frequency": frequency,
         "priority": priority,
-        "companyTypes": company_types
+        "companyTypes": company_types,
+        "resources": question.get("resources", [])
     }
