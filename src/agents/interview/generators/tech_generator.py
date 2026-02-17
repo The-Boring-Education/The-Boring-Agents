@@ -4,6 +4,8 @@ from typing import Dict, Optional, List
 from langchain_core.prompts import PromptTemplate
 
 from src.agents.interview.generators.base_generator import BaseAnswerGenerator
+from langchain_core.output_parsers import PydanticOutputParser
+from src.agents.interview.models import InterviewQuestionResponse
 
 
 class TechAnswerGenerator(BaseAnswerGenerator):
@@ -21,17 +23,18 @@ class TechAnswerGenerator(BaseAnswerGenerator):
         # Store technology in custom_params for compatibility
         self.custom_params['technology'] = self.technology
     
+    def _get_output_parser(self) -> Optional[PydanticOutputParser]:
+        """Get output parser for tech answers."""
+        return PydanticOutputParser(pydantic_object=InterviewQuestionResponse)
+
     def _get_answer_prompt_template(self) -> PromptTemplate:
         """Get the prompt template for tech answer generation."""
         technology = self.technology or "General Tech"
-        indian_context = self._get_indian_context(technology)
         
         return PromptTemplate(
-            input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types"],
+            input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types", "format_instructions"],
             template=f"""
 You are a Senior Tech Interviewer and Expert Software Engineer with 10+ years of experience in {technology} and the Indian tech industry.
-
-Create a comprehensive, interview-ready answer for this {technology} question:
 
 **Question**: {{question}}
 **Topic**: {{topic}}
@@ -41,116 +44,83 @@ Create a comprehensive, interview-ready answer for this {technology} question:
 **Priority**: {{priority}}
 **Company Types**: {{company_types}}
 
-**ANSWER REQUIREMENTS:**
+**CRITICAL INSTRUCTION:**
+The "answer" field in your JSON response MUST contain the ENTIRE long-form answer as a single markdown string.
+Do NOT summarize. Do NOT shorten. The answer MUST be 800-1500+ words with ALL sections below.
+Use markdown headings (##### ), bullet points, bold text, and code blocks for formatting.
+Do NOT use emojis anywhere in the response.
+Write naturally — avoid generic AI phrases like "Let's dive in", "In conclusion", "It's important to note that", "It's worth mentioning", "comprehensive", "robust", "leverage", "utilize". Write like a senior engineer explaining to a colleague, not like a textbook.
 
-##### 🎯 Direct Answer
+---
 
-Give the most direct, crisp answer first (2-3 lines). What an interviewer wants to hear immediately.
+Write the answer following this EXACT structure (include ALL sections in the "answer" field):
 
-##### 💡 Concept Explanation
+##### Answer
 
-- Explain the core concept clearly
-- Use simple language that a fresher can understand
-- Add {technology}-specific context and terminology
+A confident 2-3 sentence answer that directly addresses the question. This is what the interviewer wants to hear first.
 
-##### 🔧 Practical Implementation
+##### Detailed Explanation
 
-- Provide clean, production-ready code examples
-- Include best practices for {technology}
-- Show multiple approaches when applicable
-- Add proper error handling and edge cases
+- **What is it?** Clear definition with precise technical terminology
+- **How it works internally:** Go beyond surface-level. Explain the internal mechanism, architecture, or algorithm
+- **Where and why is this used?** Practical use cases, performance implications, trade-offs, and when to use vs. alternatives
+- Use analogies for complex topics where helpful
+- 2-3 substantial paragraphs of solid technical prose
 
-##### 🌍 Real-World Applications
+##### Code Example
 
-- Indian company examples (Flipkart, Zomato, Paytm, etc.)
-- Industry use cases specific to {technology}
-- Performance considerations and optimization
+Provide production-grade code in a markdown code block:
+- Add concise comments explaining complex logic
+- Show realistic usage context, not toy examples
+- If comparing approaches, show both (e.g., class vs hooks, callback vs async/await)
 
-##### ⚠️ Common Pitfalls & Best Practices
+##### Answer at a Glance
 
-- What NOT to do (common mistakes)
-- {technology}-specific anti-patterns
-- Security considerations
-- Performance gotchas
+4-6 crisp bullet points that summarize the core takeaways:
+- Performance implications / Time Complexity
+- Trade-offs (Pros/Cons)
+- Edge cases and gotchas
+- Common mistakes developers make
 
-##### 🚀 Advanced Concepts
+##### Real-World Context
 
-- Latest {technology} features and updates
-- Enterprise-level considerations
-- Scalability patterns
-- Integration with other technologies
+How this applies in real products and companies:
+- Relate to real scenarios (handling high traffic, payment flows, real-time systems, etc.)
+- Why companies care about this in production
 
-##### 🎤 Interview Tips
+##### How Interviewers Ask This
 
-- How to approach this question in an interview
-- What interviewers are really testing
-- Follow-up questions to expect
-- Confidence-building talking points
+1. [First variation of how this question is commonly phrased]
+2. [Second variation]
+3. [Third variation]
 
-## 🎨 FORMATTING REQUIREMENTS
+##### Interview Tips
 
-- Use emojis for section headers
-- Include code blocks with proper syntax highlighting for {technology}
-- Add Indian context where relevant ({indian_context})
-- Make it engaging but professional
-- Include memory tricks or mnemonics where helpful
+**What to say:**
+- Key concepts interviewers want to hear
+- How to structure your verbal answer
 
-## 🔍 TECHNOLOGY-SPECIFIC REQUIREMENTS
+**What NOT to say:**
+- Common mistakes and misconceptions
+- Red flags that hurt your impression
 
-For {technology}:
-- Include latest best practices and patterns
-- Cover framework/library-specific features
-- Add ecosystem-related questions (tools, packages, etc.)
-- Include deployment and DevOps considerations if relevant
-- Mention version-specific differences when important
+##### Follow-up Questions to Prepare
 
-## 📈 DIFFICULTY ADAPTATION
+List 2-3 likely follow-up questions the interviewer will ask next.
 
-**Easy Questions**: Focus on fundamentals, basic syntax, core concepts
-**Medium Questions**: Include practical examples, design patterns, trade-offs
-**Hard Questions**: Cover advanced topics, performance optimization, architecture
+---
 
-## 🇮🇳 INDIAN TECH CONTEXT
+**DATA CONSTRAINTS (CRITICAL):**
+- **Frequency**: MUST be one of ["Most Asked", "Asked Frequently", "Asked Sometimes"]. Do NOT use other values.
+- **Priority**: MUST be one of ["High", "Medium", "Low"].
+- **Company Types**: List of strings.
 
-- Use examples from Indian startups and companies
-- Include relevant Indian tech scenarios
-- Consider cost-effectiveness and resource constraints
-- Add cultural context where appropriate
+**REMINDER:** The "answer" field must contain the FULL markdown-formatted response with ALL sections above. Minimum 800 words. Do NOT truncate or summarize into a short paragraph. Do NOT use emojis.
 
-Write the answer in a way that helps the candidate:
-1. **Understand** the concept deeply
-2. **Implement** it practically 
-3. **Explain** it confidently in interviews
-4. **Remember** it easily
-
-Make it comprehensive yet concise, technical yet accessible.
+**FORMAT INSTRUCTIONS:**
+{{format_instructions}}
 """
         )
-    
-    def _get_answer_structure(self) -> Dict[str, str]:
-        """Get the expected answer structure for tech questions."""
-        return {
-            "Direct Answer": "Direct Answer",
-            "Concept Explanation": "Concept Explanation",
-            "Practical Implementation": "Practical Implementation",
-            "Real-World Applications": "Real-World Applications",
-            "Common Pitfalls": "Common Pitfalls",
-            "Interview Tips": "Interview Tips"
-        }
-    
-    def _get_indian_context(self, technology: str) -> str:
-        """Get Indian tech industry context for the technology."""
-        contexts = {
-            "Python": "Python is widely used in Indian fintech companies like Paytm and Razorpay for backend development and data analytics.",
-            "Java": "Java remains the backbone of many Indian enterprises and banking systems, with extensive use in companies like Infosys and TCS.",
-            "JavaScript": "JavaScript powers the frontend of major Indian platforms like Flipkart, Myntra, and BigBasket.",
-            "React": "React is the preferred choice for Indian startups like Zomato and Swiggy for building responsive user interfaces.",
-            "React.js": "React.js is extensively used by Indian e-commerce giants for creating dynamic and interactive user experiences.",
-            "Node.js": "Node.js is popular among Indian startups for building scalable backend services, especially in companies like Ola and PhonePe.",
-            "DevOps": "Indian IT services companies are rapidly adopting DevOps practices to accelerate delivery for global clients.",
-            "Docker": "Docker containerization is becoming standard in Indian cloud-native companies for deployment efficiency."
-        }
-        return contexts.get(technology, f"{technology} is gaining significant adoption in the Indian tech ecosystem.")
     
     def generate_answer(
         self,
@@ -161,7 +131,7 @@ Make it comprehensive yet concise, technical yet accessible.
         priority: str = "Medium",
         company_types: Optional[List[str]] = None,
         technology: Optional[str] = None
-    ) -> str:
+    ) -> InterviewQuestionResponse:
         """Generate a tech-specific answer.
         
         Args:
@@ -174,7 +144,7 @@ Make it comprehensive yet concise, technical yet accessible.
             technology: Technology name (overrides instance technology if provided)
             
         Returns:
-            MDX-formatted answer string
+            InterviewQuestionResponse object
         """
         # Use provided technology or fall back to instance technology
         tech = technology or self.technology or "General Tech"

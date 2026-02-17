@@ -1,9 +1,11 @@
 """Generic answer generator for aptitude and basic interview questions."""
 
-from typing import Dict
+from typing import Dict, Any
 from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
 
 from src.agents.interview.generators.base_generator import BaseAnswerGenerator
+from src.agents.interview.models import InterviewQuestionResponse
 
 
 class GenericAnswerGenerator(BaseAnswerGenerator):
@@ -13,12 +15,9 @@ class GenericAnswerGenerator(BaseAnswerGenerator):
         """Get the prompt template for generic answer generation."""
         return PromptTemplate(
             input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types"],
+            partial_variables={"format_instructions": self._get_output_parser().get_format_instructions()},
             template="""
-You are India's TOP tech instructor and interviewer with 500+ interviews at companies like:
-- FAANG (Google, Meta, Amazon, Apple, Netflix)
-- Indian Unicorns (Flipkart, Paytm, Ola, Swiggy, Zomato, BYJU'S)
-- Mid-size startups (Razorpay, Freshworks, Zoho, InMobi)
-- MNCs (Microsoft, Oracle, SAP, IBM)
+You are India's top tech instructor and interviewer with 500+ interviews at companies like FAANG, Indian Unicorns (Flipkart, Razorpay, Swiggy), and MNCs (Microsoft, Oracle, SAP).
 
 **Interview Question:** {question}
 **Topic:** {topic}
@@ -27,84 +26,77 @@ You are India's TOP tech instructor and interviewer with 500+ interviews at comp
 **Priority:** {priority}
 **Company Types:** {company_types}
 
-Create a WORLD-CLASS answer for this aptitude/general interview question that will help Indian students ACE their interviews.
+**CRITICAL INSTRUCTION:**
+The "answer" field in your JSON response MUST contain the ENTIRE long-form answer below as a single markdown string.
+Do NOT summarize. Do NOT shorten. The answer MUST be 800-1500+ words with ALL the sections below.
+Use markdown headings (##### ), bullet points, bold, and code blocks for formatting.
+Do NOT use emojis anywhere in the response.
+Write naturally — avoid generic AI phrases like "Let's dive in", "In conclusion", "It's important to note that", "comprehensive", "robust", "leverage". Write like you are explaining to a friend, not writing a textbook.
 
-##### 🎯 Quick Answer
+---
 
-Give a concise, confident answer they can say in the first 30 seconds.
+Write the answer following this EXACT structure (include ALL sections):
 
-##### 📚 Introduction
+##### Answer
 
-**What is it?**
-- Clear definition in simple terms
-- Why it exists and what problem it solves
-- Basic reasoning and logic behind the concept
+A concise 2-3 sentence answer they can say in the first 30 seconds of the interview.
 
-**Real-world Context (Indian Examples):**
-- How this applies in Indian tech companies
-- Practical scenarios where this knowledge is useful
-- Common use cases
+##### Detailed Explanation
 
-##### 💡 Basic Reasoning
+- **What is it?** Clear definition in simple terms
+- **Why does it exist?** The problem it solves
+- **How does it work?** Step-by-step breakdown with technical depth
+- Include concrete examples and code snippets where applicable
+- Use bullet points for clarity
 
-Explain the fundamental reasoning and logic:
-- Step-by-step thought process
-- Why this approach works
-- Basic principles involved
+##### Code Example (if applicable)
 
-##### 🤔 Why This Concept Matters
+Provide a practical code example in a markdown code block showing the concept in action. Include comments explaining each part.
 
-Real-world importance, industry relevance, and why it matters for your career.
+##### Answer at a Glance
 
-##### 🎭 Different Ways Interviewers Ask This
+List 4-6 important takeaways as bullet points. These should be crisp, memorable facts — not generic filler.
 
-1. [First variation of how this question might be framed]
-2. [Second variation of how this question might be framed]
-3. [Third variation of how this question might be framed]
+##### How Interviewers Ask This
 
-##### 😄 How will you remember it?
+1. [First variation of how this question is commonly phrased]
+2. [Second variation]
+3. [Third variation]
 
-Create a funny, memorable analogy using Indian context (e.g., Mumbai local trains, masala dabba, street food stall).
+##### Interview Tips
 
-##### 💡 Tip
+**What to say:**
+- Key concepts interviewers want to hear
+- How to structure your verbal answer
 
-Share one practical, actionable tip that will make a real difference for this concept.
+**What NOT to say:**
+- Common mistakes and misconceptions
+- Red flags that hurt your impression
 
-##### 💼 Interview Pro Tips
+##### Follow-up Questions to Prepare
 
-**What interviewers want to hear:**
+List 2-3 follow-up questions the interviewer might ask after this one.
 
-1. Key concepts and reasoning
-2. Clear explanation of the logic
-3. Practical applications
+##### Memory Trick
 
-**Red flags to avoid:**
+A funny, memorable analogy using relatable context that helps remember the concept.
 
-1. Common misconceptions
-2. Things you shouldn't say in interviews
-3. Mistakes freshers typically make
+---
 
-##### 🧠 Practice Problems
+**DATA CONSTRAINTS (CRITICAL):**
+- **Frequency**: MUST be one of ["Most Asked", "Asked Frequently", "Asked Sometimes"].
+- **Priority**: MUST be one of ["High", "Medium", "Low"].
+- **Company Types**: List of strings.
 
-1. [First problem to solve for practice with brief description]
-2. [Second problem to solve for practice with brief description]
+**REMINDER:** The "answer" field must contain the FULL markdown-formatted response with ALL sections above. Minimum 800 words. Do NOT truncate or summarize. Do NOT use emojis.
 
-## Writing Style:
-- Write like you're mentoring your younger sibling
-- Use conversational Hindi-English (but stay professional)
-- Add emojis for better engagement
-- Include specific numbers, metrics, examples
-- Be confident but humble
-- Make them feel "I got this!" after reading
-
-Make this answer so good that students will:
-1. Understand the concept deeply
-2. Remember it with your analogies
-3. Feel confident in interviews
-4. Want to share it with friends
-5. Think "This was totally worth it!"
+{format_instructions}
 """
         )
+
+    def _get_output_parser(self) -> PydanticOutputParser:
+        """Get the output parser for generic questions."""
+        return PydanticOutputParser(pydantic_object=InterviewQuestionResponse)
     
     def _get_answer_structure(self) -> Dict[str, str]:
         """Get the expected answer structure for generic questions."""

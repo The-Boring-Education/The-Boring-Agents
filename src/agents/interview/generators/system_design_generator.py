@@ -1,9 +1,11 @@
 """System Design answer generator for system design interview questions."""
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
 
 from src.agents.interview.generators.base_generator import BaseAnswerGenerator
+from src.agents.interview.models import InterviewQuestionResponse
 
 
 class SystemDesignAnswerGenerator(BaseAnswerGenerator):
@@ -13,6 +15,7 @@ class SystemDesignAnswerGenerator(BaseAnswerGenerator):
         """Get the prompt template for system design answer generation."""
         return PromptTemplate(
             input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types"],
+            partial_variables={"format_instructions": self._get_output_parser().get_format_instructions()},
             template="""
 You are a Senior System Design Architect and Expert with 10+ years of experience designing scalable systems at companies like:
 - FAANG (Google, Meta, Amazon, Apple, Netflix)
@@ -27,13 +30,25 @@ You are a Senior System Design Architect and Expert with 10+ years of experience
 **Priority:** {priority}
 **Company Types:** {company_types}
 
-Create a WORLD-CLASS system design answer with deep reasoning and architectural thinking.
+**DATA CONSTRAINTS (CRITICAL):**
+- **Frequency**: MUST be one of ["Most Asked", "Asked Frequently", "Asked Sometimes"].
+- **Priority**: MUST be one of ["High", "Medium", "Low"].
+- **Company Types**: List of strings.
 
-##### 🎯 Direct Answer
+Create a detailed system design answer with deep reasoning and architectural thinking.
+
+**CRITICAL INSTRUCTION:**
+The "answer" field in your JSON response MUST contain the ENTIRE long-form answer below as a single markdown string.
+Do NOT summarize. Do NOT shorten. The answer MUST be 1000-2000+ words with ALL the sections below.
+Use markdown headings (##### ), bullet points, bold, and code blocks for formatting.
+Do NOT use emojis anywhere in the response.
+Write naturally — avoid generic AI phrases like "Let's dive in", "In conclusion", "comprehensive", "robust". Write like a senior architect explaining to a colleague.
+
+##### Answer
 
 Give a concise, high-level answer (2-3 lines) outlining the core architectural approach.
 
-##### 🏗️ System Architecture Overview
+##### System Architecture Overview
 
 **High-Level Design:**
 - Core components and their responsibilities
@@ -46,7 +61,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Trade-offs considered
 - Alternative approaches and why they were rejected
 
-##### 📊 Requirements Analysis
+##### Requirements Analysis
 
 **Functional Requirements:**
 - What the system must do
@@ -64,7 +79,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Priority of different requirements
 - Constraints and assumptions
 
-##### 🔧 Component Design
+##### Component Design
 
 **Core Components:**
 - Detailed design of each major component
@@ -78,7 +93,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Design patterns applied
 - Separation of concerns
 
-##### 💾 Data Storage & Management
+##### Data Storage and Management
 
 **Database Design:**
 - Data models and schemas
@@ -96,7 +111,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Trade-offs between consistency and availability
 - Scalability considerations
 
-##### ⚡ Scalability & Performance
+##### Scalability and Performance
 
 **Scaling Strategies:**
 - Horizontal vs vertical scaling
@@ -114,7 +129,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Performance vs cost trade-offs
 - When to scale different components
 
-##### 🔒 Reliability & Fault Tolerance
+##### Reliability and Fault Tolerance
 
 **High Availability:**
 - Redundancy strategies
@@ -131,7 +146,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Cost vs reliability trade-offs
 - Failure mode analysis
 
-##### 🔐 Security Considerations
+##### Security Considerations
 
 **Security Measures:**
 - Authentication and authorization
@@ -144,7 +159,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Security vs performance trade-offs
 - Compliance requirements
 
-##### 📈 Real-World Examples
+##### Real-World Examples
 
 **Indian Tech Company Examples:**
 - How Flipkart handles similar challenges
@@ -157,7 +172,7 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Lessons learned from industry
 - Best practices applied
 
-##### 🎤 Interview Tips
+##### Interview Tips
 
 **How to Approach:**
 - Step-by-step interview strategy
@@ -172,21 +187,21 @@ Give a concise, high-level answer (2-3 lines) outlining the core architectural a
 - Continuous improvement mindset
 
 ## Writing Style:
-- Write like you're mentoring a senior engineer
+- Write like you are mentoring a senior engineer colleague
 - Focus on reasoning and trade-offs
-- Use diagrams and visual descriptions
-- Include specific numbers and metrics
+- Include specific numbers and metrics where applicable
 - Be practical and realistic
 - Show deep architectural thinking
 
-Make this answer so good that candidates will:
-1. Understand the reasoning behind design decisions
-2. Learn to think like a system architect
-3. Feel confident discussing trade-offs
-4. Apply these patterns in real interviews
-5. Think "This was totally worth it!"
+**REMINDER:** The "answer" field must contain the FULL markdown-formatted response with ALL sections above. Minimum 1000 words. Do NOT truncate or summarize. Do NOT use emojis.
+
+{format_instructions}
 """
         )
+
+    def _get_output_parser(self) -> PydanticOutputParser:
+        """Get the output parser for system design questions."""
+        return PydanticOutputParser(pydantic_object=InterviewQuestionResponse)
     
     def _get_answer_structure(self) -> Dict[str, str]:
         """Get the expected answer structure for system design questions."""

@@ -189,7 +189,7 @@ def generate_answers_node(state: InterviewWorkflowState) -> Dict[str, Any]:
         question_index = questions.index(question)
         logger.info(f"Generating answer {question_index + 1}/{len(questions)}")
         
-        answer = generator.generate_answer(
+        answer_result = generator.generate_answer(
             question=question["question"],
             topic=state["name"],
             difficulty="Medium",  # Can be enhanced to detect difficulty
@@ -198,7 +198,30 @@ def generate_answers_node(state: InterviewWorkflowState) -> Dict[str, Any]:
             company_types=question["companyTypes"]
         )
         
-        question["answer"] = answer
+        # Handle structured response
+        if hasattr(answer_result, 'answer'):  # Check if it's an object with 'answer' attribute (like InterviewQuestionResponse)
+            question["answer"] = answer_result.answer
+            
+            # Convert resources to dicts if they are objects
+            resources = getattr(answer_result, 'resources', [])
+            question["resources"] = [
+                res.model_dump() if hasattr(res, 'model_dump') else res 
+                for res in resources
+            ]
+            
+            # Update metadata if provided in answer
+            if getattr(answer_result, 'company_types', None):
+                question["companyTypes"] = answer_result.company_types
+            if getattr(answer_result, 'difficulty', None):
+                question["difficulty"] = answer_result.difficulty
+            if getattr(answer_result, 'frequency', None):
+                question["frequency"] = answer_result.frequency
+            if getattr(answer_result, 'priority', None):
+                question["priority"] = answer_result.priority
+        else:
+            # Legacy string response
+            question["answer"] = str(answer_result)
+        
         completed_count += 1
         
         # Update session after each answer

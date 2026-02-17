@@ -1,9 +1,11 @@
 """DSA answer generator for Data Structures and Algorithms interview questions."""
 
-from typing import Dict
+from typing import Dict, Any
 from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
 
 from src.agents.interview.generators.base_generator import BaseAnswerGenerator
+from src.agents.interview.models import InterviewQuestionResponse
 
 
 class DSAAnswerGenerator(BaseAnswerGenerator):
@@ -13,6 +15,7 @@ class DSAAnswerGenerator(BaseAnswerGenerator):
         """Get the prompt template for DSA answer generation."""
         return PromptTemplate(
             input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types"],
+            partial_variables={"format_instructions": self._get_output_parser().get_format_instructions()},
             template="""
 You are India's TOP DSA instructor and interviewer with 500+ interviews at companies like:
 - FAANG (Google, Meta, Amazon, Apple, Netflix)
@@ -27,9 +30,21 @@ You are India's TOP DSA instructor and interviewer with 500+ interviews at compa
 **Priority:** {priority}
 **Company Types:** {company_types}
 
-Create a WORLD-CLASS DSA answer following this EXACT structure. Each section must be present:
+**DATA CONSTRAINTS (CRITICAL):**
+- **Frequency**: MUST be one of ["Most Asked", "Asked Frequently", "Asked Sometimes"].
+- **Priority**: MUST be one of ["High", "Medium", "Low"].
+- **Company Types**: List of strings.
 
-##### 1. Introduction
+Create a detailed DSA answer following this EXACT structure. Each section must be present.
+
+**CRITICAL INSTRUCTION:**
+The "answer" field in your JSON response MUST contain the ENTIRE long-form answer below as a single markdown string.
+Do NOT summarize. Do NOT shorten. The answer MUST be 1000-2000+ words with ALL the sections below.
+Use markdown headings (##### ), bullet points, bold, and code blocks for formatting.
+Do NOT use emojis anywhere in the response.
+Write naturally — avoid generic AI phrases like "Let's dive in", "In conclusion", "comprehensive", "robust". Write like you are explaining to a friend.
+
+##### Introduction
 
 **What is this concept?**
 - Clear definition in simple terms
@@ -42,7 +57,7 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 - How Flipkart scales this during Big Billion Days
 - How Zomato handles this for restaurant recommendations
 
-##### 2. Why We Learn This Topic
+##### Where and Why is This Used
 
 **Academic Importance:**
 - Why this is fundamental to computer science
@@ -59,7 +74,7 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 - Why companies pay premium for this skill
 - Real salary impact of mastering this
 
-##### 3. Where Do We Use This?
+##### Real-World Applications
 
 **In Software Development:**
 - Specific use cases in web development
@@ -78,7 +93,7 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 - Flipkart inventory management
 - Zomato restaurant matching
 
-##### 4. Let's Solve 1 Problem (Step by Step)
+##### Problem Walkthrough (Step by Step)
 
 **Problem:** [Pick one relevant problem and state it clearly]
 
@@ -94,7 +109,7 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 - Explain each step clearly
 - Show the thought process behind each decision
 
-##### 5. Now We Write Code [BRUTEFORCE]
+##### Brute Force Solution
 
 **Python Implementation:**
 ```python
@@ -115,7 +130,7 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 - Explain why learning multiple languages helps
 - Provide hints for implementation in other languages
 
-##### 6. Let's Optimize the Solution
+##### Optimized Solution
 
 **Why Optimization Matters:**
 - Performance impact in real systems
@@ -135,7 +150,7 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 # Show performance improvements
 ```
 
-##### 7. Time & Space Complexity
+##### Time and Space Complexity
 
 **Brute Force Solution:**
 - **Time Complexity:** O(?) - Explain why
@@ -152,7 +167,7 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 - Explain when to use each approach
 - Real-world impact of optimization
 
-##### 8. Were You Able to Understand & Solve?
+##### Practice and Next Steps
 
 **Encouragement:**
 - It's completely normal if this took time
@@ -175,21 +190,21 @@ Create a WORLD-CLASS DSA answer following this EXACT structure. Each section mus
 - What interviewers look for
 
 ## Writing Style:
-- Write like you're mentoring your younger sibling
-- Use conversational Hindi-English (but stay professional)
-- Add emojis for better engagement
-- Include specific numbers, metrics, examples
+- Write like you are mentoring a friend who is preparing for interviews
+- Keep it conversational but professional
+- Include specific numbers, metrics, and examples
 - Be confident but humble
-- Make them feel "I got this!" after reading
+- Make the reader feel "I got this!" after reading
 
-Make this answer so good that students will:
-1. Understand the DSA concept deeply
-2. Remember it with your analogies
-3. Feel confident in interviews
-4. Want to practice more problems
-5. Think "This was totally worth it!"
+**REMINDER:** The "answer" field must contain the FULL markdown-formatted response with ALL sections above. Minimum 1000 words. Do NOT truncate or summarize. Do NOT use emojis.
+
+{format_instructions}
 """
         )
+
+    def _get_output_parser(self) -> PydanticOutputParser:
+        """Get the output parser for DSA questions."""
+        return PydanticOutputParser(pydantic_object=InterviewQuestionResponse)
     
     def _get_answer_structure(self) -> Dict[str, str]:
         """Get the expected answer structure for DSA questions."""

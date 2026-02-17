@@ -8,6 +8,9 @@ from src.core.base_agent import BaseAgent
 from src.agents.interview.common.mdx_utils import format_answer_as_mdx
 
 
+from langchain_core.output_parsers import PydanticOutputParser
+from src.agents.interview.models import InterviewQuestionResponse
+
 class BaseAnswerGenerator(BaseAgent, ABC):
     """Abstract base class for all answer generators."""
     
@@ -33,11 +36,11 @@ class BaseAnswerGenerator(BaseAgent, ABC):
         pass
     
     @abstractmethod
-    def _get_answer_structure(self) -> Dict[str, str]:
-        """Get the expected answer structure for this generator type.
+    def _get_output_parser(self) -> Optional[PydanticOutputParser]:
+        """Get the output parser for structured generation.
         
         Returns:
-            Dictionary describing required sections in the answer
+            PydanticOutputParser or None
         """
         pass
     
@@ -49,7 +52,7 @@ class BaseAnswerGenerator(BaseAgent, ABC):
         frequency: str = "Asked Sometimes",
         priority: str = "Medium",
         company_types: Optional[List[str]] = None
-    ) -> str:
+    ) -> InterviewQuestionResponse:
         """Generate an answer for an interview question.
         
         Args:
@@ -61,7 +64,7 @@ class BaseAnswerGenerator(BaseAgent, ABC):
             company_types: Types of companies that ask this question
             
         Returns:
-            MDX-formatted answer string
+            InterviewQuestionResponse object
         """
         if company_types is None:
             company_types = ["Startup", "MNC"]
@@ -71,6 +74,10 @@ class BaseAnswerGenerator(BaseAgent, ABC):
         # Get prompt template
         prompt_template = self._get_answer_prompt_template()
         
+        # Get output parser
+        parser = self._get_output_parser()
+        format_instructions = parser.get_format_instructions() if parser else ""
+        
         # Format prompt with question details
         prompt = prompt_template.format(
             question=question,
@@ -78,164 +85,76 @@ class BaseAnswerGenerator(BaseAgent, ABC):
             difficulty=difficulty,
             frequency=frequency,
             priority=priority,
-            company_types=", ".join(company_types) if company_types else "All types"
+            company_types=", ".join(company_types) if company_types else "All types",
+            format_instructions=format_instructions
         )
         
         # Generate answer using LLM
         raw_answer = self._generate_with_prompt(prompt)
         
-        # Apply quality improvements
-        improved_answer = self._apply_quality_improvements(
-            raw_answer,
-            question,
-            topic,
-            difficulty
-        )
-        
-        # Format as MDX
-        mdx_answer = format_answer_as_mdx(improved_answer)
-        
-        self.logger.info("Answer generated successfully")
-        return mdx_answer
-    
-    def _apply_quality_improvements(
-        self,
-        answer: str,
-        question: str,
-        topic: str,
-        difficulty: str
-    ) -> str:
-        """Apply quality improvements to the generated answer.
+        try:
+            if parser:
+                structured_answer = parser.parse(raw_answer)
+                # Normalize response to match database enums
+                structured_answer = self._normalize_response(structured_answer)
+                self.logger.info("Answer generated, parsed, and normalized successfully")
+                return structured_answer
+            else:
+                return raw_answer
+        except Exception as e:
+            self.logger.error(f"Failed to parse answer: {e}")
+            raise e
+            
+    def _normalize_response(self, response: InterviewQuestionResponse) -> InterviewQuestionResponse:
+        """Normalize response fields to match database enums.
         
         Args:
-            answer: Raw generated answer
-            question: Original question
-            topic: Topic area
-            difficulty: Difficulty level
+            response: The parsed InterviewQuestionResponse
             
         Returns:
-            Improved answer
+            Normalized InterviewQuestionResponse
         """
-        # Check for required sections
-        required_sections = self._get_answer_structure()
-        missing_sections = self._check_missing_sections(answer, required_sections)
+        # 1. Normalize Frequency
+        freq_map = {
+            "high": "Most Asked",
+            "most asked": "Most Asked",
+            "most-asked": "Most Asked",
+            "medium": "Asked Frequently",
+            "asked frequently": "Asked Frequently",
+            "frequently": "Asked Frequently",
+            "low": "Asked Sometimes",
+            "asked sometimes": "Asked Sometimes",
+            "sometimes": "Asked Sometimes",
+            "uncommon": "Asked Sometimes",
+            "rare": "Asked Sometimes"
+        }
         
-        if missing_sections:
-            answer = self._add_missing_sections(answer, missing_sections, question, topic)
+        curr_freq = response.frequency.lower() if response.frequency else ""
+        response.frequency = freq_map.get(curr_freq, "Asked Frequently")
         
-        # Ensure proper formatting
-        answer = self._ensure_proper_formatting(answer)
+        # 2. Normalize Priority
+        priority_map = {
+            "high": "High",
+            "medium": "Medium",
+            "low": "Low",
+            "critical": "High",
+            "normal": "Medium"
+        }
         
-        return answer
+        curr_priority = response.priority.lower() if response.priority else ""
+        response.priority = priority_map.get(curr_priority, "Medium")
+        
+        # 3. Ensure difficulty is capitalized correctly
+        diff_map = {
+            "easy": "Easy",
+            "medium": "Medium",
+            "hard": "Hard"
+        }
+        curr_diff = response.difficulty.lower() if response.difficulty else ""
+        response.difficulty = diff_map.get(curr_diff, "Medium")
+        
+        return response
     
-    def _check_missing_sections(
-        self,
-        answer: str,
-        required_sections: Dict[str, str]
-    ) -> List[str]:
-        """Check for missing required sections in the answer.
-        
-        Args:
-            answer: Generated answer
-            required_sections: Dictionary of required sections
-            
-        Returns:
-            List of missing section names
-        """
-        missing = []
-        for section_name, section_keyword in required_sections.items():
-            if section_keyword.lower() not in answer.lower():
-                missing.append(section_name)
-        return missing
-    
-    def _add_missing_sections(
-        self,
-        answer: str,
-        missing_sections: List[str],
-        question: str,
-        topic: str
-    ) -> str:
-        """Add missing sections to the answer.
-        
-        Args:
-            answer: Current answer
-            missing_sections: List of missing section names
-            question: Original question
-            topic: Topic area
-            
-        Returns:
-            Answer with missing sections added
-        """
-        # Default implementation - can be overridden by subclasses
-        for section in missing_sections:
-            section_content = self._generate_missing_section(section, question, topic)
-            answer += f"\n\n{section_content}"
-        return answer
-    
-    def _generate_missing_section(
-        self,
-        section_name: str,
-        question: str,
-        topic: str
-    ) -> str:
-        """Generate content for a missing section.
-        
-        Args:
-            section_name: Name of the section
-            question: Original question
-            topic: Topic area
-            
-        Returns:
-            Generated section content
-        """
-        prompt = f"Generate a brief {section_name} section for this interview question: {question}\nTopic: {topic}"
-        return self._generate_with_prompt(prompt)
-    
-    def _ensure_proper_formatting(self, answer: str) -> str:
-        """Ensure proper markdown formatting.
-        
-        Args:
-            answer: Answer text
-            
-        Returns:
-            Formatted answer
-        """
-        # Fix headers - ensure consistent header levels
-        answer = answer.replace("###", "#####")
-        answer = answer.replace("##", "#####")
-        
-        # Fix spacing
-        answer = answer.replace("\n\n\n", "\n\n")
-        
-        # Ensure code blocks are properly formatted
-        if "```" in answer:
-            # Ensure language tags are present
-            lines = answer.split('\n')
-            formatted_lines = []
-            in_code_block = False
-            code_language = "text"
-            
-            for line in lines:
-                if line.strip().startswith("```"):
-                    if not in_code_block:
-                        # Opening code block
-                        in_code_block = True
-                        # Check if language is specified
-                        if len(line.strip()) > 3:
-                            code_language = line.strip()[3:].strip()
-                        else:
-                            code_language = "text"
-                        formatted_lines.append(f"```{code_language}")
-                    else:
-                        # Closing code block
-                        in_code_block = False
-                        formatted_lines.append("```")
-                else:
-                    formatted_lines.append(line)
-            
-            answer = '\n'.join(formatted_lines)
-        
-        return answer
     
     def generate_content(self, content_type: str, **kwargs) -> Dict[str, Any]:
         """Generate content based on type.
