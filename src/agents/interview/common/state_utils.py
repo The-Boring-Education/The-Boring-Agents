@@ -204,10 +204,47 @@ def normalize_question_metadata(question: Dict[str, Any]) -> Dict[str, Any]:
         "title": title,
         "question": question.get("question", ""),
         "answer": question.get("answer", ""),
-        "explanation": question.get("explanation", ""),
-        "keyPoints": question.get("keyPoints", question.get("key_points", [])),
         "frequency": frequency,
         "priority": priority,
         "companyTypes": company_types,
-        "resources": question.get("resources", [])
+        "resources": normalize_resources(question.get("resources", []))
     }
+
+
+def normalize_resources(resources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Normalize resource types to match enum values.
+    
+    Args:
+        resources: List of resource dictionaries
+        
+    Returns:
+        Normalized list of resource dictionaries
+    """
+    valid_types = {'YOUTUBE', 'ARTICLE', 'CODE', 'LEETCODE', 'BLOG'}
+    normalized = []
+    
+    for res in resources:
+        if not isinstance(res, dict) or not res.get("url"):
+            continue
+            
+        res_type = str(res.get("type", "")).upper()
+        
+        # Map common variations
+        if "YOUTUBE" in res_type or "VIDEO" in res_type:
+            res_type = "YOUTUBE"
+        elif "LEETCODE" in res_type:
+            res_type = "LEETCODE"
+        elif "BLOG" in res_type:
+            res_type = "BLOG"
+        elif "CODE" in res_type or "GITHUB" in res_type:
+            res_type = "CODE"
+        elif res_type not in valid_types:
+            res_type = "ARTICLE"
+            
+        normalized.append({
+            "type": res_type,
+            "url": res.get("url"),
+            "label": res.get("label")
+        })
+        
+    return normalized
