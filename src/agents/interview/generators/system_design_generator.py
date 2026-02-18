@@ -1,6 +1,6 @@
 """System Design answer generator for system design interview questions."""
 
-from typing import Dict, Optional, List
+from typing import Dict
 from langchain_core.prompts import PromptTemplate
 
 from src.agents.interview.generators.base_generator import BaseAnswerGenerator
@@ -8,9 +8,8 @@ from src.agents.interview.generators.base_generator import BaseAnswerGenerator
 
 class SystemDesignAnswerGenerator(BaseAnswerGenerator):
     """Generator for system design interview questions with reasoning-based answers."""
-    
+
     def _get_answer_prompt_template(self) -> PromptTemplate:
-        """Get the prompt template for system design answer generation."""
         return PromptTemplate(
             input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types"],
             template="""
@@ -185,11 +184,10 @@ Make this answer so good that candidates will:
 3. Feel confident discussing trade-offs
 4. Apply these patterns in real interviews
 5. Think "This was totally worth it!"
-"""
+""",
         )
-    
+
     def _get_answer_structure(self) -> Dict[str, str]:
-        """Get the expected answer structure for system design questions."""
         return {
             "Direct Answer": "Direct Answer",
             "System Architecture Overview": "System Architecture Overview",
@@ -199,25 +197,5 @@ Make this answer so good that candidates will:
             "Scalability": "Scalability",
             "Reliability": "Reliability",
             "Security Considerations": "Security Considerations",
-            "Interview Tips": "Interview Tips"
+            "Interview Tips": "Interview Tips",
         }
-    
-    def generate_content(self, content_type: str, **kwargs) -> Dict:
-        """Generate content based on type."""
-        if content_type == "answer":
-            answer = self.generate_answer(
-                question=kwargs.get("question", ""),
-                topic=kwargs.get("topic", ""),
-                difficulty=kwargs.get("difficulty", "Medium"),
-                frequency=kwargs.get("frequency", "Asked Sometimes"),
-                priority=kwargs.get("priority", "Medium"),
-                company_types=kwargs.get("company_types", ["Startup", "MNC"])
-            )
-            return {
-                "status": "success",
-                "answer": answer,
-                "content_type": "answer"
-            }
-        else:
-            raise ValueError(f"Unknown content type: {content_type}")
-

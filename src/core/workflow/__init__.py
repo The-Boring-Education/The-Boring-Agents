@@ -1,4 +1,4 @@
-"""Backward-compatible re-exports from the core workflow utilities."""
+"""Core workflow utilities shared across all agent workflows."""
 
 from src.core.workflow.workflow_utils import (
     handle_node_errors,
@@ -9,6 +9,7 @@ from src.core.workflow.workflow_utils import (
     update_state_safely,
     validate_state_fields,
 )
+from src.core.workflow.base_orchestrator import BaseWorkflowOrchestrator
 
 __all__ = [
     "handle_node_errors",
@@ -18,4 +19,5 @@ __all__ = [
     "create_error_state",
     "update_state_safely",
     "validate_state_fields",
+    "BaseWorkflowOrchestrator",
 ]
