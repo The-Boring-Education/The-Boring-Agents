@@ -178,7 +178,14 @@ class BaseAnswerGenerator(BaseAgent, ABC):
 
     @staticmethod
     def _ensure_proper_formatting(answer: str) -> str:
-        answer = answer.replace("###", "#####").replace("##", "#####")
+        import re
+        # Normalize all markdown headers (h1-h6) to h5 in a single pass
+        answer = re.sub(
+            r"^(#{1,6})\s+",
+            "##### ",
+            answer,
+            flags=re.MULTILINE,
+        )
         answer = answer.replace("\n\n\n", "\n\n")
         if "```" not in answer:
             return answer

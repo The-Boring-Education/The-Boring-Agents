@@ -148,6 +148,11 @@ Please generate questions in a numbered list format:
 3. [Question 3]
 ...and so on
 
+IMPORTANT FORMATTING RULES:
+- Do NOT wrap questions in bold markdown (no ** around questions)
+- Do NOT use any markdown formatting in the questions
+- Output plain text questions only
+
 Generate exactly {question_count} questions covering all the topics comprehensively. Make sure questions are:
 - Clear and specific
 - Interview-appropriate
@@ -230,6 +235,11 @@ Create engaging metadata that:
 3. Explains the value for interview preparation
 4. Mentions target audience and difficulty level
 5. Includes real-world application context
+
+IMPORTANT FORMATTING RULES:
+- Do NOT use any markdown formatting (no ** bold, no # headers)
+- Output plain text only
+- Do NOT echo back the sheet name or description with markdown formatting
 
 Keep it concise (150-200 words), engaging, and professional.
 
