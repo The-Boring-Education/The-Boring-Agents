@@ -293,6 +293,42 @@ class InterviewSessionManager(BaseSessionManager):
             
         return deleted
     
+    def update_session_sheet(self, session_id: str, sheet_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update the entire sheet_data for a session.
+        
+        Args:
+            session_id: Session ID
+            sheet_data: New sheet data dictionary
+            
+        Returns:
+            Updated session data
+        """
+        session_data = self.get_session(session_id)
+        if not session_data:
+            raise ValueError(f"Session {session_id} not found")
+        
+        # Update sheet_data
+        session_data["sheet_data"] = sheet_data
+        
+        # Sync questions list from sheet_data if questions exist there
+        if "questions" in sheet_data:
+            session_data["questions"] = sheet_data["questions"]
+            session_data["question_count"] = len(sheet_data["questions"])
+            
+        # Sync to output file
+        output_file = session_data.get("output_file")
+        if output_file and os.path.exists(output_file):
+            try:
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    json.dump(sheet_data, f, indent=2, ensure_ascii=False)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to update output file {output_file}: {e}")
+        
+        self.save_session(session_id, session_data)
+        return session_data
+
     def update_questions(self, session_id: str, questions: list) -> None:
         """Update all questions for a session.
         
@@ -345,6 +381,17 @@ class InterviewSessionManager(BaseSessionManager):
                         pass
 
                 if is_match:
+                    # If question text is being updated but title isn't, 
+                    # we should re-derive the title from the new question text
+                    if "question" in updates and "title" not in updates:
+                        from ..common.state_utils import clean_title
+                        new_question_text = updates["question"]
+                        updates["title"] = clean_title(new_question_text)[:100]
+                    # If title IS being updated, ensure it's clean
+                    elif "title" in updates:
+                        from ..common.state_utils import clean_title
+                        updates["title"] = clean_title(updates["title"])[:100]
+
                     # Update fields
                     session_data["questions"][i].update(updates)
                     # Ensure updated_at is set

@@ -450,6 +450,25 @@ async def delete_question(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.put("/session/{session_id}/sheet")
+async def update_session_sheet(
+    session_id: str,
+    payload: dict,
+    request: Request
+):
+    """Update the entire session sheet data."""
+    log_action(request, "update_session_sheet", session_id=session_id)
+    try:
+        sheet_data = payload.get("sheetData")
+        if not sheet_data:
+            raise HTTPException(status_code=400, detail="sheetData is required")
+        return controller.update_session_sheet(session_id, sheet_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_action(request, "update_session_sheet", level="ERROR", session_id=session_id, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/session/{session_id}/questions")
 async def add_question(
     session_id: str,

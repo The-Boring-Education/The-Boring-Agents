@@ -225,6 +225,16 @@ class InterviewPrepController:
             logger.error(f"Error updating question {question_id} in session {session_id}: {e}")
             raise HTTPException(status_code=500, detail="Failed to update question")
 
+    def update_session_sheet(self, session_id: str, sheet_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update the entire sheet data for a session."""
+        try:
+            return self.orchestrator.session_manager.update_session_sheet(session_id, sheet_data)
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error updating session sheet {session_id}: {e}")
+            raise HTTPException(status_code=500, detail="Failed to update session sheet")
+
     def get_question(self, session_id: str, question_id: str) -> Dict[str, Any]:
         """Get a single question from a session."""
         try:

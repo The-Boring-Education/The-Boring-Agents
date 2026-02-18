@@ -1,7 +1,32 @@
 """State utility functions for workflow state management."""
 
+import re
 from typing import Dict, Any, List
 from src.agents.interview.workflow.state import InterviewWorkflowState
+
+
+def clean_title(title: str) -> str:
+    """Strip markdown formatting from a question title.
+
+    The LLM sometimes wraps titles in bold/italic markers (e.g. **What is React?**)
+    or includes heading symbols.  This function removes all such artifacts so the
+    title stored in the database is plain text.
+
+    Args:
+        title: Raw title string that may contain markdown.
+
+    Returns:
+        Clean plain-text title.
+    """
+    #Remove specific malformed patterns like (**) or (*) often found in LLM output
+    cleaned = re.sub(r'\(\*{1,2}\)', '', title)
+    cleaned = re.sub(r'\*{1,2}|_{1,2}', '', cleaned)
+    cleaned = re.sub(r'^#+\s*', '', cleaned)
+    cleaned = cleaned.replace('`', '')
+    cleaned = cleaned.replace('()', '')
+    cleaned = ' '.join(cleaned.split())
+    
+    return cleaned.strip()
 
 
 def create_initial_state(
@@ -195,8 +220,9 @@ def normalize_question_metadata(question: Dict[str, Any]) -> Dict[str, Any]:
     if not company_types:
         company_types = ["Startup", "MNC"]
     
-    # Ensure title is within limit
-    title = question.get("title", question.get("question", "")[:100])
+    # Ensure title is clean plain text and within limit
+    raw_title = question.get("title", question.get("question", "")[:100])
+    title = clean_title(raw_title)
     if len(title) > 100:
         title = title[:100]
     
