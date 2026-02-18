@@ -156,7 +156,7 @@ def finalize_quiz_node(state: QuizWorkflowState) -> Dict[str, Any]:
         
         # Update session
         session_manager = QuizSessionManager()
-        from src.core.session.session_types import SessionStatus
+        from src.core.session import SessionStatus
         session_manager.set_output_file(session_id, output_file, quiz_data)
         session_manager.update_status(
             session_id,

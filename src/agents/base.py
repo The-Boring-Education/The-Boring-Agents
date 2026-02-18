@@ -1,14 +1,18 @@
-"""Base agent class for all content generation agents."""
+"""Base agent class for all content generation agents.
+
+All agents (interview, quiz, shiksha, etc.) inherit from BaseAgent.
+Provides LLM initialization, prompt template management, and content generation.
+"""
 
 import json
+import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
-import logging
+from typing import Any, Dict, Optional
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
 
 from src.core.config import config
 
@@ -37,7 +41,6 @@ class BaseAgent(ABC):
 
     @property
     def llm(self) -> BaseChatModel:
-        """Get the language model instance, initializing if needed."""
         if self._llm is None:
             self._llm = self._initialize_llm(**self.model_kwargs)
         return self._llm
@@ -45,7 +48,6 @@ class BaseAgent(ABC):
     def _initialize_llm(self, **kwargs) -> BaseChatModel:
         if not config.openai_api_key:
             raise ValueError("No valid API key found. Please set OPENAI_API_KEY in your environment.")
-
         return ChatOpenAI(
             model_name=self.model_name,
             openai_api_key=config.openai_api_key,
@@ -55,16 +57,11 @@ class BaseAgent(ABC):
         )
 
     def _get_prompt_templates(self) -> Dict[str, PromptTemplate]:
-        """Get prompt templates specific to this agent.
-
-        Override in subclasses that use the template-based prompt system.
-        Defaults to empty dict for agents that use their own prompting strategy.
-        """
+        """Override in subclasses that use the template-based prompt system."""
         return {}
 
     @abstractmethod
     def generate_content(self, **kwargs) -> Dict[str, Any]:
-        """Generate content based on the agent's specific purpose."""
         pass
 
     def _format_prompt(self, template_name: str, **kwargs) -> str:
@@ -82,7 +79,6 @@ class BaseAgent(ABC):
                 if len(words) > max_words:
                     self.logger.warning("Truncating prompt from %d to %d words", len(words), max_words)
                     prompt = " ".join(words[:max_words])
-
             response = self.llm.invoke(prompt)
             return response.content.strip()
         except Exception as e:

@@ -9,7 +9,7 @@ from src.agents.quiz.workflow.state_utils import (
     state_from_session,
     determine_resume_status
 )
-from src.core.session.session_types import SessionStatus
+from src.core.session import SessionStatus
 
 logger = logging.getLogger(__name__)
 

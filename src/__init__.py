@@ -11,6 +11,6 @@ __version__ = "0.1.0"
 __author__ = "The Boring Education"
 
 from src.core.config import Config
-from src.core.base_agent import BaseAgent
+from src.agents.base import BaseAgent
 
 __all__ = ["Config", "BaseAgent"]

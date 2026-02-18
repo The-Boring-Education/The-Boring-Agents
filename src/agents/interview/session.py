@@ -1,4 +1,8 @@
-"""Session manager for interview sheet generation."""
+"""Session manager for interview sheet generation.
+
+Extends BaseSessionManager with interview-specific question CRUD,
+sheet_data mirroring, and question_count auto-healing.
+"""
 
 import json
 import logging
@@ -7,8 +11,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from src.core.session.base_session_manager import BaseSessionManager
-from src.core.session.session_types import SessionStatus, ProgressInfo
+from src.core.session import BaseSessionManager, SessionStatus, ProgressInfo
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +19,7 @@ DEFAULT_QUESTION_COUNT = 20
 
 
 # ---------------------------------------------------------------------------
-# Helpers (extracted to eliminate duplication)
+# Helpers
 # ---------------------------------------------------------------------------
 
 def _find_question_index(questions: List[Dict[str, Any]], question_id: str) -> int:
@@ -48,7 +51,7 @@ def _sync_output_file(session_data: Dict[str, Any]) -> None:
 
 
 def _ensure_question_count(session_data: Dict[str, Any]) -> int:
-    """Single source of truth for fixing/calculating question_count."""
+    """Single source of truth for calculating question_count."""
     count = session_data.get("question_count")
     if count and count > 0:
         return count
@@ -67,8 +70,6 @@ class InterviewSessionManager(BaseSessionManager):
 
     def __init__(self, sessions_dir: Optional[str] = None):
         super().__init__(workflow_type="interview", sessions_dir=sessions_dir)
-
-    # -- session lifecycle ----------------------------------------------------
 
     def _create_session_data(
         self,
@@ -93,11 +94,7 @@ class InterviewSessionManager(BaseSessionManager):
             "meta": None,
             "questions": [],
             "question_texts": [],
-            "progress": ProgressInfo(
-                current_step="Initializing...",
-                completed=0,
-                total=question_count,
-            ).to_dict(),
+            "progress": ProgressInfo(current_step="Initializing...", completed=0, total=question_count).to_dict(),
             "created_at": now,
             "updated_at": now,
             "output_file": None,
@@ -115,12 +112,8 @@ class InterviewSessionManager(BaseSessionManager):
         **kwargs,
     ) -> str:
         return super().create_session(
-            name=name,
-            description=description,
-            agent_type=agent_type,
-            roadmap=roadmap,
-            question_count=question_count,
-            **kwargs,
+            name=name, description=description, agent_type=agent_type,
+            roadmap=roadmap, question_count=question_count, **kwargs,
         )
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
@@ -155,82 +148,68 @@ class InterviewSessionManager(BaseSessionManager):
     # -- metadata helpers -----------------------------------------------------
 
     def set_meta(self, session_id: str, meta: str) -> None:
-        session_data = self._require_session(session_id)
-        session_data["meta"] = meta
-        self.save_session(session_id, session_data)
+        data = self._require_session(session_id)
+        data["meta"] = meta
+        self.save_session(session_id, data)
 
     def set_output_file(self, session_id: str, output_file: str, sheet_data: Optional[Dict[str, Any]] = None) -> None:
-        session_data = self._require_session(session_id)
-        session_data["output_file"] = output_file
+        data = self._require_session(session_id)
+        data["output_file"] = output_file
         if sheet_data:
-            session_data["sheet_data"] = sheet_data
-        self.save_session(session_id, session_data)
+            data["sheet_data"] = sheet_data
+        self.save_session(session_id, data)
 
-    # -- question CRUD (uses shared helpers) ----------------------------------
+    # -- question CRUD --------------------------------------------------------
 
     def add_question(self, session_id: str, question: Dict[str, Any]) -> Dict[str, Any]:
-        session_data = self._require_session(session_id)
-
+        data = self._require_session(session_id)
         if "id" not in question and "_id" not in question:
             now = datetime.now(timezone.utc).isoformat()
             question["id"] = str(uuid.uuid4())
             question["created_at"] = now
             question["updated_at"] = now
-
-        session_data.setdefault("questions", []).append(question)
-        self._mirror_to_sheet_data(session_data, "append", question=question)
-        session_data["question_count"] = max(
-            session_data.get("question_count", 0),
-            len(session_data["questions"]),
-        )
-        self.save_session(session_id, session_data)
+        data.setdefault("questions", []).append(question)
+        self._mirror_to_sheet_data(data, "append", question=question)
+        data["question_count"] = max(data.get("question_count", 0), len(data["questions"]))
+        self.save_session(session_id, data)
         return question
 
     def get_question(self, session_id: str, question_id: str) -> Optional[Dict[str, Any]]:
-        session_data = self.get_session(session_id)
-        if not session_data:
+        data = self.get_session(session_id)
+        if not data:
             return None
-        questions = session_data.get("questions", [])
+        questions = data.get("questions", [])
         idx = _find_question_index(questions, question_id)
         return questions[idx] if idx >= 0 else None
 
     def delete_question(self, session_id: str, question_id: str) -> bool:
-        session_data = self._require_session(session_id)
-        deleted = False
-
-        questions = session_data.get("questions", [])
+        data = self._require_session(session_id)
+        questions = data.get("questions", [])
         idx = _find_question_index(questions, question_id)
+        deleted = False
         if idx >= 0:
             questions.pop(idx)
-            session_data["questions"] = questions
+            data["questions"] = questions
             deleted = True
-
-        self._mirror_to_sheet_data(session_data, "delete", question_id=question_id)
-
+        self._mirror_to_sheet_data(data, "delete", question_id=question_id)
         if deleted:
-            session_data["question_count"] = len(session_data.get("questions", []))
-            self.save_session(session_id, session_data)
+            data["question_count"] = len(data.get("questions", []))
+            self.save_session(session_id, data)
         return deleted
 
-    def update_question_in_session(
-        self, session_id: str, question_id: str, updates: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        session_data = self._require_session(session_id)
-        updated_question = None
-
-        questions = session_data.get("questions", [])
+    def update_question_in_session(self, session_id: str, question_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        data = self._require_session(session_id)
+        questions = data.get("questions", [])
         idx = _find_question_index(questions, question_id)
+        updated_question = None
         if idx >= 0:
             questions[idx].update(updates)
             questions[idx]["updated_at"] = datetime.now(timezone.utc).isoformat()
             updated_question = questions[idx]
-
-        self._mirror_to_sheet_data(session_data, "update", question_id=question_id, updates=updates)
-
+        self._mirror_to_sheet_data(data, "update", question_id=question_id, updates=updates)
         if updated_question is None:
             raise ValueError(f"Question {question_id} not found in session {session_id}")
-
-        self.save_session(session_id, session_data)
+        self.save_session(session_id, data)
         return updated_question
 
     # -- migration helper -----------------------------------------------------
@@ -239,10 +218,10 @@ class InterviewSessionManager(BaseSessionManager):
         if not os.path.exists(self.sessions_dir):
             return 0
         fixed = 0
-        for filename in os.listdir(self.sessions_dir):
-            if not filename.endswith(".json"):
+        for fname in os.listdir(self.sessions_dir):
+            if not fname.endswith(".json"):
                 continue
-            sid = filename.replace(".json", "")
+            sid = fname.replace(".json", "")
             try:
                 data = super().get_session(sid)
                 if data:
@@ -258,10 +237,10 @@ class InterviewSessionManager(BaseSessionManager):
     # -- private helpers ------------------------------------------------------
 
     def _require_session(self, session_id: str) -> Dict[str, Any]:
-        session_data = self.get_session(session_id)
-        if not session_data:
+        data = self.get_session(session_id)
+        if not data:
             raise ValueError(f"Session {session_id} not found")
-        return session_data
+        return data
 
     def _mirror_to_sheet_data(
         self,
@@ -272,25 +251,19 @@ class InterviewSessionManager(BaseSessionManager):
         question_id: Optional[str] = None,
         updates: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Keep sheet_data.questions in sync with session_data.questions and flush to disk."""
         sheet_data = session_data.get("sheet_data")
         if not sheet_data:
             return
-
         sheet_questions = sheet_data.setdefault("questions", [])
-
         if operation == "append" and question is not None:
             sheet_questions.append(question)
-
         elif operation == "delete" and question_id is not None:
             idx = _find_question_index(sheet_questions, question_id)
             if idx >= 0:
                 sheet_questions.pop(idx)
-
         elif operation == "update" and question_id is not None and updates is not None:
             idx = _find_question_index(sheet_questions, question_id)
             if idx >= 0:
                 sheet_questions[idx].update(updates)
                 sheet_questions[idx]["updated_at"] = datetime.now(timezone.utc).isoformat()
-
         _sync_output_file(session_data)

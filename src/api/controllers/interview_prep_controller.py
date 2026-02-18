@@ -5,8 +5,8 @@ from typing import Optional, List, Dict, Any
 
 from fastapi import HTTPException, BackgroundTasks
 
-from src.agents.interview.workflow.orchestrator import InterviewWorkflowOrchestrator
-from src.core.session.session_types import SessionStatus
+from src.agents.interview.workflow import InterviewWorkflowOrchestrator
+from src.core.session import SessionStatus
 from src.api.models.interview_prep_models import (
     CreateSheetRequest,
     TopicGenerationRequest,

@@ -7,7 +7,7 @@ Tests the SessionStatus, ProgressInfo, and BaseSessionData classes.
 import pytest
 from datetime import datetime
 
-from src.core.session.session_types import (
+from src.core.session import (
     SessionStatus,
     ProgressInfo,
     BaseSessionData,

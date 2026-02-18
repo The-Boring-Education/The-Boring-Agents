@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.agents.interview.common.schema_utils import (
+from src.agents.interview.utils import (
     generate_slug,
     generate_cover_image_url,
     validate_roadmap,

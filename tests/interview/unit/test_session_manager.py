@@ -5,8 +5,8 @@ import os
 import tempfile
 import shutil
 
-from src.agents.interview.session.session_manager import InterviewSessionManager
-from src.core.session.session_types import SessionStatus
+from src.agents.interview.session import InterviewSessionManager
+from src.core.session import SessionStatus
 
 
 class TestInterviewSessionManager:

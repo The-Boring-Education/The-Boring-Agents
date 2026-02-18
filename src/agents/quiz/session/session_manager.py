@@ -1,8 +1,7 @@
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
-from src.core.session.base_session_manager import BaseSessionManager
-from src.core.session.session_types import SessionStatus, ProgressInfo
+from src.core.session import BaseSessionManager, SessionStatus, ProgressInfo
 
 class QuizSessionManager(BaseSessionManager):
     """Manages quiz generation sessions extending base session manager."""
