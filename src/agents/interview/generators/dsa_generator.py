@@ -8,9 +8,8 @@ from src.agents.interview.generators.base_generator import BaseAnswerGenerator
 
 class DSAAnswerGenerator(BaseAnswerGenerator):
     """Generator for DSA interview questions with stepwise approach and real-world examples."""
-    
+
     def _get_answer_prompt_template(self) -> PromptTemplate:
-        """Get the prompt template for DSA answer generation."""
         return PromptTemplate(
             input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types"],
             template="""
@@ -188,11 +187,10 @@ Make this answer so good that students will:
 3. Feel confident in interviews
 4. Want to practice more problems
 5. Think "This was totally worth it!"
-"""
+""",
         )
-    
+
     def _get_answer_structure(self) -> Dict[str, str]:
-        """Get the expected answer structure for DSA questions."""
         return {
             "Introduction": "Introduction",
             "Why We Learn This Topic": "Why We Learn This Topic",
@@ -201,25 +199,5 @@ Make this answer so good that students will:
             "Now We Write Code": "Now We Write Code",
             "Let's Optimize the Solution": "Let's Optimize the Solution",
             "Time & Space Complexity": "Time & Space Complexity",
-            "Were You Able to Understand & Solve": "Were You Able to Understand & Solve"
+            "Were You Able to Understand & Solve": "Were You Able to Understand & Solve",
         }
-    
-    def generate_content(self, content_type: str, **kwargs) -> Dict:
-        """Generate content based on type."""
-        if content_type == "answer":
-            answer = self.generate_answer(
-                question=kwargs.get("question", ""),
-                topic=kwargs.get("topic", ""),
-                difficulty=kwargs.get("difficulty", "Medium"),
-                frequency=kwargs.get("frequency", "Asked Sometimes"),
-                priority=kwargs.get("priority", "Medium"),
-                company_types=kwargs.get("company_types", ["Startup", "MNC"])
-            )
-            return {
-                "status": "success",
-                "answer": answer,
-                "content_type": "answer"
-            }
-        else:
-            raise ValueError(f"Unknown content type: {content_type}")
-

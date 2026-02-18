@@ -9,8 +9,8 @@ from src.agents.interview.workflow.nodes import (
     generate_answers_node,
     persist_state_node,
     finalize_node,
-    _get_answer_generator
 )
+from src.agents.interview.generators import get_generator
 from src.agents.interview.workflow.state import InterviewWorkflowState
 from src.agents.interview.types import AnswerAgentType
 
@@ -43,8 +43,8 @@ class TestGenerateMetadataNode:
         assert "meta" not in result  # Should not regenerate
     
     @patch('src.agents.interview.workflow.nodes.MetadataGenerator')
-    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
-    def test_generate_metadata_success(self, mock_session_manager, mock_metadata_gen):
+    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    def test_generate_metadata_success(self, mock_get_sm, mock_metadata_gen):
         """Test successful metadata generation."""
         state: InterviewWorkflowState = {
             "session_id": "test-123",
@@ -63,14 +63,12 @@ class TestGenerateMetadataNode:
             "sheet_data": None
         }
         
-        # Mock metadata generator
         mock_gen_instance = Mock()
         mock_gen_instance.generate_sheet_meta.return_value = "Generated metadata"
         mock_metadata_gen.return_value = mock_gen_instance
         
-        # Mock session manager
         mock_session = Mock()
-        mock_session_manager.return_value = mock_session
+        mock_get_sm.return_value = mock_session
         
         result = generate_metadata_node(state)
         
@@ -142,8 +140,8 @@ class TestGenerateQuestionsNode:
     
     @patch('src.agents.interview.workflow.nodes.QuestionGenerator')
     @patch('src.agents.interview.workflow.nodes.MetadataGenerator')
-    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
-    def test_generate_questions_success(self, mock_session_manager, mock_metadata_gen, mock_question_gen):
+    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    def test_generate_questions_success(self, mock_get_sm, mock_metadata_gen, mock_question_gen):
         """Test successful question generation."""
         state: InterviewWorkflowState = {
             "session_id": "test-123",
@@ -162,12 +160,10 @@ class TestGenerateQuestionsNode:
             "sheet_data": None
         }
         
-        # Mock question generator
         mock_q_gen = Mock()
         mock_q_gen.generate_questions.return_value = ["Question 1", "Question 2"]
         mock_question_gen.return_value = mock_q_gen
         
-        # Mock metadata generator
         mock_m_gen = Mock()
         mock_m_gen.generate_question_metadata.return_value = {
             "frequency": "Asked Sometimes",
@@ -176,9 +172,8 @@ class TestGenerateQuestionsNode:
         }
         mock_metadata_gen.return_value = mock_m_gen
         
-        # Mock session manager
         mock_session = Mock()
-        mock_session_manager.return_value = mock_session
+        mock_get_sm.return_value = mock_session
         
         result = generate_questions_node(state)
         
@@ -242,9 +237,9 @@ class TestGenerateAnswersNode:
         assert result["status"] == "finalizing"
         assert result["progress"]["completed"] == 2
     
-    @patch('src.agents.interview.workflow.nodes._get_answer_generator')
-    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
-    def test_generate_answers_success(self, mock_session_manager, mock_get_generator):
+    @patch('src.agents.interview.workflow.nodes.get_generator')
+    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    def test_generate_answers_success(self, mock_get_sm, mock_get_generator):
         """Test successful answer generation."""
         state: InterviewWorkflowState = {
             "session_id": "test-123",
@@ -257,7 +252,7 @@ class TestGenerateAnswersNode:
             "error": None,
             "meta": "Metadata",
             "questions": [
-                {"title": "Q1", "question": "Question 1", "answer": ""}
+                {"title": "Q1", "question": "Question 1", "answer": "", "frequency": "Asked Sometimes", "priority": "Medium", "companyTypes": ["Startup"]}
             ],
             "question_texts": [],
             "progress": {},
@@ -265,15 +260,13 @@ class TestGenerateAnswersNode:
             "sheet_data": None
         }
         
-        # Mock generator
         mock_generator = Mock()
         mock_generator.generate_answer.return_value = "Generated answer"
         mock_get_generator.return_value = mock_generator
         
-        # Mock session manager
         mock_session = Mock()
         mock_session.get_session.return_value = {}
-        mock_session_manager.return_value = mock_session
+        mock_get_sm.return_value = mock_session
         
         result = generate_answers_node(state)
         
@@ -285,8 +278,8 @@ class TestGenerateAnswersNode:
 class TestPersistStateNode:
     """Tests for persist_state_node."""
     
-    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
-    def test_persist_state_success(self, mock_session_manager):
+    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    def test_persist_state_success(self, mock_get_sm):
         """Test successful state persistence."""
         state: InterviewWorkflowState = {
             "session_id": "test-123",
@@ -305,22 +298,20 @@ class TestPersistStateNode:
             "sheet_data": None
         }
         
-        # Mock session manager
         mock_session = Mock()
         mock_session.get_session.return_value = {
             "session_id": "test-123",
             "status": "pending"
         }
-        mock_session_manager.return_value = mock_session
+        mock_get_sm.return_value = mock_session
         
         result = persist_state_node(state)
         
-        # Should return empty dict (no state changes)
         assert result == {}
         mock_session.save_session.assert_called_once()
     
-    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
-    def test_persist_state_error_handling(self, mock_session_manager):
+    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    def test_persist_state_error_handling(self, mock_get_sm):
         """Test error handling in state persistence."""
         state: InterviewWorkflowState = {
             "session_id": "test-123",
@@ -339,12 +330,10 @@ class TestPersistStateNode:
             "sheet_data": None
         }
         
-        # Mock error
         mock_session = Mock()
         mock_session.get_session.side_effect = Exception("File error")
-        mock_session_manager.return_value = mock_session
+        mock_get_sm.return_value = mock_session
         
-        # Should not raise, just return empty dict
         result = persist_state_node(state)
         assert result == {}
 
@@ -375,7 +364,7 @@ class TestFinalizeNode:
         
         assert result["status"] == "completed"
     
-    @patch('src.agents.interview.workflow.nodes.InterviewSessionManager')
+    @patch('src.agents.interview.workflow.nodes._get_session_manager')
     @patch('src.agents.interview.workflow.nodes.validate_sheet_structure')
     @patch('src.agents.interview.workflow.nodes.generate_slug')
     @patch('src.agents.interview.workflow.nodes.generate_cover_image_url')
@@ -386,7 +375,7 @@ class TestFinalizeNode:
     @patch('os.path.join')
     def test_finalize_success(
         self, mock_join, mock_makedirs, mock_json_dump, mock_open,
-        mock_defaults, mock_cover, mock_slug, mock_validate, mock_session_manager
+        mock_defaults, mock_cover, mock_slug, mock_validate, mock_get_sm
     ):
         """Test successful finalization."""
         state: InterviewWorkflowState = {
@@ -408,7 +397,6 @@ class TestFinalizeNode:
             "sheet_data": None
         }
         
-        # Mock utilities
         mock_slug.return_value = "test-sheet"
         mock_cover.return_value = "https://example.com/image.jpg"
         mock_defaults.return_value = {
@@ -421,9 +409,8 @@ class TestFinalizeNode:
         mock_validate.return_value = (True, [])
         mock_join.return_value = "/path/to/output.json"
         
-        # Mock session manager
         mock_session = Mock()
-        mock_session_manager.return_value = mock_session
+        mock_get_sm.return_value = mock_session
         
         result = finalize_node(state)
         
@@ -431,44 +418,38 @@ class TestFinalizeNode:
         assert "sheet_data" in result
         assert "output_file" in result
         mock_session.set_output_file.assert_called_once()
-        mock_session.update_session_status.assert_called_once()
+        mock_session.update_status.assert_called_once()
 
 
-class TestGetAnswerGenerator:
-    """Tests for _get_answer_generator."""
+class TestGetGenerator:
+    """Tests for generator registry get_generator()."""
     
     def test_get_generic_generator(self):
-        """Test getting generic generator."""
-        generator = _get_answer_generator("generic")
+        generator = get_generator("generic")
         assert generator is not None
         from src.agents.interview.generators.generic_generator import GenericAnswerGenerator
         assert isinstance(generator, GenericAnswerGenerator)
     
     def test_get_dsa_generator(self):
-        """Test getting DSA generator."""
-        generator = _get_answer_generator("dsa")
+        generator = get_generator("dsa")
         assert generator is not None
         from src.agents.interview.generators.dsa_generator import DSAAnswerGenerator
         assert isinstance(generator, DSAAnswerGenerator)
     
     def test_get_tech_generator(self):
-        """Test getting tech generator."""
-        generator = _get_answer_generator("tech", technology="Python")
+        generator = get_generator("tech", technology="Python")
         assert generator is not None
         from src.agents.interview.generators.tech_generator import TechAnswerGenerator
         assert isinstance(generator, TechAnswerGenerator)
     
     def test_get_system_design_generator(self):
-        """Test getting system design generator."""
-        generator = _get_answer_generator("system_design")
+        generator = get_generator("system_design")
         assert generator is not None
         from src.agents.interview.generators.system_design_generator import SystemDesignAnswerGenerator
         assert isinstance(generator, SystemDesignAnswerGenerator)
     
-    def test_default_to_generic_for_invalid(self):
-        """Test that invalid agent type defaults to generic."""
-        generator = _get_answer_generator("invalid_type")
-        assert generator is not None
-        from src.agents.interview.generators.generic_generator import GenericAnswerGenerator
-        assert isinstance(generator, GenericAnswerGenerator)
+    def test_raises_for_invalid_type(self):
+        """Test that invalid agent type raises ValueError."""
+        with pytest.raises(ValueError):
+            get_generator("invalid_type")
 

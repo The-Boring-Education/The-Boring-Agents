@@ -5,27 +5,33 @@ from langchain_core.prompts import PromptTemplate
 
 from src.agents.interview.generators.base_generator import BaseAnswerGenerator
 
+_INDIAN_CONTEXT = {
+    "Python": "Python is widely used in Indian fintech companies like Paytm and Razorpay for backend development and data analytics.",
+    "Java": "Java remains the backbone of many Indian enterprises and banking systems, with extensive use in companies like Infosys and TCS.",
+    "JavaScript": "JavaScript powers the frontend of major Indian platforms like Flipkart, Myntra, and BigBasket.",
+    "React": "React is the preferred choice for Indian startups like Zomato and Swiggy for building responsive user interfaces.",
+    "React.js": "React.js is extensively used by Indian e-commerce giants for creating dynamic and interactive user experiences.",
+    "Node.js": "Node.js is popular among Indian startups for building scalable backend services, especially in companies like Ola and PhonePe.",
+    "DevOps": "Indian IT services companies are rapidly adopting DevOps practices to accelerate delivery for global clients.",
+    "Docker": "Docker containerization is becoming standard in Indian cloud-native companies for deployment efficiency.",
+}
+
 
 class TechAnswerGenerator(BaseAnswerGenerator):
     """Generator for technology-specific interview questions with code examples."""
-    
+
     def __init__(self, technology: Optional[str] = None, **kwargs):
-        """Initialize tech answer generator.
-        
-        Args:
-            technology: Technology name (e.g., "React", "Python", "Node.js")
-            **kwargs: Additional arguments
-        """
         super().__init__(**kwargs)
         self.technology = technology or "General Tech"
-        # Store technology in custom_params for compatibility
-        self.custom_params['technology'] = self.technology
-    
+        self.custom_params["technology"] = self.technology
+
     def _get_answer_prompt_template(self) -> PromptTemplate:
-        """Get the prompt template for tech answer generation."""
         technology = self.technology or "General Tech"
-        indian_context = self._get_indian_context(technology)
-        
+        indian_context = _INDIAN_CONTEXT.get(
+            technology,
+            f"{technology} is gaining significant adoption in the Indian tech ecosystem.",
+        )
+
         return PromptTemplate(
             input_variables=["question", "topic", "difficulty", "frequency", "priority", "company_types"],
             template=f"""
@@ -119,39 +125,24 @@ For {technology}:
 
 Write the answer in a way that helps the candidate:
 1. **Understand** the concept deeply
-2. **Implement** it practically 
+2. **Implement** it practically
 3. **Explain** it confidently in interviews
 4. **Remember** it easily
 
 Make it comprehensive yet concise, technical yet accessible.
-"""
+""",
         )
-    
+
     def _get_answer_structure(self) -> Dict[str, str]:
-        """Get the expected answer structure for tech questions."""
         return {
             "Direct Answer": "Direct Answer",
             "Concept Explanation": "Concept Explanation",
             "Practical Implementation": "Practical Implementation",
             "Real-World Applications": "Real-World Applications",
             "Common Pitfalls": "Common Pitfalls",
-            "Interview Tips": "Interview Tips"
+            "Interview Tips": "Interview Tips",
         }
-    
-    def _get_indian_context(self, technology: str) -> str:
-        """Get Indian tech industry context for the technology."""
-        contexts = {
-            "Python": "Python is widely used in Indian fintech companies like Paytm and Razorpay for backend development and data analytics.",
-            "Java": "Java remains the backbone of many Indian enterprises and banking systems, with extensive use in companies like Infosys and TCS.",
-            "JavaScript": "JavaScript powers the frontend of major Indian platforms like Flipkart, Myntra, and BigBasket.",
-            "React": "React is the preferred choice for Indian startups like Zomato and Swiggy for building responsive user interfaces.",
-            "React.js": "React.js is extensively used by Indian e-commerce giants for creating dynamic and interactive user experiences.",
-            "Node.js": "Node.js is popular among Indian startups for building scalable backend services, especially in companies like Ola and PhonePe.",
-            "DevOps": "Indian IT services companies are rapidly adopting DevOps practices to accelerate delivery for global clients.",
-            "Docker": "Docker containerization is becoming standard in Indian cloud-native companies for deployment efficiency."
-        }
-        return contexts.get(technology, f"{technology} is gaining significant adoption in the Indian tech ecosystem.")
-    
+
     def generate_answer(
         self,
         question: str,
@@ -160,54 +151,17 @@ Make it comprehensive yet concise, technical yet accessible.
         frequency: str = "Asked Sometimes",
         priority: str = "Medium",
         company_types: Optional[List[str]] = None,
-        technology: Optional[str] = None
+        technology: Optional[str] = None,
     ) -> str:
-        """Generate a tech-specific answer.
-        
-        Args:
-            question: The interview question
-            topic: Topic/subject area
-            difficulty: Difficulty level
-            frequency: How often the question is asked
-            priority: Priority level
-            company_types: Types of companies that ask this question
-            technology: Technology name (overrides instance technology if provided)
-            
-        Returns:
-            MDX-formatted answer string
-        """
-        # Use provided technology or fall back to instance technology
-        tech = technology or self.technology or "General Tech"
-        if tech != self.technology:
-            self.technology = tech
-            self.custom_params['technology'] = tech
-        
+        if technology and technology != self.technology:
+            self.technology = technology
+            self.custom_params["technology"] = technology
+
         return super().generate_answer(
             question=question,
             topic=topic,
             difficulty=difficulty,
             frequency=frequency,
             priority=priority,
-            company_types=company_types
+            company_types=company_types,
         )
-    
-    def generate_content(self, content_type: str, **kwargs) -> Dict:
-        """Generate content based on type."""
-        if content_type == "answer":
-            answer = self.generate_answer(
-                question=kwargs.get("question", ""),
-                topic=kwargs.get("topic", ""),
-                difficulty=kwargs.get("difficulty", "Medium"),
-                frequency=kwargs.get("frequency", "Asked Sometimes"),
-                priority=kwargs.get("priority", "Medium"),
-                company_types=kwargs.get("company_types", ["Startup", "MNC"]),
-                technology=kwargs.get("technology", self.technology)
-            )
-            return {
-                "status": "success",
-                "answer": answer,
-                "content_type": "answer"
-            }
-        else:
-            raise ValueError(f"Unknown content type: {content_type}")
-

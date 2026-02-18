@@ -1,163 +1,97 @@
 """Base agent class for all content generation agents."""
 
+import json
+import os
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 import logging
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import BaseOutputParser
 
 from src.core.config import config
 
+logger = logging.getLogger(__name__)
+
+
 class BaseAgent(ABC):
     """Abstract base class for all content generation agents."""
-    
+
+    CUSTOM_PARAM_KEYS = frozenset({"technology"})
+
     def __init__(self, model_name: Optional[str] = None, **kwargs):
-        """Initialize the base agent.
-        
-        Args:
-            model_name: Name of the model to use (defaults to config.default_model)
-            **kwargs: Additional arguments for model configuration
-        """
         self.model_name = model_name or config.default_model
         self.logger = logging.getLogger(self.__class__.__name__)
-        
-        # Filter out custom parameters that shouldn't go to LLM
-        custom_params = {'technology'}
-        self.model_kwargs = {k: v for k, v in kwargs.items() if k not in custom_params}
-        
-        # Store custom parameters for agent use
-        self.custom_params = {k: v for k, v in kwargs.items() if k in custom_params}
-        
-        # Initialize LLM lazily (only when needed)
-        self._llm = None
-        
-        # Initialize prompt templates (to be overridden by subclasses)
+
+        self.model_kwargs = {k: v for k, v in kwargs.items() if k not in self.CUSTOM_PARAM_KEYS}
+        self.custom_params = {k: v for k, v in kwargs.items() if k in self.CUSTOM_PARAM_KEYS}
+
+        self._llm: Optional[BaseChatModel] = None
         self.prompt_templates = self._get_prompt_templates()
-        
-        # Log agent initialization with model and temperature info
-        self.logger.info(f"🤖 {self.__class__.__name__} initialized with:")
-        self.logger.info(f"   Model: {self.model_name}")
-        self.logger.info(f"   Temperature: {config.temperature}")
-        self.logger.info(f"   Max Tokens: {config.max_tokens}")
-        
-        # Print to console for visibility
-        from rich.console import Console
-        console = Console()
-        console.print(f"[blue]🤖 {self.__class__.__name__} initialized - Model: {self.model_name}, Temperature: {config.temperature}[/blue]")
-    
+
+        self.logger.info(
+            "%s initialized | model=%s temperature=%s max_tokens=%s",
+            self.__class__.__name__, self.model_name, config.temperature, config.max_tokens,
+        )
+
     @property
     def llm(self) -> BaseChatModel:
         """Get the language model instance, initializing if needed."""
         if self._llm is None:
             self._llm = self._initialize_llm(**self.model_kwargs)
         return self._llm
-    
+
     def _initialize_llm(self, **kwargs) -> BaseChatModel:
-        """Initialize the language model based on configuration.
-        
-        Returns:
-            Initialized language model instance
-        """
-        # Default model settings
-        model_kwargs = {
-            "temperature": config.temperature,
-            "max_tokens": config.max_tokens,
-            **kwargs
-        }
-        
-        # Initialize OpenAI model (can be extended for other providers)
-        if config.openai_api_key:
-            return ChatOpenAI(
-                model_name=self.model_name,
-                openai_api_key=config.openai_api_key,
-                **model_kwargs
-            )
-        else:
+        if not config.openai_api_key:
             raise ValueError("No valid API key found. Please set OPENAI_API_KEY in your environment.")
-    
-    @abstractmethod
+
+        return ChatOpenAI(
+            model_name=self.model_name,
+            openai_api_key=config.openai_api_key,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+            **kwargs,
+        )
+
     def _get_prompt_templates(self) -> Dict[str, PromptTemplate]:
         """Get prompt templates specific to this agent.
-        
-        Returns:
-            Dictionary of prompt templates keyed by operation name
+
+        Override in subclasses that use the template-based prompt system.
+        Defaults to empty dict for agents that use their own prompting strategy.
         """
-        pass
-    
+        return {}
+
     @abstractmethod
     def generate_content(self, **kwargs) -> Dict[str, Any]:
-        """Generate content based on the agent's specific purpose.
-        
-        Args:
-            **kwargs: Agent-specific parameters
-            
-        Returns:
-            Generated content as a dictionary
-        """
+        """Generate content based on the agent's specific purpose."""
         pass
-    
+
     def _format_prompt(self, template_name: str, **kwargs) -> str:
-        """Format a prompt template with given parameters.
-        
-        Args:
-            template_name: Name of the template to use
-            **kwargs: Parameters to fill in the template
-            
-        Returns:
-            Formatted prompt string
-        """
         if template_name not in self.prompt_templates:
             raise ValueError(f"Template '{template_name}' not found in {self.__class__.__name__}")
-        
-        template = self.prompt_templates[template_name]
-        return template.format(**kwargs)
-    
+        return self.prompt_templates[template_name].format(**kwargs)
+
     def _generate_with_prompt(self, prompt: str) -> str:
-        """Generate content using the language model with the given prompt.
-        
-        Args:
-            prompt: The formatted prompt string
-            
-        Returns:
-            Generated content
-        """
         try:
-            # Check if prompt exceeds context length
-            estimated_tokens = len(prompt.split()) * 1.3  # Rough estimation
+            estimated_tokens = len(prompt.split()) * 1.3
             if estimated_tokens > config.max_context_length:
-                self.logger.warning(f"Prompt may exceed context length: ~{estimated_tokens:.0f} tokens")
-                # Truncate prompt if necessary
+                self.logger.warning("Prompt may exceed context length: ~%.0f tokens", estimated_tokens)
                 max_words = int(config.max_context_length / 1.3)
                 words = prompt.split()
                 if len(words) > max_words:
-                    self.logger.warning(f"Truncating prompt from {len(words)} to {max_words} words")
+                    self.logger.warning("Truncating prompt from %d to %d words", len(words), max_words)
                     prompt = " ".join(words[:max_words])
-            
+
             response = self.llm.invoke(prompt)
             return response.content.strip()
         except Exception as e:
-            self.logger.error(f"Error generating content: {str(e)}")
+            self.logger.error("Error generating content: %s", e)
             raise
-    
+
     def save_content(self, content: Dict[str, Any], filename: str) -> str:
-        """Save generated content to a file.
-        
-        Args:
-            content: Content to save
-            filename: Name of the file (without extension)
-            
-        Returns:
-            Path to the saved file
-        """
-        import json
-        import os
-        
         filepath = os.path.join(config.output_dir, f"{filename}.json")
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(content, f, indent=2, ensure_ascii=False)
-        
-        self.logger.info(f"Content saved to {filepath}")
+        self.logger.info("Content saved to %s", filepath)
         return filepath
