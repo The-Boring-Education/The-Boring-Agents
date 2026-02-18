@@ -98,7 +98,8 @@ def get_schema_defaults() -> Dict[str, Any]:
         "price": 0,
         "discountPercentage": 0,
         "appliedCoupon": None,
-        "features": []
+        "features": [],
+        "resources": []
     }
 
 
@@ -181,6 +182,18 @@ def validate_question_structure(question: Dict[str, Any], index: int = 0) -> Lis
             errors.append(f"Question {index}: companyTypes must be a list")
         elif not validate_company_types(question["companyTypes"]):
             errors.append(f"Question {index}: Invalid companyTypes values")
+    
+    # Validate resources
+    if "resources" in question:
+        if not isinstance(question["resources"], list):
+            errors.append(f"Question {index}: resources must be a list")
+        else:
+            for r_idx, resource in enumerate(question["resources"]):
+                if not isinstance(resource, dict):
+                    errors.append(f"Question {index}, Resource {r_idx}: must be a dictionary")
+                else:
+                    if "type" not in resource or "url" not in resource:
+                        errors.append(f"Question {index}, Resource {r_idx}: missing type or url")
     
     return errors
 

@@ -21,6 +21,9 @@ API Naming Conventions (REST-compliant):
 """
 
 import logging
+import os
+import glob
+import json
 from fastapi import APIRouter, BackgroundTasks, Request, HTTPException
 from typing import Optional
 
@@ -34,6 +37,7 @@ from src.api.models.quiz_models import (
     SimpleStatus,
 )
 from src.utils.request_logging import log_action
+from src.core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +93,13 @@ async def create_quiz(
 # Topic Operations
 # =============================================================================
 
+# Dashboard health check
+@router.get("/topics")
+def list_quiz_topics(request: Request):
+    """List available quiz topics (dashboard compatibility)."""
+    return {"topics": ["Python", "Java", "JavaScript", "C++", "DSA", "Aptitude"]}
+
+
 @router.post("/topics", response_model=SessionResponse)
 async def generate_topic(
     payload: TopicGenerationRequest,
@@ -117,6 +128,83 @@ async def generate_topic(
             error_type=type(e).__name__
         )
         raise
+
+
+# Alias for /quizzes endpoint 
+@router.post("/generate", response_model=SessionResponse)
+async def generate_quiz_alias(
+    payload: CreateQuizRequest,
+    background_tasks: BackgroundTasks,
+    request: Request
+):
+    """Alias for /quizzes endpoint (dashboard compatibility)."""
+    return await create_quiz(payload, background_tasks, request)
+
+
+# Pending quizzes operations
+@router.get("/pending")
+def list_pending_quizzes(request: Request):
+    """List pending generated quizzes from the output directory."""
+    try:
+        output_dir = os.path.join(config.output_dir, "quizzes")
+        if not os.path.exists(output_dir):
+            return {"pending": []}
+            
+        pending = []
+        for file_path in glob.glob(os.path.join(output_dir, "*.json")):
+            filename = os.path.basename(file_path)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    pending.append({
+                        "filename": filename,
+                        "topic": data.get("categoryName") or data.get("topic"),
+                        "question_count": len(data.get("questions", [])),
+                        "categoryName": data.get("categoryName")
+                    })
+            except:
+                pending.append({"filename": filename})
+                
+        return {"pending": pending}
+    except Exception as e:
+        logger.error(f"Error listing pending quizzes: {e}")
+        return {"pending": []}
+
+
+@router.get("/pending/{filename}/content")
+def get_pending_quiz_content(filename: str, request: Request):
+    """Get content of a pending quiz file."""
+    try:
+        output_dir = os.path.join(config.output_dir, "quizzes")
+        file_path = os.path.join(output_dir, filename)
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/pending/{filename}")
+def delete_pending_quiz_file(filename: str, request: Request):
+    """Delete a pending quiz file."""
+    try:
+        output_dir = os.path.join(config.output_dir, "quizzes")
+        file_path = os.path.join(output_dir, filename)
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return {"ok": True}
+        else:
+            return {"ok": False, "error": "File not found"}
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # =============================================================================
@@ -326,6 +414,31 @@ def delete_session(session_id: str, request: Request):
             error_type=type(e).__name__
         )
         raise
+
+
+# =============================================================================
+# Dashboard-compatible Aliases
+# =============================================================================
+
+@router.get("/progress/{session_id}")
+def get_session_progress_alias_progress(session_id: str, request: Request):
+    """Alias for /sessions/{id} specifically for agentsApi.ts compatibility."""
+    return get_session_progress(session_id, request)
+
+@router.get("/session/{session_id}")
+def get_session_progress_alias_singular(session_id: str, request: Request):
+    """Alias for /sessions/{id} endpoint (singular 'session')."""
+    return get_session_progress(session_id, request)
+
+@router.get("/session/{session_id}/output")
+def get_session_output_alias(session_id: str, request: Request):
+    """Alias for /sessions/{id}/output endpoint (singular 'session')."""
+    return get_session_output(session_id, request)
+
+@router.delete("/session/{session_id}")
+def delete_session_alias(session_id: str, request: Request):
+    """Delete a session (singular 'session')."""
+    return delete_session(session_id, request)
 
 
 # =============================================================================

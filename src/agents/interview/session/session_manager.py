@@ -113,22 +113,185 @@ class InterviewSessionManager(BaseSessionManager):
         session_data["meta"] = meta
         self.save_session(session_id, session_data)
     
-    def add_question(self, session_id: str, question: Dict[str, Any]) -> None:
+    
+    def add_question(self, session_id: str, question: Dict[str, Any]) -> Dict[str, Any]:
         """Add a question to a session.
         
         Args:
             session_id: Session ID
             question: Question data dictionary
+            
+        Returns:
+            Added question with ID
         """
         session_data = self.get_session(session_id)
         if not session_data:
             raise ValueError(f"Session {session_id} not found")
         
+        # Ensure question has an ID
+        if "id" not in question and "_id" not in question:
+            import uuid
+            question["id"] = str(uuid.uuid4())
+            question["created_at"] = datetime.now(timezone.utc).isoformat()
+            question["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        # 1. Add to 'questions' list
         if "questions" not in session_data:
             session_data["questions"] = []
         
         session_data["questions"].append(question)
+        
+        # 2. Add to 'sheet_data' if exists
+        if "sheet_data" in session_data and session_data["sheet_data"]:
+            if "questions" not in session_data["sheet_data"]:
+                session_data["sheet_data"]["questions"] = []
+            session_data["sheet_data"]["questions"].append(question)
+            
+            # Sync to output file
+            output_file = session_data.get("output_file")
+            if output_file and os.path.exists(output_file):
+                try:
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        json.dump(session_data["sheet_data"], f, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to update output file {output_file}: {e}")
+
+        # Update question count
+        session_data["question_count"] = max(
+            session_data.get("question_count", 0), 
+            len(session_data["questions"])
+        )
+        
         self.save_session(session_id, session_data)
+        return question
+
+    def get_question(self, session_id: str, question_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific question from a session.
+        
+        Args:
+            session_id: Session ID
+            question_id: Question ID
+            
+        Returns:
+            Question dictionary or None
+        """
+        session_data = self.get_session(session_id)
+        if not session_data:
+            return None
+            
+        # Try finding in questions list
+        questions = session_data.get("questions", [])
+        for i, q in enumerate(questions):
+            q_id = q.get("id") or q.get("_id")
+            
+            # Match by ID or Index
+            is_match = False
+            if str(q_id) == str(question_id):
+                is_match = True
+            elif question_id.startswith("question_"):
+                try:
+                    idx = int(question_id.split("_")[1])
+                    if i == idx:
+                        is_match = True
+                except (ValueError, IndexError):
+                    pass
+            
+            if is_match:
+                return q
+                
+        return None
+
+    def delete_question(self, session_id: str, question_id: str) -> bool:
+        """Delete a question from a session.
+        
+        Args:
+            session_id: Session ID
+            question_id: Question ID
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        session_data = self.get_session(session_id)
+        if not session_data:
+            raise ValueError(f"Session {session_id} not found")
+            
+        deleted = False
+        
+        # 1. Delete from questions matching ID logic
+        if "questions" in session_data:
+            questions = session_data["questions"]
+            target_idx = -1
+            
+            for i, q in enumerate(questions):
+                q_id = q.get("id") or q.get("_id")
+                
+                is_match = False
+                if str(q_id) == str(question_id):
+                    is_match = True
+                elif question_id.startswith("question_"):
+                    try:
+                        idx = int(question_id.split("_")[1])
+                        if i == idx:
+                            is_match = True
+                    except (ValueError, IndexError):
+                        pass
+                
+                if is_match:
+                    target_idx = i
+                    break
+            
+            if target_idx != -1:
+                questions.pop(target_idx)
+                session_data["questions"] = questions
+                deleted = True
+        
+        # 2. Delete from sheet_data if exists
+        if "sheet_data" in session_data and session_data["sheet_data"]:
+            sheet_questions = session_data["sheet_data"].get("questions", [])
+            target_idx = -1
+            
+            for i, q in enumerate(sheet_questions):
+                q_id = q.get("id") or q.get("_id")
+                
+                is_match = False
+                if str(q_id) == str(question_id):
+                    is_match = True
+                elif question_id.startswith("question_"):
+                    try:
+                        idx = int(question_id.split("_")[1])
+                        if i == idx:
+                            is_match = True
+                    except (ValueError, IndexError):
+                        pass
+                
+                if is_match:
+                    target_idx = i
+                    break
+            
+            if target_idx != -1:
+                sheet_questions.pop(target_idx)
+                session_data["sheet_data"]["questions"] = sheet_questions
+                deleted = True
+                
+                # Sync to output file
+                output_file = session_data.get("output_file")
+                if output_file and os.path.exists(output_file):
+                    try:
+                        with open(output_file, 'w', encoding='utf-8') as f:
+                            json.dump(session_data["sheet_data"], f, indent=2, ensure_ascii=False)
+                    except Exception as e:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"Failed to update output file {output_file}: {e}")
+
+        if deleted:
+            # Update count
+            session_data["question_count"] = len(session_data.get("questions", []))
+            self.save_session(session_id, session_data)
+            
+        return deleted
     
     def update_questions(self, session_id: str, questions: list) -> None:
         """Update all questions for a session.
@@ -141,8 +304,101 @@ class InterviewSessionManager(BaseSessionManager):
         if not session_data:
             raise ValueError(f"Session {session_id} not found")
         
-        session_data["questions"] = questions
+    
+    def update_question_in_session(self, session_id: str, question_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a specific question in a session (including final sheet data).
+        
+        Args:
+            session_id: Session ID
+            question_id: Question ID to update
+            updates: Dictionary of fields to update
+            
+        Returns:
+            Updated question dictionary
+            
+        Raises:
+            ValueError: If session or question not found
+        """
+        session_data = self.get_session(session_id)
+        if not session_data:
+            raise ValueError(f"Session {session_id} not found")
+            
+        updated_question = None
+        question_found = False
+        
+        # 1. Update in 'questions' list (in-progress or completed)
+        if "questions" in session_data:
+            for i, q in enumerate(session_data["questions"]):
+                # Check different ID fields (id, _id)
+                q_id = q.get("id") or q.get("_id")
+                
+                # Match by explicit ID OR by index if ID is like "question_X"
+                is_match = False
+                if str(q_id) == str(question_id):
+                    is_match = True
+                elif question_id.startswith("question_"):
+                    try:
+                        idx = int(question_id.split("_")[1])
+                        if i == idx:
+                            is_match = True
+                    except (ValueError, IndexError):
+                        pass
+
+                if is_match:
+                    # Update fields
+                    session_data["questions"][i].update(updates)
+                    # Ensure updated_at is set
+                    session_data["questions"][i]["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    updated_question = session_data["questions"][i]
+                    question_found = True
+                    break
+                    
+        # 2. Update in 'sheet_data' if it exists (completed session final output)
+        if "sheet_data" in session_data and session_data["sheet_data"]:
+            sheet_questions = session_data["sheet_data"].get("questions", [])
+            for i, q in enumerate(sheet_questions):
+                q_id = q.get("id") or q.get("_id")
+                
+                is_match = False
+                if str(q_id) == str(question_id):
+                    is_match = True
+                elif question_id.startswith("question_"):
+                    try:
+                        idx = int(question_id.split("_")[1])
+                        if i == idx:
+                            is_match = True
+                    except (ValueError, IndexError):
+                        pass
+
+                if is_match:
+                    # Update fields
+                    sheet_questions[i].update(updates)
+                    sheet_questions[i]["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    # If we didn't find it in main list (unlikely), take from here
+                    if not updated_question:
+                        updated_question = sheet_questions[i]
+                    question_found = True
+                    break
+            session_data["sheet_data"]["questions"] = sheet_questions
+            
+            # Sync to output file if it exists
+            output_file = session_data.get("output_file")
+            if output_file and os.path.exists(output_file) and session_data["sheet_data"]:
+                try:
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        json.dump(session_data["sheet_data"], f, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to update output file {output_file}: {e}")
+            
+        if not question_found:
+            raise ValueError(f"Question {question_id} not found in session {session_id}")
+            
         self.save_session(session_id, session_data)
+        return updated_question
+
+
     
     def set_output_file(self, session_id: str, output_file: str, sheet_data: Optional[Dict[str, Any]] = None) -> None:
         """Set output file path for a completed session.
