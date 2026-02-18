@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock
 
-from src.agents.interview.common.workflow_utils import (
+from src.core.orchestrator import (
     handle_node_errors,
     check_skip_condition,
     update_state_safely,
@@ -12,7 +12,7 @@ from src.agents.interview.common.workflow_utils import (
     log_node_execution,
     create_error_state
 )
-from src.agents.interview.common.state_utils import (
+from src.agents.interview.workflow import (
     create_initial_state,
     state_from_session,
     determine_resume_status,

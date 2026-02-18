@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from src.agents.interview.common.metadata_generator import MetadataGenerator
-from src.agents.interview.common.question_generator import QuestionGenerator
+from src.agents.interview.utils import MetadataGenerator
+from src.agents.interview.utils import QuestionGenerator
 
 
 class TestMetadataGenerator:
@@ -25,7 +25,7 @@ class TestMetadataGenerator:
         assert "sheet_meta" in templates
         assert "question_metadata" in templates
     
-    @patch('src.agents.interview.common.metadata_generator.MetadataGenerator._generate_with_prompt')
+    @patch('src.agents.interview.utils.MetadataGenerator._generate_with_prompt')
     def test_generate_sheet_meta(self, mock_generate):
         """Test sheet metadata generation."""
         mock_generate.return_value = "Generated metadata content"
@@ -46,7 +46,7 @@ class TestMetadataGenerator:
         assert "Test Description" in call_args
         assert "Tech" in call_args
     
-    @patch('src.agents.interview.common.metadata_generator.MetadataGenerator._generate_with_prompt')
+    @patch('src.agents.interview.utils.MetadataGenerator._generate_with_prompt')
     def test_generate_question_metadata(self, mock_generate):
         """Test question metadata generation."""
         mock_generate.return_value = """
@@ -143,7 +143,7 @@ class TestQuestionGenerator:
         assert isinstance(templates, dict)
         assert "generate_questions" in templates
     
-    @patch('src.agents.interview.common.question_generator.QuestionGenerator._generate_with_prompt')
+    @patch('src.agents.interview.utils.QuestionGenerator._generate_with_prompt')
     def test_generate_questions(self, mock_generate):
         """Test question generation."""
         mock_generate.return_value = """

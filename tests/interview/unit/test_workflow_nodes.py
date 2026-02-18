@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
-from src.agents.interview.workflow.nodes import (
+from src.agents.interview.workflow import (
     generate_metadata_node,
     generate_questions_node,
     generate_answers_node,
@@ -11,7 +11,7 @@ from src.agents.interview.workflow.nodes import (
     finalize_node,
 )
 from src.agents.interview.generators import get_generator
-from src.agents.interview.workflow.state import InterviewWorkflowState
+from src.agents.interview.workflow import InterviewWorkflowState
 from src.agents.interview.types import AnswerAgentType
 
 
@@ -42,8 +42,8 @@ class TestGenerateMetadataNode:
         assert result["status"] == "questions_generating"
         assert "meta" not in result  # Should not regenerate
     
-    @patch('src.agents.interview.workflow.nodes.MetadataGenerator')
-    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    @patch('src.agents.interview.workflow.MetadataGenerator')
+    @patch('src.agents.interview.workflow._get_session_manager')
     def test_generate_metadata_success(self, mock_get_sm, mock_metadata_gen):
         """Test successful metadata generation."""
         state: InterviewWorkflowState = {
@@ -81,7 +81,7 @@ class TestGenerateMetadataNode:
         )
         mock_session.set_meta.assert_called_once_with("test-123", "Generated metadata")
     
-    @patch('src.agents.interview.workflow.nodes.MetadataGenerator')
+    @patch('src.agents.interview.workflow.MetadataGenerator')
     def test_generate_metadata_error_handling(self, mock_metadata_gen):
         """Test error handling in metadata generation."""
         state: InterviewWorkflowState = {
@@ -138,9 +138,9 @@ class TestGenerateQuestionsNode:
         assert result["status"] == "answers_generating"
         assert "questions" not in result  # Should not regenerate
     
-    @patch('src.agents.interview.workflow.nodes.QuestionGenerator')
-    @patch('src.agents.interview.workflow.nodes.MetadataGenerator')
-    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    @patch('src.agents.interview.workflow.QuestionGenerator')
+    @patch('src.agents.interview.workflow.MetadataGenerator')
+    @patch('src.agents.interview.workflow._get_session_manager')
     def test_generate_questions_success(self, mock_get_sm, mock_metadata_gen, mock_question_gen):
         """Test successful question generation."""
         state: InterviewWorkflowState = {
@@ -237,8 +237,8 @@ class TestGenerateAnswersNode:
         assert result["status"] == "finalizing"
         assert result["progress"]["completed"] == 2
     
-    @patch('src.agents.interview.workflow.nodes.get_generator')
-    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    @patch('src.agents.interview.workflow.get_generator')
+    @patch('src.agents.interview.workflow._get_session_manager')
     def test_generate_answers_success(self, mock_get_sm, mock_get_generator):
         """Test successful answer generation."""
         state: InterviewWorkflowState = {
@@ -278,7 +278,7 @@ class TestGenerateAnswersNode:
 class TestPersistStateNode:
     """Tests for persist_state_node."""
     
-    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    @patch('src.agents.interview.workflow._get_session_manager')
     def test_persist_state_success(self, mock_get_sm):
         """Test successful state persistence."""
         state: InterviewWorkflowState = {
@@ -310,7 +310,7 @@ class TestPersistStateNode:
         assert result == {}
         mock_session.save_session.assert_called_once()
     
-    @patch('src.agents.interview.workflow.nodes._get_session_manager')
+    @patch('src.agents.interview.workflow._get_session_manager')
     def test_persist_state_error_handling(self, mock_get_sm):
         """Test error handling in state persistence."""
         state: InterviewWorkflowState = {
@@ -364,11 +364,11 @@ class TestFinalizeNode:
         
         assert result["status"] == "completed"
     
-    @patch('src.agents.interview.workflow.nodes._get_session_manager')
-    @patch('src.agents.interview.workflow.nodes.validate_sheet_structure')
-    @patch('src.agents.interview.workflow.nodes.generate_slug')
-    @patch('src.agents.interview.workflow.nodes.generate_cover_image_url')
-    @patch('src.agents.interview.workflow.nodes.get_schema_defaults')
+    @patch('src.agents.interview.workflow._get_session_manager')
+    @patch('src.agents.interview.workflow.validate_sheet_structure')
+    @patch('src.agents.interview.workflow.generate_slug')
+    @patch('src.agents.interview.workflow.generate_cover_image_url')
+    @patch('src.agents.interview.workflow.get_schema_defaults')
     @patch('builtins.open', create=True)
     @patch('json.dump')
     @patch('os.makedirs')
@@ -427,25 +427,25 @@ class TestGetGenerator:
     def test_get_generic_generator(self):
         generator = get_generator("generic")
         assert generator is not None
-        from src.agents.interview.generators.generic_generator import GenericAnswerGenerator
+        from src.agents.interview.generators import GenericAnswerGenerator
         assert isinstance(generator, GenericAnswerGenerator)
     
     def test_get_dsa_generator(self):
         generator = get_generator("dsa")
         assert generator is not None
-        from src.agents.interview.generators.dsa_generator import DSAAnswerGenerator
+        from src.agents.interview.generators import DSAAnswerGenerator
         assert isinstance(generator, DSAAnswerGenerator)
     
     def test_get_tech_generator(self):
         generator = get_generator("tech", technology="Python")
         assert generator is not None
-        from src.agents.interview.generators.tech_generator import TechAnswerGenerator
+        from src.agents.interview.generators import TechAnswerGenerator
         assert isinstance(generator, TechAnswerGenerator)
     
     def test_get_system_design_generator(self):
         generator = get_generator("system_design")
         assert generator is not None
-        from src.agents.interview.generators.system_design_generator import SystemDesignAnswerGenerator
+        from src.agents.interview.generators import SystemDesignAnswerGenerator
         assert isinstance(generator, SystemDesignAnswerGenerator)
     
     def test_raises_for_invalid_type(self):
