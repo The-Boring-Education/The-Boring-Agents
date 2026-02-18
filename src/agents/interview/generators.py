@@ -275,8 +275,13 @@ _GENERATOR_REGISTRY: Dict[AnswerAgentType, type] = {
 }
 
 
-def get_generator(agent_type: AnswerAgentType, **kwargs) -> BaseAnswerGenerator:
-    """Instantiate a generator by AnswerAgentType."""
+def get_generator(agent_type, **kwargs) -> BaseAnswerGenerator:
+    """Instantiate a generator by AnswerAgentType enum or string name."""
+    if isinstance(agent_type, str):
+        try:
+            agent_type = AnswerAgentType(agent_type.lower())
+        except ValueError:
+            raise ValueError(f"Unknown agent type: {agent_type}")
     cls = _GENERATOR_REGISTRY.get(agent_type)
     if cls is None:
         raise ValueError(f"Unknown agent type: {agent_type}")
