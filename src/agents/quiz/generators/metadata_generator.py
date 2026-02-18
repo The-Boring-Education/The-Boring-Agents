@@ -5,7 +5,7 @@ from langchain_core.prompts import PromptTemplate
 import json
 import logging
 
-from src.core.base_agent import BaseAgent
+from src.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
 
