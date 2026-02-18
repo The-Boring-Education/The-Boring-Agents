@@ -1,6 +1,6 @@
-"""Core workflow utilities shared across all agent workflows."""
-
-from src.core.workflow.workflow_utils import (
+"""Backward-compatible re-export. Canonical location: src.core.orchestrator"""
+from src.core.orchestrator import (
+    BaseWorkflowOrchestrator,
     handle_node_errors,
     check_skip_condition,
     log_node_execution,
@@ -9,9 +9,9 @@ from src.core.workflow.workflow_utils import (
     update_state_safely,
     validate_state_fields,
 )
-from src.core.workflow.base_orchestrator import BaseWorkflowOrchestrator
 
 __all__ = [
+    "BaseWorkflowOrchestrator",
     "handle_node_errors",
     "check_skip_condition",
     "log_node_execution",
@@ -19,5 +19,4 @@ __all__ = [
     "create_error_state",
     "update_state_safely",
     "validate_state_fields",
-    "BaseWorkflowOrchestrator",
 ]

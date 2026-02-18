@@ -1,11 +1,4 @@
-"""Type definitions for interview agents."""
+"""Backward-compatible re-export. Canonical location: src.agents.interview.generators"""
+from src.agents.interview.generators import AnswerAgentType
 
-from enum import Enum
-
-
-class AnswerAgentType(Enum):
-    """Available answer creator agent types."""
-    GENERIC = "generic"
-    DSA = "dsa"
-    TECH = "tech"
-    SYSTEM_DESIGN = "system_design"
+__all__ = ["AnswerAgentType"]

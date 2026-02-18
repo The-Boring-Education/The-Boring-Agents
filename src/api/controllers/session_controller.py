@@ -9,7 +9,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import HTTPException, Query
 
 # from src.agents.quiz.quiz_orchestrator import QuizOrchestrator
-from src.agents.interview.session.session_manager import InterviewSessionManager
+from src.agents.interview.session import InterviewSessionManager
 from src.utils.session_logger import read_logs, get_log_file_path
 from src.utils.helpers import load_json_file
 from src.core.config import config
@@ -103,7 +103,7 @@ class SessionController:
             session = self.interview_session_manager.get_session(session_id)
             if session:
                 # Use the workflow orchestrator to resume
-                from ...agents.interview.workflow.orchestrator import InterviewWorkflowOrchestrator
+                from src.agents.interview.workflow import InterviewWorkflowOrchestrator
                 orchestrator = InterviewWorkflowOrchestrator()
                 result = orchestrator.resume_session(session_id)
                 if result.get("status") != "failed":
