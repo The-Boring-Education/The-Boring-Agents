@@ -1,19 +1,33 @@
-"""Interview agents module."""
+"""Interview prep agent — public API.
 
-from src.agents.interview.types import AnswerAgentType
-from src.agents.interview.workflow.orchestrator import InterviewWorkflowOrchestrator
-from src.agents.interview.session.session_manager import InterviewSessionManager
-from src.agents.interview.generators.generic_generator import GenericAnswerGenerator
-from src.agents.interview.generators.dsa_generator import DSAAnswerGenerator
-from src.agents.interview.generators.tech_generator import TechAnswerGenerator
-from src.agents.interview.generators.system_design_generator import SystemDesignAnswerGenerator
+Import everything you need from the flat module files:
+  generators.py  — AnswerAgentType, get_generator, generator classes
+  session.py     — InterviewSessionManager
+  workflow.py    — InterviewWorkflowOrchestrator, state helpers
+  utils.py       — schema/mdx utils, QuestionGenerator, MetadataGenerator
+  prompts.py     — prompt templates as constants
+"""
+
+from src.agents.interview.generators import (
+    AnswerAgentType,
+    BaseAnswerGenerator,
+    DSAAnswerGenerator,
+    GenericAnswerGenerator,
+    SystemDesignAnswerGenerator,
+    TechAnswerGenerator,
+    get_generator,
+)
+from src.agents.interview.session import InterviewSessionManager
+from src.agents.interview.workflow import InterviewWorkflowOrchestrator
 
 __all__ = [
     "AnswerAgentType",
-    "InterviewWorkflowOrchestrator",
-    "InterviewSessionManager",
-    "GenericAnswerGenerator",
+    "BaseAnswerGenerator",
     "DSAAnswerGenerator",
-    "TechAnswerGenerator",
+    "GenericAnswerGenerator",
     "SystemDesignAnswerGenerator",
+    "TechAnswerGenerator",
+    "get_generator",
+    "InterviewSessionManager",
+    "InterviewWorkflowOrchestrator",
 ]
