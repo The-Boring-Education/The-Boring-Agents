@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any
 
 from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
-from src.core.session.session_types import SessionStatus
+from src.core.session import SessionStatus
 
 
 class TestQuizWorkflowOrchestratorInit:

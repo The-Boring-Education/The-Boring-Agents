@@ -178,7 +178,14 @@ class BaseAnswerGenerator(BaseAgent, ABC):
 
     @staticmethod
     def _ensure_proper_formatting(answer: str) -> str:
-        answer = answer.replace("###", "#####").replace("##", "#####")
+        import re
+        # Normalize all markdown headers (h1-h6) to h5 in a single pass
+        answer = re.sub(
+            r"^(#{1,6})\s+",
+            "##### ",
+            answer,
+            flags=re.MULTILINE,
+        )
         answer = answer.replace("\n\n\n", "\n\n")
         if "```" not in answer:
             return answer
@@ -275,8 +282,13 @@ _GENERATOR_REGISTRY: Dict[AnswerAgentType, type] = {
 }
 
 
-def get_generator(agent_type: AnswerAgentType, **kwargs) -> BaseAnswerGenerator:
-    """Instantiate a generator by AnswerAgentType."""
+def get_generator(agent_type, **kwargs) -> BaseAnswerGenerator:
+    """Instantiate a generator by AnswerAgentType enum or string name."""
+    if isinstance(agent_type, str):
+        try:
+            agent_type = AnswerAgentType(agent_type.lower())
+        except ValueError:
+            raise ValueError(f"Unknown agent type: {agent_type}")
     cls = _GENERATOR_REGISTRY.get(agent_type)
     if cls is None:
         raise ValueError(f"Unknown agent type: {agent_type}")

@@ -12,7 +12,7 @@ from src.agents.interview.workflow import (
 )
 from src.agents.interview.generators import get_generator
 from src.agents.interview.workflow import InterviewWorkflowState
-from src.agents.interview.types import AnswerAgentType
+from src.agents.interview.generators import AnswerAgentType
 
 
 class TestGenerateMetadataNode:

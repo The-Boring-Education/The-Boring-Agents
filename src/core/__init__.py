@@ -1,7 +1,7 @@
 """Core module — config, session, orchestrator, base agent."""
 
 from src.core.config import Config, config, get_config
-from src.core.base_agent import BaseAgent
+from src.agents.base import BaseAgent
 from src.core.session import BaseSessionManager, SessionStatus, ProgressInfo
 from src.core.orchestrator import BaseWorkflowOrchestrator
 from src.core.env import (
