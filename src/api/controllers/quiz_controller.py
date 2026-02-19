@@ -14,7 +14,7 @@ from fastapi import HTTPException, BackgroundTasks
 
 # TODO: Implement QuizWorkflowOrchestrator in src/agents/quiz/workflow/orchestrator.py
 # Uncomment the import below once implemented:
-from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
+from src.agents.quiz.workflow import QuizWorkflowOrchestrator
 
 from src.core.session import SessionStatus
 from src.core.env import get_env_manager

@@ -7,7 +7,7 @@ Tests the QuizWorkflowState TypedDict and state utilities.
 import pytest
 from typing import Dict, Any
 
-from src.agents.quiz.workflow.state import QuizWorkflowState
+from src.agents.quiz.workflow import QuizWorkflowState
 
 
 class TestQuizWorkflowState:
@@ -205,10 +205,10 @@ class TestStateUtilities:
     
     def test_import_state_utils(self):
         """Test that state_utils can be imported."""
-        from src.agents.quiz.workflow.state_utils import (
+        from src.agents.quiz.workflow import (
             create_initial_state,
             state_from_session,
-            determine_resume_status
+            determine_resume_status,
         )
         
         assert create_initial_state is not None
