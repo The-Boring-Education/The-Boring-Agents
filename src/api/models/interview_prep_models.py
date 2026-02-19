@@ -47,6 +47,46 @@ class TopicGenerationRequest(BaseModel):
         return value
 
 
+class InterviewQuestionResources(BaseModel):
+    """Resources for interview questions."""
+    youtubeURL: Optional[str] = None
+    leetcodeURL: Optional[str] = None
+    blogURL: Optional[str] = None
+
+
+class InterviewSheetQuestionModel(BaseModel):
+    """Interview question model - matches InterviewSheetQuestionModel in Sheet.ts."""
+    title: str = Field(..., description="Question title")
+    question: str = Field(..., description="Question text")
+    answer: str = Field(..., description="Question answer")
+    frequency: str = Field(..., description="Frequency: Most Asked, Asked Frequently, Asked Sometimes")
+    companyTypes: List[str] = Field(..., description="List of company types")
+    priority: str = Field(default="Medium", description="Priority: High, Medium, Low")
+    resources: InterviewQuestionResources = Field(default_factory=InterviewQuestionResources)
+
+
+class InterviewSheetModel(BaseModel):
+    """Interview sheet model - matches InterviewSheetModel in Sheet.ts."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    slug: str
+    description: str
+    meta: str
+    coverImageURL: str
+    liveOn: str
+    roadmap: str
+    questions: List[InterviewSheetQuestionModel]
+    dsaQuestions: List[str] = Field(default_factory=list)  # List of ObjectIds
+    
+    # Defaults
+    isPremium: bool = False
+    price: int = 0
+    discountPercentage: int = 0
+    appliedCoupon: Optional[str] = None
+    features: List[str] = Field(default_factory=list)
+
+
 class InterviewGenerationSession(BaseModel):
     """Interview generation session model."""
     sessionId: str
@@ -60,8 +100,9 @@ class InterviewGenerationSession(BaseModel):
     startedAt: str
     completedAt: Optional[str] = None
     outputFile: Optional[str] = None
-    sheetData: Optional[Dict[str, Any]] = None
+    sheetData: Optional[InterviewSheetModel] = None
     error: Optional[str] = None
+
 
 
 class SessionResponse(BaseModel):

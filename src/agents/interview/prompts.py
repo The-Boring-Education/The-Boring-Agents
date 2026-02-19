@@ -28,7 +28,7 @@ DSA_ANSWER_STRUCTURE = {
 }
 
 TECH_ANSWER_STRUCTURE = {
-    "Direct Answer": "Direct Answer",
+    "Answer": "Answer",
     "Concept Explanation": "Concept Explanation",
     "Practical Implementation": "Practical Implementation",
     "Real-World Applications": "Real-World Applications",
@@ -37,7 +37,7 @@ TECH_ANSWER_STRUCTURE = {
 }
 
 SYSTEM_DESIGN_ANSWER_STRUCTURE = {
-    "Direct Answer": "Direct Answer",
+    "Answer": "Answer",
     "System Architecture Overview": "System Architecture Overview",
     "Requirements Analysis": "Requirements Analysis",
     "Component Design": "Component Design",
@@ -65,29 +65,29 @@ Company Types: {company_types}
 
 Write a thorough, interview-ready answer following this structure:
 
-##### 🎯 Quick Answer
+##### Quick Answer
 
 A concise, confident answer (2-3 lines) the candidate can deliver in 30 seconds.
 
-##### 📚 Introduction
+##### Introduction
 
 - Clear definition in plain terms
 - Why this concept exists and what problem it solves
 - How this applies in Indian tech companies (use real examples from Flipkart, Swiggy, Razorpay, etc.)
 
-##### 💡 Basic Reasoning
+##### Basic Reasoning
 
 - Step-by-step thought process behind the concept
 - Why this approach works
 - Core principles involved
 
-##### 🤔 Why This Concept Matters
+##### Why This Concept Matters
 
 - Real-world importance in the Indian tech industry
 - How companies actually use this in production
 - Why interviewers test this specifically
 
-##### 💼 Interview Pro Tips
+##### Interview Pro Tips
 
 What interviewers want to hear:
 1. Key concepts and clear reasoning
@@ -233,11 +233,11 @@ Company Types: {company_types}
 
 Write a thorough system design answer following this structure:
 
-##### 🎯 Direct Answer
+##### Answer
 
 Concise high-level answer (2-3 lines) outlining the core architectural approach.
 
-##### 🏗️ System Architecture Overview
+##### System Architecture Overview
 
 High-Level Design:
 - Core components and their responsibilities
@@ -250,7 +250,7 @@ Reasoning:
 - Trade-offs considered
 - Alternative approaches and why they were rejected
 
-##### 📊 Requirements Analysis
+##### Requirements Analysis
 
 Functional Requirements:
 - What the system must do
@@ -261,14 +261,14 @@ Non-Functional Requirements:
 
 Explain how these requirements drive the design decisions.
 
-##### 🔧 Component Design
+##### Component Design
 
 - Detailed design of each major component
 - Data models, APIs, and component interactions
 - Design patterns applied and why
 - Separation of concerns
 
-##### 💾 Data Storage & Management
+##### Data Storage & Management
 
 Database Design:
 - Data models, SQL vs NoSQL choices, partitioning, sharding, replication
@@ -278,26 +278,26 @@ Caching Strategy:
 
 Explain why specific storage solutions were chosen and the consistency vs availability trade-offs.
 
-##### ⚡ Scalability & Performance
+##### Scalability & Performance
 
 - Horizontal vs vertical scaling
 - Load balancing, database scaling, CDN usage
 - Bottleneck identification and optimization
 - How the system handles growth (use Indian scale examples — Flipkart Big Billion Days, Swiggy peak hours)
 
-##### 🔒 Reliability & Fault Tolerance
+##### Reliability & Fault Tolerance
 
 - Redundancy and failover mechanisms
 - Failure scenarios and graceful degradation
 - Circuit breakers, retries, disaster recovery
 
-##### 🔐 Security Considerations
+##### Security Considerations
 
 - Authentication, authorization, encryption
 - API security and DDoS protection
 - Compliance considerations
 
-##### 🎤 Interview Tips
+##### Interview Tips
 
 - Step-by-step approach for system design interviews
 - What interviewers look for at each stage
@@ -352,36 +352,36 @@ Company Types: {{company_types}}
 
 Write a thorough, interview-ready answer for this {technology} question:
 
-##### 🎯 Direct Answer
+##### Answer
 
 The most direct, crisp answer first (2-3 lines). What an interviewer wants to hear immediately.
 
-##### 💡 Concept Explanation
+##### Concept Explanation
 
 - Explain the core concept clearly
 - Use plain language a fresher can understand
 - Add {technology}-specific context and terminology
 
-##### 🔧 Practical Implementation
+##### Practical Implementation
 
 - Clean, production-ready code examples with proper {technology} syntax highlighting
 - Best practices for {technology}
 - Multiple approaches when applicable
 - Error handling and edge cases
 
-##### 🌍 Real-World Applications
+##### Real-World Applications
 
 - How Indian companies use this (Flipkart, Zomato, Paytm, Swiggy, etc.)
 - Industry use cases specific to {technology}
 - Performance considerations and optimization
 
-##### ⚠️ Common Pitfalls & Best Practices
+##### Common Pitfalls & Best Practices
 
 - Common mistakes and how to avoid them
 - {technology}-specific anti-patterns
 - Security and performance gotchas
 
-##### 🎤 Interview Tips
+##### Interview Tips
 
 - How to approach this question in an interview
 - What interviewers are really testing

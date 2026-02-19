@@ -157,7 +157,7 @@ def normalize_question_metadata(question: Dict[str, Any]) -> Dict[str, Any]:
         "title": title, "question": question.get("question", ""),
         "answer": question.get("answer", ""), "frequency": frequency,
         "priority": priority, "companyTypes": company_types,
-        "resources": question.get("resources", []),
+        "resources": question.get("resources", {"youtubeURL": None, "leetcodeURL": None, "blogURL": None}),
     }
 
 
@@ -294,7 +294,7 @@ def finalize_node(state: InterviewWorkflowState) -> Dict[str, Any]:
         "isPremium": defaults["isPremium"], "price": defaults["price"],
         "discountPercentage": defaults["discountPercentage"],
         "appliedCoupon": defaults["appliedCoupon"], "features": defaults["features"],
-        "questions": state["questions"],
+        "questions": state["questions"], "dsaQuestions": defaults["dsaQuestions"],
     }
     is_valid, errors = validate_sheet_structure(sheet_data)
     if not is_valid:
