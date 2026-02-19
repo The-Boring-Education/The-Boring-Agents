@@ -27,6 +27,7 @@ from src.agents.quiz.generators import (
     QuizQuestionGenerator,
 )
 from src.agents.quiz.session import QuizSessionManager
+from src.agents.interview.utils import generate_slug
 
 logger = logging.getLogger(__name__)
 
@@ -237,17 +238,18 @@ def finalize_quiz_node(state: QuizWorkflowState) -> Dict[str, Any]:
 
     log_node_execution("finalize", session_id)
 
+    category_metadata = state.get("category_metadata") or {}
     quiz_data = {
-        "categoryName": state["category_metadata"]["categoryName"],
-        "categoryDescription": state["category_metadata"]["categoryDescription"],
-        "categoryIcon": state["category_metadata"]["categoryIcon"],
+        "categoryName": category_metadata.get("categoryName", state.get("topic", "")),
+        "categoryDescription": category_metadata.get("categoryDescription", state.get("description", "")),
+        "categoryIcon": category_metadata.get("categoryIcon", ""),
         "questions": state["questions"],
         "isActive": True,
     }
 
     output_dir = os.path.join(config.output_dir, "quizzes")
     os.makedirs(output_dir, exist_ok=True)
-    output_filename = f"quiz_{state['topic'].lower().replace(' ', '_')}.json"
+    output_filename = f"quiz_{generate_slug(state['topic'])}.json"
     output_file = os.path.join(output_dir, output_filename)
 
     with open(output_file, "w", encoding="utf-8") as f:
