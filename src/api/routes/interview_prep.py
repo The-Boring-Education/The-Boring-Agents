@@ -169,6 +169,21 @@ def delete_session(session_id: str, request: Request):
         log_action(request, "delete_session", level="ERROR", session_id=session_id, error=str(e))
         raise
 
+@router.put("/sessions/{session_id}/sheet")
+async def update_session_sheet(session_id: str, payload: dict, request: Request):
+    """Update the entire sheet data for a session."""
+    log_action(request, "update_session_sheet", session_id=session_id)
+    try:
+        sheet_data = payload.get("sheetData")
+        if not sheet_data:
+            raise HTTPException(status_code=400, detail="No sheetData provided")
+        return controller.update_session_sheet(session_id, sheet_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_action(request, "update_session_sheet", level="ERROR", session_id=session_id, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # ---------------------------------------------------------------------------
 # Question CRUD (under /sessions/ for consistency)
@@ -260,3 +275,7 @@ async def delete_question_alias(session_id: str, question_id: str, request: Requ
 @router.post("/session/{session_id}/questions")
 async def add_question_alias(session_id: str, question: dict, request: Request):
     return await add_question(session_id, question, request)
+
+@router.put("/session/{session_id}/sheet")
+async def update_session_sheet_alias(session_id: str, payload: dict, request: Request):
+    return await update_session_sheet(session_id, payload, request)

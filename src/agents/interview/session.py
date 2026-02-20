@@ -212,6 +212,19 @@ class InterviewSessionManager(BaseSessionManager):
         self.save_session(session_id, data)
         return updated_question
 
+    def update_sheet_data(self, session_id: str, sheet_data: Dict[str, Any]) -> None:
+        """Update the entire sheet_data object in a session."""
+        data = self._require_session(session_id)
+        data["sheet_data"] = sheet_data
+        
+        if "questions" in sheet_data:
+            data["questions"] = sheet_data["questions"]
+            
+        data["question_count"] = len(data.get("questions", []))
+        
+        self.save_session(session_id, data)
+        _sync_output_file(data)
+
     # -- migration helper -----------------------------------------------------
 
     def fix_all_sessions_question_count(self) -> int:
