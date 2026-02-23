@@ -213,12 +213,19 @@ class InterviewSessionManager(BaseSessionManager):
         return updated_question
 
     def update_sheet_data(self, session_id: str, sheet_data: Dict[str, Any]) -> None:
-        """Update the entire sheet_data object in a session."""
+        """Update the entire sheet_data object in a session, preserving questions if omitted."""
         data = self._require_session(session_id)
-        data["sheet_data"] = sheet_data
+        existing_sheet_data = data.get("sheet_data", {})
+        existing_questions = existing_sheet_data.get("questions") or data.get("questions")
+        existing_sheet_data.update(sheet_data)
         
-        if "questions" in sheet_data:
-            data["questions"] = sheet_data["questions"]
+        if "questions" not in sheet_data and existing_questions:
+             existing_sheet_data["questions"] = existing_questions
+             
+        data["sheet_data"] = existing_sheet_data
+        
+        if "questions" in existing_sheet_data:
+            data["questions"] = existing_sheet_data["questions"]
             
         data["question_count"] = len(data.get("questions", []))
         

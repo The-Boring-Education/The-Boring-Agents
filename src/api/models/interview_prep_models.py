@@ -87,6 +87,27 @@ class InterviewSheetModel(BaseModel):
     features: List[str] = Field(default_factory=list)
 
 
+class UploadSheetRequest(BaseModel):
+    """Request model for uploading interview sheet to database."""
+    model_config = ConfigDict(populate_by_name=True)
+    
+    sheetData: InterviewSheetModel = Field(..., description="Sheet data matching DB schema")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata overrides")
+    api_url: Optional[str] = Field(default=None, alias="apiUrl")
+    admin_secret: Optional[str] = Field(default="TBEAdmin", alias="adminSecret")
+
+
+class ValidateSheetRequest(BaseModel):
+    """Request model for interview sheet validation."""
+    sheetData: Dict[str, Any]
+
+
+class SimpleStatus(BaseModel):
+    """Simple status response model."""
+    ok: bool
+    message: str
+
+
 class InterviewGenerationSession(BaseModel):
     """Interview generation session model."""
     sessionId: str

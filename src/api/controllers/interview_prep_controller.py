@@ -12,22 +12,15 @@ from src.api.models.interview_prep_models import (
     TopicGenerationRequest,
     SessionResponse,
     TopicTemplate,
+    RoadmapSuggestion,
+    SimpleStatus,
+    UploadSheetRequest,
+    ValidateSheetRequest,
 )
 
+from src.core.constants import INTERVIEW_TEMPLATES, ROADMAP_SUGGESTIONS
+
 logger = logging.getLogger(__name__)
-
-# Hardcoded topic templates -- move to DB / config file when the list grows.
-_TOPIC_TEMPLATES: List[Dict[str, Any]] = [
-    {"name": "React.js", "description": "React.js interview questions covering hooks, components, state management, and best practices", "agentTypes": ["tech"], "suggestedQuestionCount": 25, "difficulty": "Medium", "roadmaps": ["Frontend", "Fullstack"], "category": "Frontend Framework", "tags": ["react", "javascript", "frontend"]},
-    {"name": "Node.js", "description": "Node.js backend development questions including Express, APIs, and server-side concepts", "agentTypes": ["tech"], "suggestedQuestionCount": 30, "difficulty": "Medium", "roadmaps": ["Backend", "Fullstack"], "category": "Backend Runtime", "tags": ["nodejs", "javascript", "backend"]},
-    {"name": "Data Structures & Algorithms", "description": "Core DSA concepts including arrays, trees, graphs, sorting, and algorithmic thinking", "agentTypes": ["dsa"], "suggestedQuestionCount": 40, "difficulty": "Hard", "roadmaps": ["DSA"], "category": "Computer Science", "tags": ["algorithms", "data-structures", "coding"]},
-    {"name": "Python", "description": "Python programming questions covering syntax, libraries, OOP, and best practices", "agentTypes": ["tech"], "suggestedQuestionCount": 25, "difficulty": "Medium", "roadmaps": ["Backend", "Tech"], "category": "Programming Language", "tags": ["python", "programming", "backend"]},
-    {"name": "System Design", "description": "System design interview questions covering scalability, architecture, and distributed systems", "agentTypes": ["system_design"], "suggestedQuestionCount": 15, "difficulty": "Hard", "roadmaps": ["Backend", "Fullstack"], "category": "Architecture", "tags": ["system-design", "architecture", "scalability"]},
-    {"name": "JavaScript", "description": "Core JavaScript concepts including ES6+, async programming, and DOM manipulation", "agentTypes": ["tech"], "suggestedQuestionCount": 30, "difficulty": "Medium", "roadmaps": ["Frontend", "Fullstack"], "category": "Programming Language", "tags": ["javascript", "programming", "frontend"]},
-    {"name": "Database Design", "description": "Database concepts including SQL, NoSQL, normalization, and query optimization", "agentTypes": ["tech"], "suggestedQuestionCount": 20, "difficulty": "Medium", "roadmaps": ["Backend", "Fullstack"], "category": "Database", "tags": ["database", "sql", "nosql"]},
-]
-
-
 class InterviewPrepController:
     """Controller for interview preparation operations."""
 
@@ -179,10 +172,90 @@ class InterviewPrepController:
             logger.error("Error adding question to session %s: %s", session_id, e)
             raise HTTPException(status_code=500, detail="Failed to add question")
 
+    # -- validation & upload --------------------------------------------------
+
+    def validate_sheet(self, payload: ValidateSheetRequest) -> SimpleStatus:
+        """Validate an interview sheet structure."""
+        try:
+            sheet_data = payload.sheetData
+            errors = []
+            
+            # Required core fields
+            required_fields = ["name", "slug", "description", "questions"]
+            for field in required_fields:
+                if field not in sheet_data:
+                    errors.append(f"Missing required field: {field}")
+                    
+            # Validate questions
+            questions = sheet_data.get("questions", [])
+            if not questions:
+                errors.append("Interview sheet must have at least one question")
+            else:
+                for i, q in enumerate(questions):
+                    prefix = f"Question {i+1}"
+                    for q_field in ["title", "question", "answer", "frequency"]:
+                        if q_field not in q:
+                            errors.append(f"{prefix}: Missing field '{q_field}'")
+                            
+            if errors:
+                return SimpleStatus(ok=False, message=f"Validation failed: {'; '.join(errors[:5])}")
+                
+            return SimpleStatus(ok=True, message="Validation successful")
+        except Exception as e:
+            logger.error("Validation error: %s", e)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def upload_sheet(self, payload: UploadSheetRequest) -> SimpleStatus:
+        """Upload interview sheet to the database via API."""
+        import requests
+        from src.core.config import config
+        
+        try:
+            # Convert to dict for validation payload
+            sheet_dict = payload.sheetData.model_dump() if hasattr(payload.sheetData, 'model_dump') else payload.sheetData
+            
+            # Validate first
+            validation = self.validate_sheet(ValidateSheetRequest(sheetData=sheet_dict))
+            if not validation.ok:
+                return validation
+                
+            api_url = (payload.api_url or config.api_base_url).rstrip('/')
+            url = f"{api_url}/api/v1/interview-prep/upload"
+            
+            headers = {
+                'x-admin-secret': payload.admin_secret or 'TBEAdmin',
+                'Content-Type': 'application/json'
+            }
+            
+            # Pack payload exactly as upload.ts would output
+            upload_body = {
+                "sessionId": "direct-upload",  # The agent upload endpoint doesn't strictly need a genuine session ID
+                "metadata": payload.metadata,
+                "sheetData": sheet_dict
+            }
+            
+            response = requests.post(url, json=upload_body, headers=headers, timeout=30)
+            
+            if response.status_code in [200, 201]:
+                return SimpleStatus(ok=True, message="Interview sheet uploaded successfully")
+            else:
+                return SimpleStatus(ok=False, message=f"Upload failed: HTTP {response.status_code} - {response.text}")
+                
+        except requests.exceptions.Timeout:
+            return SimpleStatus(ok=False, message="Upload timeout - API server may be slow")
+        except requests.exceptions.ConnectionError:
+            return SimpleStatus(ok=False, message="Connection error - check if API server is running")
+        except Exception as e:
+            logger.error("Upload handler error: %s", e)
+            raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
     # -- templates ------------------------------------------------------------
 
     def get_topic_templates(self) -> List[TopicTemplate]:
-        return [TopicTemplate(**t) for t in _TOPIC_TEMPLATES]
+        return [TopicTemplate(**t) for t in INTERVIEW_TEMPLATES]
+
+    def get_roadmap_suggestions(self) -> List[RoadmapSuggestion]:
+        return [RoadmapSuggestion(**s) for s in ROADMAP_SUGGESTIONS]
 
     # -- private helpers ------------------------------------------------------
 

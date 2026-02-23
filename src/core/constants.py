@@ -1,0 +1,196 @@
+"""Core static data constants for the application."""
+
+from typing import List, Dict, Any
+
+INTERVIEW_TEMPLATES: List[Dict[str, Any]] = [
+    {
+        "name": "React.js",
+        "description": "React.js interview questions covering hooks, components, state management, and best practices",
+        "agentTypes": [
+            "tech"
+        ],
+        "suggestedQuestionCount": 25,
+        "difficulty": "Medium",
+        "roadmaps": [
+            "Frontend",
+            "Fullstack"
+        ],
+        "category": "Frontend Framework",
+        "tags": [
+            "react",
+            "javascript",
+            "frontend"
+        ]
+    },
+    {
+        "name": "Node.js",
+        "description": "Node.js backend development questions including Express, APIs, and server-side concepts",
+        "agentTypes": [
+            "tech"
+        ],
+        "suggestedQuestionCount": 30,
+        "difficulty": "Medium",
+        "roadmaps": [
+            "Backend",
+            "Fullstack"
+        ],
+        "category": "Backend Runtime",
+        "tags": [
+            "nodejs",
+            "javascript",
+            "backend"
+        ]
+    },
+    {
+        "name": "Data Structures & Algorithms",
+        "description": "Core DSA concepts including arrays, trees, graphs, sorting, and algorithmic thinking",
+        "agentTypes": [
+            "dsa"
+        ],
+        "suggestedQuestionCount": 40,
+        "difficulty": "Hard",
+        "roadmaps": [
+            "DSA"
+        ],
+        "category": "Computer Science",
+        "tags": [
+            "algorithms",
+            "data-structures",
+            "coding"
+        ]
+    },
+    {
+        "name": "Python",
+        "description": "Python programming questions covering syntax, libraries, OOP, and best practices",
+        "agentTypes": [
+            "tech"
+        ],
+        "suggestedQuestionCount": 25,
+        "difficulty": "Medium",
+        "roadmaps": [
+            "Backend",
+            "Tech"
+        ],
+        "category": "Programming Language",
+        "tags": [
+            "python",
+            "programming",
+            "backend"
+        ]
+    },
+    {
+        "name": "System Design",
+        "description": "System design interview questions covering scalability, architecture, and distributed systems",
+        "agentTypes": [
+            "system_design"
+        ],
+        "suggestedQuestionCount": 15,
+        "difficulty": "Hard",
+        "roadmaps": [
+            "Backend",
+            "Fullstack"
+        ],
+        "category": "Architecture",
+        "tags": [
+            "system-design",
+            "architecture",
+            "scalability"
+        ]
+    },
+    {
+        "name": "JavaScript",
+        "description": "Core JavaScript concepts including ES6+, async programming, and DOM manipulation",
+        "agentTypes": [
+            "tech"
+        ],
+        "suggestedQuestionCount": 30,
+        "difficulty": "Medium",
+        "roadmaps": [
+            "Frontend",
+            "Fullstack"
+        ],
+        "category": "Programming Language",
+        "tags": [
+            "javascript",
+            "programming",
+            "frontend"
+        ]
+    },
+    {
+        "name": "Database Design",
+        "description": "Database concepts including SQL, NoSQL, normalization, and query optimization",
+        "agentTypes": [
+            "tech"
+        ],
+        "suggestedQuestionCount": 20,
+        "difficulty": "Medium",
+        "roadmaps": [
+            "Backend",
+            "Fullstack"
+        ],
+        "category": "Database",
+        "tags": [
+            "database",
+            "sql",
+            "nosql"
+        ]
+    }
+]
+
+ROADMAP_SUGGESTIONS: List[Dict[str, Any]] = [
+    {
+        "name": "Frontend Developer",
+        "description": "Master the art of building beautiful user interfaces",
+        "topics": [
+            "HTML",
+            "CSS",
+            "JavaScript",
+            "React",
+            "Next.js"
+        ],
+        "technologies": [
+            "React",
+            "TypeScript",
+            "Tailwind CSS"
+        ],
+        "difficulty": "Intermediate",
+        "estimatedTime": "3-6 months"
+    },
+    {
+        "name": "Backend Developer",
+        "description": "Build scalable and performant server-side applications",
+        "topics": [
+            "Node.js",
+            "Express",
+            "Databases",
+            "System Design",
+            "APIs"
+        ],
+        "technologies": [
+            "Node.js",
+            "PostgreSQL",
+            "Redis",
+            "Docker"
+        ],
+        "difficulty": "Advanced",
+        "estimatedTime": "6-12 months"
+    },
+    {
+        "name": "Fullstack Engineer",
+        "description": "Become a versatile developer who can handle both ends",
+        "topics": [
+            "Frontend",
+            "Backend",
+            "DevOps",
+            "Database Design"
+        ],
+        "technologies": [
+            "Next.js",
+            "Node.js",
+            "Prisma",
+            "AWS"
+        ],
+        "difficulty": "Advanced",
+        "estimatedTime": "9-18 months"
+    }
+]
