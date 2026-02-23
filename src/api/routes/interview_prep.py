@@ -20,7 +20,7 @@ REST-compliant naming:
 import json
 import logging
 import os
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
@@ -29,6 +29,11 @@ from src.api.models.interview_prep_models import (
     CreateSheetRequest,
     TopicGenerationRequest,
     SessionResponse,
+    TopicTemplate,
+    RoadmapSuggestion,
+    SimpleStatus,
+    UploadSheetRequest,
+    ValidateSheetRequest,
 )
 from src.utils.request_logging import log_action
 
@@ -55,6 +60,26 @@ async def create_sheet(payload: CreateSheetRequest, background_tasks: Background
         log_action(request, "create_sheet", level="ERROR", error=str(e), error_type=type(e).__name__)
         raise
 
+
+@router.post("/validate", response_model=SimpleStatus)
+async def validate_sheet(payload: ValidateSheetRequest, request: Request):
+    """Validate an interview sheet's structure before uploading."""
+    log_action(request, "validate_sheet")
+    try:
+        return controller.validate_sheet(payload)
+    except Exception as e:
+        log_action(request, "validate_sheet", level="ERROR", error=str(e))
+        raise
+
+@router.post("/upload", response_model=SimpleStatus)
+async def upload_sheet(payload: UploadSheetRequest, request: Request):
+    """Upload a finalized interview sheet to the database."""
+    log_action(request, "upload_sheet")
+    try:
+        return controller.upload_sheet(payload)
+    except Exception as e:
+        log_action(request, "upload_sheet", level="ERROR", error=str(e))
+        raise
 
 # ---------------------------------------------------------------------------
 # Topic operations
@@ -279,3 +304,26 @@ async def add_question_alias(session_id: str, question: dict, request: Request):
 @router.put("/session/{session_id}/sheet")
 async def update_session_sheet_alias(session_id: str, payload: dict, request: Request):
     return await update_session_sheet(session_id, payload, request)
+
+
+@router.get("/session/{session_id}/session")
+def get_session_alias_alt(session_id: str, request: Request):
+    """Extra alias for dashboard /session/{id}/session requests."""
+    return get_session_progress(session_id, request)
+
+# ---------------------------------------------------------------------------
+# Template operations
+# ---------------------------------------------------------------------------
+
+@router.get("/topic-templates", response_model=List[TopicTemplate])
+def get_topic_templates(request: Request):
+    """Get available topic templates."""
+    log_action(request, "get_topic_templates")
+    return controller.get_topic_templates()
+
+
+@router.get("/roadmap-suggestions", response_model=List[RoadmapSuggestion])
+def get_roadmap_suggestions(request: Request):
+    """Get roadmap suggestions."""
+    log_action(request, "get_roadmap_suggestions")
+    return controller.get_roadmap_suggestions()
