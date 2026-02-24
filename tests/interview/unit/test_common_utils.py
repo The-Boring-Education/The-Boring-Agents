@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock
 
-from src.agents.interview.common.workflow_utils import (
+from src.core.orchestrator import (
     handle_node_errors,
     check_skip_condition,
     update_state_safely,
@@ -12,7 +12,7 @@ from src.agents.interview.common.workflow_utils import (
     log_node_execution,
     create_error_state
 )
-from src.agents.interview.common.state_utils import (
+from src.agents.interview.workflow import (
     create_initial_state,
     state_from_session,
     determine_resume_status,
@@ -51,23 +51,23 @@ class TestWorkflowUtils:
         assert result["status"] == "success"
     
     def test_check_skip_condition_with_value(self):
-        """Test skip condition check with specific value."""
+        """Test skip condition check with specific value via check_func."""
         state = {"meta": "existing_meta"}
-        result = check_skip_condition(state, "meta", check_value="existing_meta")
+        result = check_skip_condition(state, "meta", check_func=lambda v: v == "existing_meta")
         assert result is True
         
-        result = check_skip_condition(state, "meta", check_value="different_meta")
+        result = check_skip_condition(state, "meta", check_func=lambda v: v == "different_meta")
         assert result is False
     
     def test_check_skip_condition_with_func(self):
         """Test skip condition check with custom function."""
         state = {"questions": [1, 2, 3]}
         result = check_skip_condition(state, "questions", check_func=lambda q: q and len(q) > 0)
-        assert result is True
-        
+        assert result
+
         state = {"questions": []}
         result = check_skip_condition(state, "questions", check_func=lambda q: q and len(q) > 0)
-        assert result is False
+        assert not result
     
     def test_check_skip_condition_default(self):
         """Test skip condition check with default behavior."""

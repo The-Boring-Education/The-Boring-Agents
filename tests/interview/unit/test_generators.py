@@ -3,10 +3,10 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from src.agents.interview.generators.generic_generator import GenericAnswerGenerator
-from src.agents.interview.generators.dsa_generator import DSAAnswerGenerator
-from src.agents.interview.generators.tech_generator import TechAnswerGenerator
-from src.agents.interview.generators.system_design_generator import SystemDesignAnswerGenerator
+from src.agents.interview.generators import GenericAnswerGenerator
+from src.agents.interview.generators import DSAAnswerGenerator
+from src.agents.interview.generators import TechAnswerGenerator
+from src.agents.interview.generators import SystemDesignAnswerGenerator
 
 
 class TestGenericGenerator:

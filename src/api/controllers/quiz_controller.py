@@ -16,7 +16,7 @@ from fastapi import HTTPException, BackgroundTasks
 # Uncomment the import below once implemented:
 from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
 
-from src.core.session.session_types import SessionStatus
+from src.core.session import SessionStatus
 from src.core.env import get_env_manager
 from src.api.models.quiz_models import (
     CreateQuizRequest,
