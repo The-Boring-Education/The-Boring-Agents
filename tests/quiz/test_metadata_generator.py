@@ -1,13 +1,17 @@
 """
 Unit tests for quiz metadata generator.
 
-Tests the QuizMetadataGenerator class.
+Tests the QuizMetadataGenerator class and related helpers.
 """
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
-from src.agents.quiz.generators.metadata_generator import QuizMetadataGenerator
+from src.agents.quiz.generators import (
+    QuizMetadataGenerator,
+    _parse_json_object,
+    _get_default_icon,
+)
 
 
 class TestQuizMetadataGeneratorInit:
@@ -66,7 +70,6 @@ class TestQuizMetadataGeneratorGeneration:
             question_count=10
         )
         
-        # Should fall back to defaults
         assert result["categoryName"] == "Python"
         assert "Python" in result["categoryDescription"]
         assert result["categoryIcon"] is not None
@@ -91,42 +94,37 @@ class TestQuizMetadataGeneratorGeneration:
 
 
 class TestQuizMetadataGeneratorParsing:
-    """Tests for JSON parsing."""
+    """Tests for JSON parsing (module-level helper)."""
     
-    @pytest.fixture
-    def generator(self):
-        """Create a metadata generator."""
-        return QuizMetadataGenerator()
-    
-    def test_parse_json_response_valid(self, generator):
+    def test_parse_json_response_valid(self):
         """Test parsing valid JSON."""
         response = '{"categoryName": "Test", "categoryIcon": "🎯"}'
-        result = generator._parse_json_response(response)
+        result = _parse_json_object(response)
         
         assert result["categoryName"] == "Test"
         assert result["categoryIcon"] == "🎯"
     
-    def test_parse_json_response_with_text(self, generator):
+    def test_parse_json_response_with_text(self):
         """Test parsing JSON embedded in text."""
         response = '''
         Here is the metadata:
         {"categoryName": "Test Quiz", "categoryDescription": "A test", "categoryIcon": "📝"}
         Hope this helps!
         '''
-        result = generator._parse_json_response(response)
+        result = _parse_json_object(response)
         
         assert result["categoryName"] == "Test Quiz"
     
-    def test_parse_json_response_invalid(self, generator):
+    def test_parse_json_response_invalid(self):
         """Test parsing invalid JSON returns None."""
         response = "This is not JSON at all"
-        result = generator._parse_json_response(response)
+        result = _parse_json_object(response)
         
         assert result is None
     
-    def test_parse_json_response_empty(self, generator):
+    def test_parse_json_response_empty(self):
         """Test parsing empty response returns None."""
-        result = generator._parse_json_response("")
+        result = _parse_json_object("")
         
         assert result is None
 
@@ -134,140 +132,124 @@ class TestQuizMetadataGeneratorParsing:
 class TestQuizMetadataGeneratorValidation:
     """Tests for metadata validation."""
     
-    @pytest.fixture
-    def generator(self):
-        """Create a metadata generator."""
-        return QuizMetadataGenerator()
-    
-    def test_validate_metadata_complete(self, generator):
+    def test_validate_metadata_complete(self):
         """Test validating complete metadata."""
         metadata = {
             "categoryName": "Test Quiz",
             "categoryDescription": "A description",
             "categoryIcon": "🎯"
         }
-        result = generator._validate_metadata(metadata, "Test")
+        result = QuizMetadataGenerator._validate_metadata(metadata, "Test")
         
         assert result["categoryName"] == "Test Quiz"
         assert result["categoryDescription"] == "A description"
         assert result["categoryIcon"] == "🎯"
     
-    def test_validate_metadata_missing_name(self, generator):
+    def test_validate_metadata_missing_name(self):
         """Test validating metadata with missing name."""
         metadata = {
             "categoryDescription": "A description",
             "categoryIcon": "🎯"
         }
-        result = generator._validate_metadata(metadata, "React")
+        result = QuizMetadataGenerator._validate_metadata(metadata, "React")
         
         assert result["categoryName"] == "React"
     
-    def test_validate_metadata_missing_description(self, generator):
+    def test_validate_metadata_missing_description(self):
         """Test validating metadata with missing description."""
         metadata = {
             "categoryName": "Test",
             "categoryIcon": "🎯"
         }
-        result = generator._validate_metadata(metadata, "Python")
+        result = QuizMetadataGenerator._validate_metadata(metadata, "Python")
         
         assert "Python" in result["categoryDescription"]
     
-    def test_validate_metadata_missing_icon(self, generator):
+    def test_validate_metadata_missing_icon(self):
         """Test validating metadata with missing icon."""
         metadata = {
             "categoryName": "Test",
             "categoryDescription": "Description"
         }
-        result = generator._validate_metadata(metadata, "React")
+        result = QuizMetadataGenerator._validate_metadata(metadata, "React")
         
         assert result["categoryIcon"] is not None
     
-    def test_validate_metadata_truncates_long_name(self, generator):
+    def test_validate_metadata_truncates_long_name(self):
         """Test that long names are truncated."""
         metadata = {
-            "categoryName": "A" * 150,  # Too long
+            "categoryName": "A" * 150,
             "categoryDescription": "Test",
             "categoryIcon": "🎯"
         }
-        result = generator._validate_metadata(metadata, "Test")
+        result = QuizMetadataGenerator._validate_metadata(metadata, "Test")
         
         assert len(result["categoryName"]) <= 100
     
-    def test_validate_metadata_truncates_long_description(self, generator):
+    def test_validate_metadata_truncates_long_description(self):
         """Test that long descriptions are truncated."""
         metadata = {
             "categoryName": "Test",
-            "categoryDescription": "A" * 600,  # Too long
+            "categoryDescription": "A" * 600,
             "categoryIcon": "🎯"
         }
-        result = generator._validate_metadata(metadata, "Test")
+        result = QuizMetadataGenerator._validate_metadata(metadata, "Test")
         
         assert len(result["categoryDescription"]) <= 500
 
 
 class TestQuizMetadataGeneratorDefaultIcons:
-    """Tests for default icon selection."""
+    """Tests for default icon selection (module-level helper)."""
     
-    @pytest.fixture
-    def generator(self):
-        """Create a metadata generator."""
-        return QuizMetadataGenerator()
-    
-    def test_default_icon_react(self, generator):
+    def test_default_icon_react(self):
         """Test default icon for React topic."""
-        icon = generator._get_default_icon("React.js")
+        icon = _get_default_icon("React.js")
         assert icon == "⚛️"
     
-    def test_default_icon_javascript(self, generator):
+    def test_default_icon_javascript(self):
         """Test default icon for JavaScript topic."""
-        icon = generator._get_default_icon("JavaScript Basics")
+        icon = _get_default_icon("JavaScript Basics")
         assert icon == "🟨"
     
-    def test_default_icon_python(self, generator):
+    def test_default_icon_python(self):
         """Test default icon for Python topic."""
-        icon = generator._get_default_icon("Python Programming")
+        icon = _get_default_icon("Python Programming")
         assert icon == "🐍"
     
-    def test_default_icon_node(self, generator):
+    def test_default_icon_node(self):
         """Test default icon for Node.js topic."""
-        icon = generator._get_default_icon("Node.js")
+        icon = _get_default_icon("Node.js")
         assert icon == "🟩"
     
-    def test_default_icon_unknown(self, generator):
+    def test_default_icon_unknown(self):
         """Test default icon for unknown topic."""
-        icon = generator._get_default_icon("Unknown Topic XYZ")
+        icon = _get_default_icon("Unknown Topic XYZ")
         assert icon == "📝"
     
-    def test_default_icon_case_insensitive(self, generator):
+    def test_default_icon_case_insensitive(self):
         """Test that icon matching is case insensitive."""
-        icon1 = generator._get_default_icon("REACT")
-        icon2 = generator._get_default_icon("react")
-        icon3 = generator._get_default_icon("React")
+        icon1 = _get_default_icon("REACT")
+        icon2 = _get_default_icon("react")
+        icon3 = _get_default_icon("React")
         
         assert icon1 == icon2 == icon3 == "⚛️"
 
 
 class TestQuizMetadataGeneratorDefaults:
-    """Tests for default metadata generation."""
+    """Tests for default metadata generation via _validate_metadata."""
     
-    @pytest.fixture
-    def generator(self):
-        """Create a metadata generator."""
-        return QuizMetadataGenerator()
-    
-    def test_get_default_metadata(self, generator):
-        """Test getting default metadata."""
-        result = generator._get_default_metadata("JavaScript")
+    def test_get_default_metadata(self):
+        """Test getting default metadata via validate with empty dict."""
+        result = QuizMetadataGenerator._validate_metadata({}, "JavaScript")
         
         assert result["categoryName"] == "JavaScript"
         assert "JavaScript" in result["categoryDescription"]
         assert result["categoryIcon"] == "🟨"
     
-    def test_get_default_metadata_has_all_fields(self, generator):
+    def test_get_default_metadata_has_all_fields(self):
         """Test that default metadata has all required fields."""
-        result = generator._get_default_metadata("Test Topic")
+        result = QuizMetadataGenerator._validate_metadata({}, "Test Topic")
         
         assert "categoryName" in result
         assert "categoryDescription" in result
         assert "categoryIcon" in result
-

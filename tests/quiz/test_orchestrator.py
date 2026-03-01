@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any
 
-from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
+from src.agents.quiz.workflow import QuizWorkflowOrchestrator
 from src.core.session import SessionStatus
 
 
@@ -17,10 +17,10 @@ class TestQuizWorkflowOrchestratorInit:
     
     def test_initialization(self, temp_sessions_dir):
         """Test that orchestrator can be initialized."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_graph.return_value = MagicMock()
             
-            with patch('src.agents.quiz.session.session_manager.QuizSessionManager') as mock_manager:
+            with patch('src.agents.quiz.session.QuizSessionManager') as mock_manager:
                 mock_manager.return_value = MagicMock()
                 
                 orchestrator = QuizWorkflowOrchestrator()
@@ -28,7 +28,7 @@ class TestQuizWorkflowOrchestratorInit:
     
     def test_has_session_manager(self, temp_sessions_dir):
         """Test that orchestrator has a session manager."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_graph.return_value = MagicMock()
             
             orchestrator = QuizWorkflowOrchestrator()
@@ -36,7 +36,7 @@ class TestQuizWorkflowOrchestratorInit:
     
     def test_has_workflow_graph(self, temp_sessions_dir):
         """Test that orchestrator has a workflow graph."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_graph.return_value = MagicMock()
             
             orchestrator = QuizWorkflowOrchestrator()
@@ -49,7 +49,7 @@ class TestQuizWorkflowOrchestratorStartGeneration:
     @pytest.fixture
     def mock_orchestrator(self, temp_sessions_dir):
         """Create a mock orchestrator."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_graph.return_value = MagicMock()
             
             orchestrator = QuizWorkflowOrchestrator()
@@ -103,7 +103,7 @@ class TestQuizWorkflowOrchestratorExecuteWorkflow:
     @pytest.fixture
     def mock_orchestrator(self, temp_sessions_dir):
         """Create a mock orchestrator with mocked graph."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_invoke = MagicMock()
             mock_invoke.invoke.return_value = {
                 "status": "completed",
@@ -170,7 +170,7 @@ class TestQuizWorkflowOrchestratorGetSessionStatus:
     @pytest.fixture
     def mock_orchestrator(self, temp_sessions_dir):
         """Create a mock orchestrator."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_graph.return_value = MagicMock()
             
             orchestrator = QuizWorkflowOrchestrator()
@@ -236,7 +236,7 @@ class TestQuizWorkflowOrchestratorUpdateSession:
     @pytest.fixture
     def mock_orchestrator(self, temp_sessions_dir):
         """Create a mock orchestrator."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_graph.return_value = MagicMock()
             
             orchestrator = QuizWorkflowOrchestrator()
@@ -321,7 +321,7 @@ class TestQuizWorkflowE2E:
     @pytest.fixture
     def mock_orchestrator(self, temp_sessions_dir, sample_quiz_data):
         """Create a mock orchestrator with full mocked workflow."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             # Mock the graph to return completed state
             mock_invoke = MagicMock()
             mock_invoke.invoke.return_value = {
@@ -366,7 +366,7 @@ class TestQuizWorkflowE2E:
     
     def test_workflow_handles_error(self, temp_sessions_dir):
         """Test that workflow handles errors properly."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_invoke = MagicMock()
             mock_invoke.invoke.side_effect = Exception("API error")
             mock_graph.return_value = mock_invoke
@@ -394,7 +394,7 @@ class TestQuizWorkflowResume:
     @pytest.fixture
     def mock_orchestrator(self, temp_sessions_dir):
         """Create a mock orchestrator."""
-        with patch('src.agents.quiz.workflow.orchestrator.create_workflow_graph') as mock_graph:
+        with patch('src.agents.quiz.workflow.create_workflow_graph') as mock_graph:
             mock_invoke = MagicMock()
             mock_invoke.invoke.return_value = {
                 "status": "completed",

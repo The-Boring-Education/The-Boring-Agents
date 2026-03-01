@@ -10,7 +10,7 @@ import json
 from unittest.mock import patch, MagicMock
 from datetime import datetime
 
-from src.agents.quiz.session.session_manager import QuizSessionManager
+from src.agents.quiz.session import QuizSessionManager
 from src.core.session import SessionStatus
 
 

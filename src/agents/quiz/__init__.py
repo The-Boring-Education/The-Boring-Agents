@@ -1,24 +1,28 @@
-"""
-Quiz generation agents.
+"""Quiz generation agent -- public API.
 
-TODO: Implement the following LangGraph-based components:
-- QuizWorkflowOrchestrator (workflow/orchestrator.py)
-- QuizWorkflowState (workflow/state.py)
-- Quiz workflow nodes (workflow/nodes.py)
-- Quiz workflow graph (workflow/graph.py)
-- QuizSessionManager (session/session_manager.py)
-
-See docs/LANGGRAPH_QUIZ_LEARNING.md for the learning guide.
+Import everything you need from the flat module files:
+  generators.py  -- QuizAgentType, QuizDifficulty, generators, get_generator
+  session.py     -- QuizSessionManager
+  workflow.py    -- QuizWorkflowOrchestrator, state helpers
+  prompts.py     -- prompt templates as constants
 """
 
-# TODO: Uncomment these exports once you implement the LangGraph agents
-# from src.agents.quiz.workflow.orchestrator import QuizWorkflowOrchestrator
-# from src.agents.quiz.session.session_manager import QuizSessionManager
-# from src.agents.quiz.types import QuizAgentType
+from src.agents.quiz.generators import (
+    QuizAgentType,
+    QuizDifficulty,
+    QuizMetadataGenerator,
+    QuizQuestionGenerator,
+    get_generator,
+)
+from src.agents.quiz.session import QuizSessionManager
+from src.agents.quiz.workflow import QuizWorkflowOrchestrator
 
 __all__ = [
-    # "QuizWorkflowOrchestrator",
-    # "QuizSessionManager",
-    # "QuizAgentType",
+    "QuizAgentType",
+    "QuizDifficulty",
+    "QuizMetadataGenerator",
+    "QuizQuestionGenerator",
+    "get_generator",
+    "QuizSessionManager",
+    "QuizWorkflowOrchestrator",
 ]
-
