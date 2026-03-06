@@ -32,11 +32,9 @@ def validate_topic_payload(
     if not topic_name or not topic_name.strip():
         errors.append("topic_name is required and cannot be empty")
 
-    if not questions or not isinstance(questions, list):
-        errors.append("questions must be a non-empty list")
-    elif len(questions) == 0:
-        errors.append("At least one question is required")
-    else:
+    if questions and not isinstance(questions, list):
+        errors.append("questions must be a list if provided")
+    elif questions:
         for idx, q in enumerate(questions):
             if not q or not isinstance(q, str) or not q.strip():
                 errors.append(f"Question at index {idx} is empty or invalid")
@@ -125,8 +123,5 @@ def validate_batch_payload(topics: List[Dict[str, Any]]) -> Dict[str, Any]:
     for idx, topic in enumerate(topics):
         if not topic.get("name"):
             errors.append(f"Topic at index {idx} missing 'name'")
-        questions = topic.get("questions", [])
-        if not questions:
-            errors.append(f"Topic '{topic.get('name', idx)}' has no questions")
 
     return {"valid": len(errors) == 0, "errors": errors}

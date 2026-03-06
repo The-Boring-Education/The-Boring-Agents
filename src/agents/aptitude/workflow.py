@@ -20,6 +20,7 @@ from src.agents.aptitude.constants import (
     validate_topic_name,
 )
 from src.agents.aptitude.generators import get_aptitude_generator
+from src.agents.aptitude.question_generator import AptitudeQuestionGenerator
 from src.agents.aptitude.validators import (
     validate_answer_structure,
     validate_question_payload,
@@ -84,6 +85,11 @@ class AptitudeWorkflow:
 
         format_type = topic_info["answerFormatType"]
         generator = get_aptitude_generator(format_type)
+        
+        if not questions:
+            logger.info("Questions not provided. Calling AptitudeQuestionGenerator...")
+            question_generator = AptitudeQuestionGenerator()
+            questions = question_generator.generate_questions(topic_name, count=5)
 
         logger.info(
             "Processing topic: %s (%s format, %d questions)",
@@ -164,15 +170,6 @@ class AptitudeWorkflow:
         for topic_data in topics:
             topic_name = topic_data["name"]
             questions = topic_data.get("questions", [])
-
-            if not questions:
-                logger.warning("Skipping topic '%s' — no questions provided", topic_name)
-                results.append({
-                    "topic": topic_name,
-                    "status": "skipped",
-                    "reason": "no questions",
-                })
-                continue
 
             try:
                 result = self.process_topic(
