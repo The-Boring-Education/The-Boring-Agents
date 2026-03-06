@@ -1,12 +1,13 @@
 """Validation utilities for aptitude payloads and generated answers.
 
 Validates:
-- Input payload (topic name, questions list)
+- Input payload (topic slug, questions list)
 - Generated answer structure (required sections per format type)
 """
 
 from typing import Any, Dict, List, Optional
 
+from src.agents.aptitude.constants import MIN_QUESTIONS_PER_TOPIC, TOPIC_SLUG_SET
 from src.agents.aptitude.prompts import ANSWER_STRUCTURE_MAP
 
 VALID_CATEGORIES = {"QUANTITATIVE", "VERBAL", "REASONING", "INTERVIEW"}
@@ -21,16 +22,15 @@ VALID_DIFFICULTIES = {"EASY", "MEDIUM", "HARD"}
 
 
 def validate_topic_payload(
-    topic_name: str,
-    questions: List[str],
-    category: Optional[str] = None,
-    sub_category: Optional[str] = None,
+    topic: str,
+    questions: Optional[List[str]] = None,
+    num_questions: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Validate the input payload for topic processing."""
     errors: List[str] = []
 
-    if not topic_name or not topic_name.strip():
-        errors.append("topic_name is required and cannot be empty")
+    if not topic or not topic.strip():
+        errors.append("topic is required and cannot be empty")
 
     if questions and not isinstance(questions, list):
         errors.append("questions must be a list if provided")
@@ -41,27 +41,26 @@ def validate_topic_payload(
             elif len(q.strip()) < 10:
                 errors.append(f"Question at index {idx} is too short (min 10 chars)")
 
-    if category and category.upper() not in VALID_CATEGORIES:
-        errors.append(f"Invalid category: {category}. Valid: {sorted(VALID_CATEGORIES)}")
-
-    if sub_category and sub_category.upper() not in VALID_SUB_CATEGORIES:
-        errors.append(f"Invalid sub_category: {sub_category}. Valid: {sorted(VALID_SUB_CATEGORIES)}")
+    if num_questions is not None and num_questions < 1:
+        errors.append("num_questions must be a positive integer")
 
     return {"valid": len(errors) == 0, "errors": errors}
 
 
 def validate_question_payload(question_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate a single question payload (for API uploads)."""
+    """Validate a single question payload for DB insertion."""
     errors: List[str] = []
 
     if not question_data.get("question"):
         errors.append("question text is required")
 
-    if not question_data.get("topicId"):
-        errors.append("topicId is required")
+    if not question_data.get("topic"):
+        errors.append("topic (slug) is required")
+    elif question_data["topic"] not in TOPIC_SLUG_SET:
+        errors.append(f"Invalid topic slug: {question_data['topic']}")
 
     difficulty = question_data.get("difficulty", "MEDIUM")
-    if difficulty.upper() not in VALID_DIFFICULTIES:
+    if isinstance(difficulty, str) and difficulty.upper() not in VALID_DIFFICULTIES:
         errors.append(f"Invalid difficulty: {difficulty}. Valid: {sorted(VALID_DIFFICULTIES)}")
 
     return {"valid": len(errors) == 0, "errors": errors}
@@ -71,11 +70,7 @@ def validate_answer_structure(
     answer: str,
     format_type: str,
 ) -> Dict[str, Any]:
-    """Validate that a generated answer contains all required sections.
-
-    Returns:
-        Dict with valid (bool), missing_sections (list), section_coverage (dict)
-    """
+    """Validate that a generated answer contains all required sections."""
     if not answer or not answer.strip():
         return {
             "valid": False,
@@ -113,15 +108,15 @@ def validate_answer_structure(
     }
 
 
-def validate_batch_payload(topics: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Validate a batch processing payload."""
+def validate_batch_payload(topics: List[str]) -> Dict[str, Any]:
+    """Validate a batch processing payload (list of topic slugs/names)."""
     errors: List[str] = []
 
     if not topics or not isinstance(topics, list):
         return {"valid": False, "errors": ["topics must be a non-empty list"]}
 
     for idx, topic in enumerate(topics):
-        if not topic.get("name"):
-            errors.append(f"Topic at index {idx} missing 'name'")
+        if not topic or not isinstance(topic, str) or not topic.strip():
+            errors.append(f"Topic at index {idx} is empty or invalid")
 
     return {"valid": len(errors) == 0, "errors": errors}

@@ -4,12 +4,17 @@ import pytest
 
 from src.agents.aptitude.constants import (
     CATEGORY_SUB_CATEGORY_MAP,
+    MIN_QUESTIONS_PER_TOPIC,
     SUB_CATEGORY_FORMAT_MAP,
     TOPIC_REGISTRY,
+    TOPIC_SLUG_SET,
     get_format_for_sub_category,
+    get_topic_by_slug,
     get_topic_info,
     get_topics_for_sub_category,
+    resolve_topic,
     validate_topic_name,
+    validate_topic_slug,
 )
 
 
@@ -60,6 +65,11 @@ class TestCategorySubCategoryMap:
         assert "HR_INTERVIEW" in subs
 
 
+class TestMinQuestions:
+    def test_minimum_is_10(self):
+        assert MIN_QUESTIONS_PER_TOPIC == 10
+
+
 class TestTopicRegistry:
     def test_registry_not_empty(self):
         assert len(TOPIC_REGISTRY) > 0
@@ -67,6 +77,7 @@ class TestTopicRegistry:
     def test_all_topics_have_required_fields(self):
         for topic in TOPIC_REGISTRY:
             assert "name" in topic, f"Missing 'name' in topic: {topic}"
+            assert "slug" in topic, f"Missing 'slug' in topic: {topic}"
             assert "category" in topic, f"Missing 'category' in topic: {topic}"
             assert "subCategory" in topic, f"Missing 'subCategory' in topic: {topic}"
 
@@ -112,6 +123,13 @@ class TestTopicRegistry:
         names = [t["name"] for t in TOPIC_REGISTRY]
         assert len(names) == len(set(names)), "Duplicate topic names found"
 
+    def test_no_duplicate_slugs(self):
+        slugs = [t["slug"] for t in TOPIC_REGISTRY]
+        assert len(slugs) == len(set(slugs)), "Duplicate topic slugs found"
+
+    def test_slug_set_matches_registry(self):
+        assert TOPIC_SLUG_SET == frozenset(t["slug"] for t in TOPIC_REGISTRY)
+
     def test_specific_topics_exist(self):
         expected = [
             "Problem on Trains", "Percentage", "Probability",
@@ -122,6 +140,16 @@ class TestTopicRegistry:
         topic_names = {t["name"] for t in TOPIC_REGISTRY}
         for name in expected:
             assert name in topic_names, f"Expected topic '{name}' not found"
+
+    def test_specific_slugs_exist(self):
+        expected = [
+            "problem-on-trains", "percentage", "probability",
+            "spotting-errors", "synonyms",
+            "number-series", "analogies",
+            "politics", "self-introduction",
+        ]
+        for slug in expected:
+            assert slug in TOPIC_SLUG_SET, f"Expected slug '{slug}' not found"
 
 
 class TestGetFormatForSubCategory:
@@ -152,6 +180,28 @@ class TestGetTopicsForSubCategory:
         assert topics == []
 
 
+class TestValidateTopicSlug:
+    def test_valid_slug(self):
+        assert validate_topic_slug("problem-on-trains") is True
+
+    def test_invalid_slug(self):
+        assert validate_topic_slug("nonexistent-topic") is False
+
+
+class TestGetTopicBySlug:
+    def test_valid_slug(self):
+        info = get_topic_by_slug("problem-on-trains")
+        assert info["name"] == "Problem on Trains"
+        assert info["slug"] == "problem-on-trains"
+        assert info["category"] == "QUANTITATIVE"
+        assert info["subCategory"] == "ARITHMETIC_APTITUDE"
+        assert info["answerFormatType"] == "SPEED"
+
+    def test_invalid_slug_raises(self):
+        with pytest.raises(ValueError, match="Topic slug not found"):
+            get_topic_by_slug("nonexistent")
+
+
 class TestValidateTopicName:
     def test_existing_topic(self):
         assert validate_topic_name("Problem on Trains") is True
@@ -168,6 +218,7 @@ class TestGetTopicInfo:
     def test_valid_topic(self):
         info = get_topic_info("Problem on Trains")
         assert info["name"] == "Problem on Trains"
+        assert info["slug"] == "problem-on-trains"
         assert info["category"] == "QUANTITATIVE"
         assert info["subCategory"] == "ARITHMETIC_APTITUDE"
         assert info["answerFormatType"] == "SPEED"
@@ -190,3 +241,19 @@ class TestGetTopicInfo:
     def test_nonexistent_raises(self):
         with pytest.raises(ValueError, match="Topic not found"):
             get_topic_info("Nonexistent Topic")
+
+
+class TestResolveTopic:
+    def test_resolve_by_slug(self):
+        info = resolve_topic("problem-on-trains")
+        assert info["name"] == "Problem on Trains"
+        assert info["answerFormatType"] == "SPEED"
+
+    def test_resolve_by_name(self):
+        info = resolve_topic("Problem on Trains")
+        assert info["slug"] == "problem-on-trains"
+        assert info["answerFormatType"] == "SPEED"
+
+    def test_resolve_unknown_raises(self):
+        with pytest.raises(ValueError, match="Unknown topic"):
+            resolve_topic("totally-fake-topic")

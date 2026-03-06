@@ -11,71 +11,47 @@ from src.agents.aptitude.validators import (
 
 
 class TestValidateTopicPayload:
-    def test_valid_payload(self):
+    def test_valid_payload_with_questions(self):
         result = validate_topic_payload(
-            topic_name="Problem on Trains",
+            topic="problem-on-trains",
             questions=["A train running at 60 km/hr crosses a pole in 9 seconds. What is the length of the train?"],
         )
         assert result["valid"] is True
         assert result["errors"] == []
 
-    def test_empty_topic_name(self):
-        result = validate_topic_payload(topic_name="", questions=["Some question here?"])
-        assert result["valid"] is False
-        assert any("topic_name" in e for e in result["errors"])
+    def test_valid_payload_without_questions(self):
+        result = validate_topic_payload(topic="problem-on-trains")
+        assert result["valid"] is True
 
-    def test_empty_questions_list(self):
-        result = validate_topic_payload(topic_name="Trains", questions=[])
-        assert result["valid"] is False
-        assert any("question" in e.lower() for e in result["errors"])
+    def test_valid_payload_with_num_questions(self):
+        result = validate_topic_payload(topic="problem-on-trains", num_questions=15)
+        assert result["valid"] is True
 
-    def test_none_questions(self):
-        result = validate_topic_payload(topic_name="Trains", questions=None)
+    def test_empty_topic(self):
+        result = validate_topic_payload(topic="")
         assert result["valid"] is False
+        assert any("topic" in e for e in result["errors"])
 
     def test_question_too_short(self):
-        result = validate_topic_payload(topic_name="Trains", questions=["Hi?"])
+        result = validate_topic_payload(topic="percentage", questions=["Hi?"])
         assert result["valid"] is False
         assert any("too short" in e for e in result["errors"])
 
     def test_empty_question_in_list(self):
         result = validate_topic_payload(
-            topic_name="Trains",
-            questions=["Valid question here about trains", ""],
+            topic="percentage",
+            questions=["Valid question here about percentage", ""],
         )
         assert result["valid"] is False
         assert any("index 1" in e for e in result["errors"])
 
-    def test_invalid_category(self):
-        result = validate_topic_payload(
-            topic_name="Trains",
-            questions=["A valid question about trains?"],
-            category="INVALID_CATEGORY",
-        )
+    def test_negative_num_questions(self):
+        result = validate_topic_payload(topic="percentage", num_questions=-1)
         assert result["valid"] is False
-        assert any("category" in e.lower() for e in result["errors"])
-
-    def test_invalid_sub_category(self):
-        result = validate_topic_payload(
-            topic_name="Trains",
-            questions=["A valid question about trains?"],
-            sub_category="INVALID_SUB",
-        )
-        assert result["valid"] is False
-        assert any("sub_category" in e.lower() for e in result["errors"])
-
-    def test_valid_with_explicit_category(self):
-        result = validate_topic_payload(
-            topic_name="Custom Topic",
-            questions=["A proper question about the topic?"],
-            category="QUANTITATIVE",
-            sub_category="ARITHMETIC_APTITUDE",
-        )
-        assert result["valid"] is True
 
     def test_multiple_valid_questions(self):
         result = validate_topic_payload(
-            topic_name="Percentage",
+            topic="percentage",
             questions=[
                 "What is 20% of 500?",
                 "If a price increases by 15%, what is the new price of Rs. 200?",
@@ -90,24 +66,32 @@ class TestValidateQuestionPayload:
     def test_valid_question(self):
         result = validate_question_payload({
             "question": "What is the simple interest on Rs. 5000 at 10% per annum for 2 years?",
-            "topicId": "abc123",
+            "topic": "simple-interest",
         })
         assert result["valid"] is True
 
     def test_missing_question_text(self):
-        result = validate_question_payload({"topicId": "abc123"})
+        result = validate_question_payload({"topic": "simple-interest"})
         assert result["valid"] is False
         assert any("question" in e for e in result["errors"])
 
-    def test_missing_topic_id(self):
-        result = validate_question_payload({"question": "Some valid question?"})
+    def test_missing_topic(self):
+        result = validate_question_payload({"question": "Some valid question about interest?"})
         assert result["valid"] is False
-        assert any("topicId" in e for e in result["errors"])
+        assert any("topic" in e for e in result["errors"])
+
+    def test_invalid_topic_slug(self):
+        result = validate_question_payload({
+            "question": "Some valid question?",
+            "topic": "nonexistent-topic",
+        })
+        assert result["valid"] is False
+        assert any("Invalid topic slug" in e for e in result["errors"])
 
     def test_invalid_difficulty(self):
         result = validate_question_payload({
             "question": "Some valid question?",
-            "topicId": "abc123",
+            "topic": "simple-interest",
             "difficulty": "SUPER_HARD",
         })
         assert result["valid"] is False
@@ -117,7 +101,7 @@ class TestValidateQuestionPayload:
         for diff in ["EASY", "MEDIUM", "HARD"]:
             result = validate_question_payload({
                 "question": "Valid question here?",
-                "topicId": "abc123",
+                "topic": "simple-interest",
                 "difficulty": diff,
             })
             assert result["valid"] is True
@@ -156,7 +140,7 @@ Step 1: solve it
 """
         result = validate_answer_structure(answer, "SPEED")
         assert result["valid"] is False
-        assert "The Pro Shortcut" in result["missing_sections"] or len(result["missing_sections"]) > 0
+        assert len(result["missing_sections"]) > 0
 
     def test_rules_format_complete(self):
         answer = """
@@ -190,7 +174,6 @@ This topic is relevant because of recent policy changes.
 
 ##### 📊 Key Facts/Stats
 - 65% of people surveyed agree
-- Policy enacted in 2023
 
 ##### 🤝 The Closing Stance
 Both sides have merit. A balanced approach is needed.
@@ -205,16 +188,12 @@ They want to assess communication skills and confidence.
 
 ##### ⭐ The STAR Strategy
 Situation: During my college project...
-Task: I was responsible for...
-Action: I decided to...
-Result: We achieved...
 
 ##### 📝 Sample "Winning" Answer
 "I am a final year student passionate about technology..."
 
 ##### 🚩 Red Flags (Do NOT Say)
 1. Don't badmouth previous employers
-2. Don't say "I have no weaknesses"
 """
         result = validate_answer_structure(answer, "BEHAVIORAL")
         assert result["valid"] is True
@@ -239,10 +218,7 @@ Result: We achieved...
 
 class TestValidateBatchPayload:
     def test_valid_batch(self):
-        result = validate_batch_payload([
-            {"name": "Trains", "questions": ["Q1 about trains length?"]},
-            {"name": "Clocks", "questions": ["Q1 about clock angles?"]},
-        ])
+        result = validate_batch_payload(["problem-on-trains", "percentage", "clocks"])
         assert result["valid"] is True
 
     def test_empty_batch(self):
@@ -253,12 +229,7 @@ class TestValidateBatchPayload:
         result = validate_batch_payload(None)
         assert result["valid"] is False
 
-    def test_topic_missing_name(self):
-        result = validate_batch_payload([{"questions": ["Q1?"]}])
+    def test_empty_string_in_batch(self):
+        result = validate_batch_payload(["problem-on-trains", ""])
         assert result["valid"] is False
-        assert any("name" in e.lower() for e in result["errors"])
-
-    def test_topic_missing_questions(self):
-        result = validate_batch_payload([{"name": "Trains"}])
-        assert result["valid"] is False
-        assert any("questions" in e.lower() for e in result["errors"])
+        assert any("index 1" in e for e in result["errors"])

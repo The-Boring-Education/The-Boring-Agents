@@ -12,71 +12,80 @@ class TestListTopicsEndpoint:
         assert isinstance(data, list)
         assert len(data) > 0
         assert "name" in data[0]
+        assert "slug" in data[0]
         assert "category" in data[0]
         assert "subCategory" in data[0]
 
     def test_contains_expected_topics(self, client):
         response = client.get("/api/v1/aptitude/topics")
         data = response.json()
-        topic_names = [t["name"] for t in data]
-        assert "Problem on Trains" in topic_names
-        assert "Synonyms" in topic_names
-        assert "Self Introduction" in topic_names
+        slugs = [t["slug"] for t in data]
+        assert "problem-on-trains" in slugs
+        assert "synonyms" in slugs
+        assert "self-introduction" in slugs
 
 
 class TestGenerateEndpoint:
     @patch("src.api.controllers.aptitude_controller.AptitudeController.generate_for_topic")
-    def test_valid_request(self, mock_generate, client):
+    def test_valid_request_with_topic_only(self, mock_generate, client):
         mock_generate.return_value = {
-            "topic": "Percentage",
-            "formatType": "SPEED",
-            "totalQuestions": 1,
-            "successfulAnswers": 1,
+            "topic": "percentage",
+            "totalQuestions": 10,
+            "successfulAnswers": 10,
             "outputFile": "/tmp/test.json",
-            "message": "Generated 1/1 answers",
+            "message": "Generated 10/10 answers for 'Percentage'",
         }
 
         response = client.post("/api/v1/aptitude/generate", json={
-            "topicName": "Percentage",
-            "questions": ["What is 20% of 500?"],
+            "topic": "percentage",
         })
 
         assert response.status_code == 200
         data = response.json()
-        assert data["topic"] == "Percentage"
-        assert data["formatType"] == "SPEED"
+        assert data["topic"] == "percentage"
+        assert data["totalQuestions"] == 10
 
-    def test_missing_topic_name(self, client):
+    @patch("src.api.controllers.aptitude_controller.AptitudeController.generate_for_topic")
+    def test_valid_request_with_questions(self, mock_generate, client):
+        mock_generate.return_value = {
+            "topic": "percentage",
+            "totalQuestions": 1,
+            "successfulAnswers": 1,
+            "outputFile": "/tmp/test.json",
+            "message": "Generated 1/1 answers for 'Percentage'",
+        }
+
+        response = client.post("/api/v1/aptitude/generate", json={
+            "topic": "percentage",
+            "questions": ["What is 20% of 500?"],
+        })
+
+        assert response.status_code == 200
+
+    @patch("src.api.controllers.aptitude_controller.AptitudeController.generate_for_topic")
+    def test_valid_request_with_num_questions(self, mock_generate, client):
+        mock_generate.return_value = {
+            "topic": "percentage",
+            "totalQuestions": 15,
+            "successfulAnswers": 15,
+            "outputFile": "/tmp/test.json",
+            "message": "Generated 15/15 answers for 'Percentage'",
+        }
+
+        response = client.post("/api/v1/aptitude/generate", json={
+            "topic": "percentage",
+            "numQuestions": 15,
+        })
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["totalQuestions"] == 15
+
+    def test_missing_topic(self, client):
         response = client.post("/api/v1/aptitude/generate", json={
             "questions": ["Some question?"],
         })
         assert response.status_code == 422
-
-    def test_empty_questions(self, client):
-        response = client.post("/api/v1/aptitude/generate", json={
-            "topicName": "Percentage",
-            "questions": [],
-        })
-        assert response.status_code == 422
-
-    @patch("src.api.controllers.aptitude_controller.AptitudeController.generate_for_topic")
-    def test_with_explicit_category(self, mock_generate, client):
-        mock_generate.return_value = {
-            "topic": "Custom",
-            "formatType": "SPEED",
-            "totalQuestions": 1,
-            "successfulAnswers": 1,
-            "outputFile": None,
-            "message": "Generated 1/1 answers",
-        }
-
-        response = client.post("/api/v1/aptitude/generate", json={
-            "topicName": "Custom Topic",
-            "questions": ["A valid custom question?"],
-            "category": "QUANTITATIVE",
-            "subCategory": "ARITHMETIC_APTITUDE",
-        })
-        assert response.status_code == 200
 
 
 class TestGenerateBatchEndpoint:
@@ -86,21 +95,33 @@ class TestGenerateBatchEndpoint:
             "totalTopics": 2,
             "successful": 2,
             "failed": 0,
-            "skipped": 0,
             "message": "Batch complete: 2/2 topics processed",
         }
 
         response = client.post("/api/v1/aptitude/generate-batch", json={
-            "topics": [
-                {"topicName": "Percentage", "questions": ["Q1 about percentage?"]},
-                {"topicName": "Clocks", "questions": ["Q1 about clock angle?"]},
-            ],
+            "topics": ["percentage", "clocks"],
         })
 
         assert response.status_code == 200
         data = response.json()
         assert data["totalTopics"] == 2
         assert data["successful"] == 2
+
+    @patch("src.api.controllers.aptitude_controller.AptitudeController.generate_batch")
+    def test_batch_with_num_questions(self, mock_batch, client):
+        mock_batch.return_value = {
+            "totalTopics": 1,
+            "successful": 1,
+            "failed": 0,
+            "message": "Batch complete: 1/1 topics processed",
+        }
+
+        response = client.post("/api/v1/aptitude/generate-batch", json={
+            "topics": ["percentage"],
+            "numQuestions": 20,
+        })
+
+        assert response.status_code == 200
 
     def test_empty_batch_rejected(self, client):
         response = client.post("/api/v1/aptitude/generate-batch", json={
