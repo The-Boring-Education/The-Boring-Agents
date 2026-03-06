@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from src.agents.aptitude.constants import TOPIC_REGISTRY, get_topic_info, validate_topic_name
+from src.agents.aptitude.constants import TOPIC_REGISTRY, resolve_topic
 from src.agents.aptitude.validators import validate_batch_payload
 from src.agents.aptitude.workflow import AptitudeWorkflow
 from src.core.config import config
@@ -19,37 +19,43 @@ class AptitudeController:
     def __init__(self):
         self.workflow = AptitudeWorkflow()
 
-    def generate_for_topic(self, topic_name: str, questions: List[str],
-                           category: Optional[str] = None,
-                           sub_category: Optional[str] = None) -> Dict[str, Any]:
+    def generate_for_topic(
+        self,
+        topic: str,
+        questions: Optional[List[str]] = None,
+        num_questions: Optional[int] = None,
+    ) -> Dict[str, Any]:
         """Generate answers for a single topic."""
         result = self.workflow.process_topic(
-            topic_name=topic_name,
+            topic=topic,
             questions=questions,
-            category=category,
-            sub_category=sub_category,
+            num_questions=num_questions,
         )
+
+        meta = result["metadata"]
         return {
-            "topic": topic_name,
-            "formatType": result["topic"]["answerFormatType"],
-            "totalQuestions": result["metadata"]["totalQuestions"],
-            "successfulAnswers": result["metadata"]["successfulAnswers"],
+            "topic": result["topic"],
+            "totalQuestions": meta["totalQuestions"],
+            "successfulAnswers": meta["successfulAnswers"],
             "outputFile": result.get("outputFile"),
-            "message": f"Generated {result['metadata']['successfulAnswers']}/{result['metadata']['totalQuestions']} answers",
+            "message": f"Generated {meta['successfulAnswers']}/{meta['totalQuestions']} answers for '{meta['topicName']}'",
         }
 
-    def generate_batch(self, topics: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def generate_batch(
+        self,
+        topics: List[str],
+        num_questions: Optional[int] = None,
+    ) -> Dict[str, Any]:
         """Generate answers for multiple topics."""
         validation = validate_batch_payload(topics)
         if not validation["valid"]:
             raise ValueError(f"Invalid batch payload: {validation['errors']}")
 
-        summary = self.workflow.process_batch(topics)
+        summary = self.workflow.process_batch(topics, num_questions=num_questions)
         return {
             "totalTopics": summary["totalTopics"],
             "successful": summary["successful"],
             "failed": summary["failed"],
-            "skipped": summary["skipped"],
             "message": f"Batch complete: {summary['successful']}/{summary['totalTopics']} topics processed",
         }
 
@@ -57,39 +63,43 @@ class AptitudeController:
         """Return all registered topics."""
         return TOPIC_REGISTRY
 
-    def upload_to_api(self, output_file: str, api_url: Optional[str] = None,
-                      admin_secret: str = "TBEAdmin") -> Dict[str, Any]:
-        """Upload generated JSON to TBE-Web API."""
+    def upload_to_api(
+        self,
+        output_file: str,
+        api_url: Optional[str] = None,
+        admin_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Upload generated JSON to TBE-Web bulk upload API.
+
+        The output file already contains the exact payload format expected
+        by TBE-Web: { topic: "<slug>", questions: [...] }
+        """
         if not os.path.exists(output_file):
             raise FileNotFoundError(f"Output file not found: {output_file}")
 
         with open(output_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        topic_data = data["topic"]
-        questions = data["questions"]
-
         payload = {
-            "topics": [{
-                "name": topic_data["name"],
-                "slug": topic_data["slug"],
-                "category": topic_data["category"],
-                "subCategory": topic_data["subCategory"],
-                "answerFormatType": topic_data["answerFormatType"],
-                "questions": [
-                    {
-                        "question": q["question"],
-                        "answer": q["answer"],
-                        "difficulty": q.get("difficulty", "MEDIUM"),
-                        "order": q.get("order", 0),
-                    }
-                    for q in questions if q.get("answer")
-                ],
-            }]
+            "topic": data["topic"],
+            "questions": [
+                {
+                    "question": q["question"],
+                    "answer": q["answer"],
+                    "difficulty": q.get("difficulty", "MEDIUM"),
+                    "order": q.get("order", 0),
+                }
+                for q in data["questions"]
+                if q.get("answer")
+            ],
         }
 
-        base_url = api_url or config.api_base_url
-        url = f"{base_url}/api/v1/aptitude/upload"
+        if not payload["questions"]:
+            return {"ok": False, "message": "No questions with answers to upload"}
+
+        secret = admin_secret or os.environ.get("TBE_ADMIN_SECRET", "")
+        base_url = api_url or config.api_v1_url
+        url = f"{base_url}/interview-prep/aptitude/upload"
 
         try:
             response = requests.post(
@@ -97,15 +107,22 @@ class AptitudeController:
                 json=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "x-admin-secret": admin_secret,
+                    "x-admin-secret": secret,
                 },
                 timeout=30,
             )
             response.raise_for_status()
-            return {"ok": True, "message": "Upload successful", "data": response.json()}
+            resp_data = response.json()
+            return {
+                "ok": True,
+                "message": f"Uploaded {len(payload['questions'])} questions for topic '{payload['topic']}'",
+                "data": resp_data,
+            }
         except requests.Timeout:
             return {"ok": False, "message": "Upload timed out"}
         except requests.ConnectionError:
             return {"ok": False, "message": f"Could not connect to {url}"}
+        except requests.HTTPError as e:
+            return {"ok": False, "message": f"Upload failed ({e.response.status_code}): {e.response.text[:200]}"}
         except Exception as e:
             return {"ok": False, "message": f"Upload failed: {str(e)}"}

@@ -7,16 +7,15 @@
 """
 
 import logging
-from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from src.api.controllers.aptitude_controller import AptitudeController
 from src.api.models.aptitude_models import (
     AptitudeBatchRequest,
     AptitudeBatchResponse,
-    AptitudeTopicRequest,
-    AptitudeTopicResponse,
+    AptitudeGenerateRequest,
+    AptitudeGenerateResponse,
     AptitudeUploadRequest,
     SimpleStatus,
 )
@@ -28,20 +27,22 @@ router = APIRouter(prefix="/aptitude", tags=["aptitude"])
 controller = AptitudeController()
 
 
-@router.post("/generate", response_model=AptitudeTopicResponse)
-async def generate_for_topic(
-    payload: AptitudeTopicRequest,
-    background_tasks: BackgroundTasks,
-    request: Request,
-):
-    """Generate answers for a single aptitude topic."""
-    log_action(request, "aptitude_generate", topic=payload.topic_name, questions=len(payload.questions))
+@router.post("/generate", response_model=AptitudeGenerateResponse)
+async def generate_for_topic(payload: AptitudeGenerateRequest, request: Request):
+    """Generate answers for a single aptitude topic.
+
+    Accepts:
+    - topic (slug or name) — required
+    - questions (list of strings) — optional, provide your own questions
+    - numQuestions (int) — optional, how many to auto-generate (min 10)
+    - If neither questions nor numQuestions: generates 10 questions
+    """
+    log_action(request, "aptitude_generate", topic=payload.topic)
     try:
         result = controller.generate_for_topic(
-            topic_name=payload.topic_name,
+            topic=payload.topic,
             questions=payload.questions,
-            category=payload.category,
-            sub_category=payload.sub_category,
+            num_questions=payload.num_questions,
         )
         return result
     except ValueError as e:
@@ -52,23 +53,17 @@ async def generate_for_topic(
 
 
 @router.post("/generate-batch", response_model=AptitudeBatchResponse)
-async def generate_batch(
-    payload: AptitudeBatchRequest,
-    request: Request,
-):
-    """Generate answers for multiple topics in batch."""
+async def generate_batch(payload: AptitudeBatchRequest, request: Request):
+    """Generate answers for multiple topics in batch.
+
+    Accepts a list of topic slugs/names. Each topic gets numQuestions (default 10).
+    """
     log_action(request, "aptitude_batch", topics=len(payload.topics))
     try:
-        topics_data = [
-            {
-                "name": t.topic_name,
-                "questions": t.questions,
-                "category": t.category,
-                "subCategory": t.sub_category,
-            }
-            for t in payload.topics
-        ]
-        result = controller.generate_batch(topics_data)
+        result = controller.generate_batch(
+            topics=payload.topics,
+            num_questions=payload.num_questions,
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -79,22 +74,22 @@ async def generate_batch(
 
 @router.get("/topics")
 def list_topics(request: Request):
-    """List all registered aptitude topics."""
+    """List all registered aptitude topics with slugs."""
     log_action(request, "aptitude_list_topics")
     return controller.get_topic_registry()
 
 
 @router.post("/upload", response_model=SimpleStatus)
 async def upload_to_api(payload: AptitudeUploadRequest, request: Request):
-    """Upload generated aptitude data to TBE-Web database."""
+    """Upload generated aptitude data to TBE-Web database via bulk upload API."""
     log_action(request, "aptitude_upload", file=payload.output_file)
     try:
         result = controller.upload_to_api(
             output_file=payload.output_file,
             api_url=payload.api_url,
-            admin_secret=payload.admin_secret or "TBEAdmin",
+            admin_secret=payload.admin_secret,
         )
-        return SimpleStatus(ok=result["ok"], message=result["message"])
+        return result
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
