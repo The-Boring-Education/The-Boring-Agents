@@ -9,19 +9,9 @@ class AptitudeTopicRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     topic_name: str = Field(..., alias="topicName", description="Topic name (e.g., 'Problem on Trains')")
-    questions: List[str] = Field(..., min_length=1, description="List of question strings")
+    questions: List[str] = Field(default_factory=list, description="List of question strings. If empty, questions will be auto-generated.")
     category: Optional[str] = Field(default=None, description="Override category")
     sub_category: Optional[str] = Field(default=None, alias="subCategory", description="Override sub-category")
-
-    @field_validator("questions")
-    @classmethod
-    def _validate_questions(cls, v):
-        if not v:
-            raise ValueError("At least one question is required")
-        for i, q in enumerate(v):
-            if not q or not q.strip():
-                raise ValueError(f"Question at index {i} is empty")
-        return v
 
 
 class AptitudeBatchRequest(BaseModel):
