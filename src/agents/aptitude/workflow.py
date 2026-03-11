@@ -1,7 +1,11 @@
 """Aptitude answer generation workflow.
 
-Takes a list of questions with their topics, determines the answer format,
-generates structured answers via LLM, validates output, and saves to JSON.
+Takes a topic (by slug or name), optionally a list of question strings
+or a desired count, generates structured answers via LLM, and saves
+output in a format that can be directly POSTed to TBE-Web's bulk upload API.
+
+Output format matches TBE-Web's AptitudeUploadPayload:
+    { "topic": "<slug>", "questions": [{ "question", "answer", "difficulty", "order" }] }
 """
 
 import json
@@ -10,35 +14,33 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from slugify import slugify
-
 from src.core.config import config
 from src.agents.aptitude.constants import (
-    SUB_CATEGORY_FORMAT_MAP,
-    get_format_for_sub_category,
-    get_topic_info,
-    validate_topic_name,
+    MIN_QUESTIONS_PER_TOPIC,
+    resolve_topic,
+    validate_topic_slug,
 )
 from src.agents.aptitude.generators import get_aptitude_generator
 from src.agents.aptitude.question_generator import AptitudeQuestionGenerator
-from src.agents.aptitude.validators import (
-    validate_answer_structure,
-    validate_question_payload,
-    validate_topic_payload,
-)
+from src.agents.aptitude.validators import validate_answer_structure
 
 logger = logging.getLogger(__name__)
 
 
 class AptitudeWorkflow:
-    """Orchestrates the aptitude answer generation pipeline.
+    """Orchestrates the aptitude generation pipeline.
 
     Usage:
         workflow = AptitudeWorkflow()
-        result = workflow.process_topic(
-            topic_name="Problem on Trains",
-            questions=["A train running at 60 km/hr...", "Two trains..."]
-        )
+
+        # Option 1: just a topic slug → generates MIN_QUESTIONS_PER_TOPIC questions
+        result = workflow.process_topic("problem-on-trains")
+
+        # Option 2: topic + desired count
+        result = workflow.process_topic("problem-on-trains", num_questions=15)
+
+        # Option 3: topic + specific question strings
+        result = workflow.process_topic("problem-on-trains", questions=["A train...", "Two trains..."])
     """
 
     def __init__(self, output_dir: Optional[str] = None):
@@ -47,58 +49,38 @@ class AptitudeWorkflow:
 
     def process_topic(
         self,
-        topic_name: str,
+        topic: str,
         questions: Optional[List[str]] = None,
-        question_count: int = 5,
-        category: Optional[str] = None,
-        sub_category: Optional[str] = None,
+        num_questions: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Generate answers for all questions under a single topic.
+        """Generate answers for a topic. Output matches TBE-Web bulk upload schema.
 
         Args:
-            topic_name: Name of the topic (must exist in TOPIC_REGISTRY or category/sub_category must be provided)
-            questions: List of question strings
-            question_count: Max questions to generate dynamically if 'questions' array is empty
-            category: Override category (if topic not in registry)
-            sub_category: Override sub-category (if topic not in registry)
+            topic: Topic slug or name (resolved via TOPIC_REGISTRY)
+            questions: Optional list of question strings to answer
+            num_questions: Optional desired count (enforced >= MIN_QUESTIONS_PER_TOPIC)
 
         Returns:
-            Dict with topic info, questions with answers, and output file path
+            Dict with 'topic' (slug), 'questions' (list), and 'metadata'.
         """
-        if questions is None:
-            questions = []
-            
-        validation = validate_topic_payload(topic_name, questions, category, sub_category)
-        if not validation["valid"]:
-            raise ValueError(f"Invalid payload: {validation['errors']}")
-
-        if validate_topic_name(topic_name):
-            topic_info = get_topic_info(topic_name)
-        else:
-            if not category or not sub_category:
-                raise ValueError(
-                    f"Topic '{topic_name}' not in registry. "
-                    f"Provide category and sub_category explicitly."
-                )
-            format_type = get_format_for_sub_category(sub_category)
-            topic_info = {
-                "name": topic_name,
-                "category": category.upper(),
-                "subCategory": sub_category.upper(),
-                "answerFormatType": format_type,
-            }
-
+        topic_info = resolve_topic(topic)
+        topic_slug = topic_info["slug"]
+        topic_name = topic_info["name"]
         format_type = topic_info["answerFormatType"]
+
         generator = get_aptitude_generator(format_type)
-        
+
         if not questions:
-            logger.info("Questions not provided. Calling AptitudeQuestionGenerator with count=%d...", question_count)
-            question_generator = AptitudeQuestionGenerator()
-            questions = question_generator.generate_questions(topic_name, count=question_count)
+            count = max(num_questions or MIN_QUESTIONS_PER_TOPIC, MIN_QUESTIONS_PER_TOPIC)
+            logger.info(
+                "No questions provided — generating %d for '%s'...", count, topic_name
+            )
+            question_gen = AptitudeQuestionGenerator()
+            questions = question_gen.generate_questions(topic_name, count=count)
 
         logger.info(
-            "Processing topic: %s (%s format, %d questions)",
-            topic_name, format_type, len(questions),
+            "Processing topic: %s [%s] (%s format, %d questions)",
+            topic_name, topic_slug, format_type, len(questions),
         )
 
         results: List[Dict[str, Any]] = []
@@ -110,7 +92,7 @@ class AptitudeWorkflow:
                 question_text = str(q_item)
                 options = []
             
-            logger.info("Generating answer %d/%d: %s...", idx, len(questions), question_text[:50])
+            logger.info("Generating answer %d/%d: %s...", idx, len(questions), question_text[:60])
 
             try:
                 answer = generator.generate_answer(
@@ -119,16 +101,14 @@ class AptitudeWorkflow:
                     sub_category=topic_info["subCategory"],
                 )
 
-                answer_validation = validate_answer_structure(answer, format_type)
+                difficulty = self._assign_difficulty(idx, len(questions))
 
                 results.append({
                     "question": question_text,
                     "options": options,
                     "answer": answer,
-                    "difficulty": "MEDIUM",
+                    "difficulty": difficulty,
                     "order": idx,
-                    "isActive": True,
-                    "validation": answer_validation,
                 })
             except Exception as e:
                 logger.error("Failed to generate answer for Q%d: %s", idx, e)
@@ -138,27 +118,23 @@ class AptitudeWorkflow:
                     "answer": "",
                     "difficulty": "MEDIUM",
                     "order": idx,
-                    "isActive": True,
-                    "validation": {"valid": False, "errors": [str(e)]},
                 })
 
-        topic_slug = slugify(topic_name)
-        output_data = {
-            "topic": {
-                "name": topic_name,
-                "slug": topic_slug,
-                "category": topic_info["category"],
-                "subCategory": topic_info["subCategory"],
-                "answerFormatType": format_type,
-            },
+        upload_payload = {
+            "topic": topic_slug,
             "questions": results,
-            "metadata": {
-                "generatedAt": datetime.now(timezone.utc).isoformat(),
-                "totalQuestions": len(questions),
-                "successfulAnswers": sum(1 for r in results if r["answer"]),
-                "failedAnswers": sum(1 for r in results if not r["answer"]),
-            },
         }
+
+        metadata = {
+            "topicName": topic_name,
+            "formatType": format_type,
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "totalQuestions": len(questions),
+            "successfulAnswers": sum(1 for r in results if r["answer"]),
+            "failedAnswers": sum(1 for r in results if not r["answer"]),
+        }
+
+        output_data = {**upload_payload, "metadata": metadata}
 
         output_file = os.path.join(self.output_dir, f"{topic_slug}.json")
         with open(output_file, "w", encoding="utf-8") as f:
@@ -170,40 +146,36 @@ class AptitudeWorkflow:
 
     def process_batch(
         self,
-        topics: List[Dict[str, Any]],
+        topics: List[str],
+        num_questions: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Process multiple topics in batch.
+        """Process multiple topics. Each entry is a slug or name.
 
         Args:
-            topics: List of dicts with keys: name, questions, (optional) category, sub_category
+            topics: List of topic slugs or names
+            num_questions: Optional question count per topic (enforced >= MIN_QUESTIONS_PER_TOPIC)
 
         Returns:
-            Summary with per-topic results
+            Summary dict with per-topic results.
         """
         results = []
-        for topic_data in topics:
-            topic_name = topic_data["name"]
-            questions = topic_data.get("questions", [])
-
+        for topic_identifier in topics:
             try:
                 result = self.process_topic(
-                    topic_name=topic_data["name"],
-                    questions=topic_data.get("questions", []),
-                    question_count=topic_data.get("question_count", 5),
-                    category=topic_data.get("category"),
-                    sub_category=topic_data.get("subCategory"),
+                    topic=topic_identifier,
+                    num_questions=num_questions,
                 )
                 results.append({
-                    "topic": topic_name,
+                    "topic": result["topic"],
                     "status": "success",
                     "outputFile": result.get("outputFile"),
                     "totalQuestions": result["metadata"]["totalQuestions"],
                     "successfulAnswers": result["metadata"]["successfulAnswers"],
                 })
             except Exception as e:
-                logger.error("Failed to process topic '%s': %s", topic_name, e)
+                logger.error("Failed to process topic '%s': %s", topic_identifier, e)
                 results.append({
-                    "topic": topic_name,
+                    "topic": topic_identifier,
                     "status": "failed",
                     "error": str(e),
                 })
@@ -214,7 +186,6 @@ class AptitudeWorkflow:
             "totalTopics": len(topics),
             "successful": sum(1 for r in results if r["status"] == "success"),
             "failed": sum(1 for r in results if r["status"] == "failed"),
-            "skipped": sum(1 for r in results if r["status"] == "skipped"),
             "results": results,
         }
         with open(summary_file, "w", encoding="utf-8") as f:
@@ -225,3 +196,13 @@ class AptitudeWorkflow:
             summary["successful"], summary["totalTopics"], summary_file,
         )
         return summary
+
+    @staticmethod
+    def _assign_difficulty(idx: int, total: int) -> str:
+        """Spread difficulty across EASY/MEDIUM/HARD based on position."""
+        ratio = idx / total
+        if ratio <= 0.3:
+            return "EASY"
+        elif ratio <= 0.7:
+            return "MEDIUM"
+        return "HARD"

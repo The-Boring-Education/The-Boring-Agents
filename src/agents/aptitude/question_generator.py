@@ -5,8 +5,10 @@ from typing import List
 
 from langchain_core.prompts import PromptTemplate
 from src.agents.base import BaseAgent
+from src.agents.aptitude.constants import MIN_QUESTIONS_PER_TOPIC
 
 logger = logging.getLogger(__name__)
+
 
 class AptitudeQuestionGenerator(BaseAgent):
     """Generates aptitude questions on the fly."""
@@ -17,11 +19,12 @@ class AptitudeQuestionGenerator(BaseAgent):
     def generate_content(self, content_type: str = "questions", **kwargs) -> dict:
         if content_type == "questions":
             topic = kwargs.get("topic", "")
-            count = kwargs.get("count", 5)
+            count = kwargs.get("count", MIN_QUESTIONS_PER_TOPIC)
             return {"status": "success", "questions": self.generate_questions(topic, count)}
         raise ValueError(f"Unknown content type: {content_type}")
 
-    def generate_questions(self, topic: str, count: int = 5) -> List[dict]:
+    def generate_questions(self, topic: str, count: int = MIN_QUESTIONS_PER_TOPIC) -> List[dict]:
+        count = max(count, MIN_QUESTIONS_PER_TOPIC)
         self.logger.info("Generating %d questions for topic: %s...", count, topic)
 
         prompt_template = PromptTemplate(
