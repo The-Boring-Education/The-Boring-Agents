@@ -48,7 +48,8 @@ class AptitudeWorkflow:
     def process_topic(
         self,
         topic_name: str,
-        questions: List[str],
+        questions: Optional[List[str]] = None,
+        question_count: int = 5,
         category: Optional[str] = None,
         sub_category: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -57,12 +58,16 @@ class AptitudeWorkflow:
         Args:
             topic_name: Name of the topic (must exist in TOPIC_REGISTRY or category/sub_category must be provided)
             questions: List of question strings
+            question_count: Max questions to generate dynamically if 'questions' array is empty
             category: Override category (if topic not in registry)
             sub_category: Override sub-category (if topic not in registry)
 
         Returns:
             Dict with topic info, questions with answers, and output file path
         """
+        if questions is None:
+            questions = []
+            
         validation = validate_topic_payload(topic_name, questions, category, sub_category)
         if not validation["valid"]:
             raise ValueError(f"Invalid payload: {validation['errors']}")
@@ -87,9 +92,9 @@ class AptitudeWorkflow:
         generator = get_aptitude_generator(format_type)
         
         if not questions:
-            logger.info("Questions not provided. Calling AptitudeQuestionGenerator...")
+            logger.info("Questions not provided. Calling AptitudeQuestionGenerator with count=%d...", question_count)
             question_generator = AptitudeQuestionGenerator()
-            questions = question_generator.generate_questions(topic_name, count=5)
+            questions = question_generator.generate_questions(topic_name, count=question_count)
 
         logger.info(
             "Processing topic: %s (%s format, %d questions)",
@@ -97,7 +102,14 @@ class AptitudeWorkflow:
         )
 
         results: List[Dict[str, Any]] = []
-        for idx, question_text in enumerate(questions, 1):
+        for idx, q_item in enumerate(questions, 1):
+            if isinstance(q_item, dict):
+                question_text = q_item.get("question", "")
+                options = q_item.get("options", [])
+            else:
+                question_text = str(q_item)
+                options = []
+            
             logger.info("Generating answer %d/%d: %s...", idx, len(questions), question_text[:50])
 
             try:
@@ -111,6 +123,7 @@ class AptitudeWorkflow:
 
                 results.append({
                     "question": question_text,
+                    "options": options,
                     "answer": answer,
                     "difficulty": "MEDIUM",
                     "order": idx,
@@ -121,6 +134,7 @@ class AptitudeWorkflow:
                 logger.error("Failed to generate answer for Q%d: %s", idx, e)
                 results.append({
                     "question": question_text,
+                    "options": options,
                     "answer": "",
                     "difficulty": "MEDIUM",
                     "order": idx,
@@ -173,10 +187,11 @@ class AptitudeWorkflow:
 
             try:
                 result = self.process_topic(
-                    topic_name=topic_name,
-                    questions=questions,
+                    topic_name=topic_data["name"],
+                    questions=topic_data.get("questions", []),
+                    question_count=topic_data.get("question_count", 5),
                     category=topic_data.get("category"),
-                    sub_category=topic_data.get("sub_category") or topic_data.get("subCategory"),
+                    sub_category=topic_data.get("subCategory"),
                 )
                 results.append({
                     "topic": topic_name,

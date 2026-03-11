@@ -40,6 +40,7 @@ async def generate_for_topic(
         result = controller.generate_for_topic(
             topic_name=payload.topic_name,
             questions=payload.questions,
+            question_count=payload.question_count,
             category=payload.category,
             sub_category=payload.sub_category,
         )
@@ -63,6 +64,7 @@ async def generate_batch(
             {
                 "name": t.topic_name,
                 "questions": t.questions,
+                "question_count": t.question_count,
                 "category": t.category,
                 "subCategory": t.sub_category,
             }

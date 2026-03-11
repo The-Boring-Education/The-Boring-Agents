@@ -10,6 +10,7 @@ class AptitudeTopicRequest(BaseModel):
 
     topic_name: str = Field(..., alias="topicName", description="Topic name (e.g., 'Problem on Trains')")
     questions: List[str] = Field(default_factory=list, description="List of question strings. If empty, questions will be auto-generated.")
+    question_count: int = Field(default=5, alias="questionCount", description="Number of questions to generate if 'questions' list is empty.")
     category: Optional[str] = Field(default=None, description="Override category")
     sub_category: Optional[str] = Field(default=None, alias="subCategory", description="Override sub-category")
 

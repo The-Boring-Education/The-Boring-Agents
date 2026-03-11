@@ -20,12 +20,14 @@ class AptitudeController:
         self.workflow = AptitudeWorkflow()
 
     def generate_for_topic(self, topic_name: str, questions: List[str],
+                           question_count: int = 5,
                            category: Optional[str] = None,
                            sub_category: Optional[str] = None) -> Dict[str, Any]:
         """Generate answers for a single topic."""
         result = self.workflow.process_topic(
             topic_name=topic_name,
             questions=questions,
+            question_count=question_count,
             category=category,
             sub_category=sub_category,
         )
@@ -70,26 +72,21 @@ class AptitudeController:
         questions = data["questions"]
 
         payload = {
-            "topics": [{
-                "name": topic_data["name"],
-                "slug": topic_data["slug"],
-                "category": topic_data["category"],
-                "subCategory": topic_data["subCategory"],
-                "answerFormatType": topic_data["answerFormatType"],
-                "questions": [
-                    {
-                        "question": q["question"],
-                        "answer": q["answer"],
-                        "difficulty": q.get("difficulty", "MEDIUM"),
-                        "order": q.get("order", 0),
-                    }
-                    for q in questions if q.get("answer")
-                ],
-            }]
+            "topic": topic_data["slug"],
+            "questions": [
+                {
+                    "question": q["question"],
+                    "answer": q["answer"],
+                    "options": q.get("options", []),
+                    "difficulty": q.get("difficulty", "MEDIUM").upper(),
+                    "order": q.get("order", 0),
+                }
+                for q in questions if q.get("answer")
+            ]
         }
 
-        base_url = api_url or config.api_base_url
-        url = f"{base_url}/api/v1/aptitude/upload"
+        base_url = api_url.rstrip("/") if api_url else config.api_base_url.rstrip("/")
+        url = f"{base_url}/api/v1/interview-prep/aptitude/upload"
 
         try:
             response = requests.post(
