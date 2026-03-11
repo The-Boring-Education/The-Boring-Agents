@@ -86,6 +86,7 @@ class AptitudeController:
                 {
                     "question": q["question"],
                     "answer": q["answer"],
+                    "options": q.get("options", []),
                     "difficulty": q.get("difficulty", "MEDIUM"),
                     "order": q.get("order", 0),
                 }
@@ -97,8 +98,16 @@ class AptitudeController:
         if not payload["questions"]:
             return {"ok": False, "message": "No questions with answers to upload"}
 
-        secret = admin_secret or os.environ.get("TBE_ADMIN_SECRET", "")
-        base_url = api_url or config.api_v1_url
+        secret = admin_secret or os.environ.get("TBE_ADMIN_SECRET", "TBEAdmin")
+        
+        # Handle base URL and prefix
+        if api_url:
+            base_url = api_url.rstrip("/")
+            if "/api/v1" not in base_url:
+                base_url = f"{base_url}/api/v1"
+        else:
+            base_url = config.api_v1_url
+            
         url = f"{base_url}/interview-prep/aptitude/upload"
 
         try:

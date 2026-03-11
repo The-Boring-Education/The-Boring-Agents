@@ -84,7 +84,14 @@ class AptitudeWorkflow:
         )
 
         results: List[Dict[str, Any]] = []
-        for idx, question_text in enumerate(questions, 1):
+        for idx, q_item in enumerate(questions, 1):
+            if isinstance(q_item, dict):
+                question_text = q_item.get("question", "")
+                options = q_item.get("options", [])
+            else:
+                question_text = str(q_item)
+                options = []
+            
             logger.info("Generating answer %d/%d: %s...", idx, len(questions), question_text[:60])
 
             try:
@@ -98,6 +105,7 @@ class AptitudeWorkflow:
 
                 results.append({
                     "question": question_text,
+                    "options": options,
                     "answer": answer,
                     "difficulty": difficulty,
                     "order": idx,
@@ -106,6 +114,7 @@ class AptitudeWorkflow:
                 logger.error("Failed to generate answer for Q%d: %s", idx, e)
                 results.append({
                     "question": question_text,
+                    "options": options,
                     "answer": "",
                     "difficulty": "MEDIUM",
                     "order": idx,

@@ -14,9 +14,9 @@ class AptitudeGenerateRequest(BaseModel):
     """
     model_config = ConfigDict(populate_by_name=True)
 
-    topic: str = Field(..., description="Topic slug or name (e.g., 'problem-on-trains' or 'Problem on Trains')")
+    topic: str = Field(..., alias="topicName", description="Topic slug or name (e.g., 'problem-on-trains' or 'Problem on Trains')")
     questions: Optional[List[str]] = Field(default=None, description="Optional list of question strings to answer")
-    num_questions: int = Field(default=10, alias="numQuestions", ge=1, description="Number of questions to generate (minimum 10 enforced)")
+    num_questions: int = Field(default=10, alias="questionCount", ge=1, description="Number of questions to generate (minimum 10 enforced)")
 
 
 class AptitudeBatchRequest(BaseModel):
