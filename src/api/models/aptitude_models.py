@@ -60,3 +60,20 @@ class AptitudeUploadRequest(BaseModel):
 class SimpleStatus(BaseModel):
     ok: bool
     message: str
+
+
+class StudyGuideGenerateRequest(BaseModel):
+    """Request to generate a study guide for a topic."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    topic: str = Field(..., alias="topicName", description="Topic slug or name")
+
+
+class StudyGuideGenerateResponse(BaseModel):
+    """Response after generating a study guide."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    topic: str = Field(description="Topic slug")
+    content: str = Field(description="Markdown study guide content")
+    output_file: Optional[str] = Field(default=None, alias="outputFile")
+    message: str

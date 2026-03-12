@@ -83,6 +83,8 @@ def create_app() -> FastAPI:
                 "aptitude": {
                     "generate": "POST /api/v1/aptitude/generate",
                     "generate_batch": "POST /api/v1/aptitude/generate-batch",
+                    "generate_study_guide": "POST /api/v1/aptitude/generate-study-guide",
+                    "upload_study_guide": "POST /api/v1/aptitude/upload-study-guide",
                     "topics": "GET /api/v1/aptitude/topics",
                     "upload": "POST /api/v1/aptitude/upload"
                 }
