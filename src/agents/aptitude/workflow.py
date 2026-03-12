@@ -22,6 +22,7 @@ from src.agents.aptitude.constants import (
 )
 from src.agents.aptitude.generators import get_aptitude_generator
 from src.agents.aptitude.question_generator import AptitudeQuestionGenerator
+from src.agents.aptitude.study_guide_generator import AptitudeStudyGuideGenerator
 from src.agents.aptitude.validators import validate_answer_structure
 
 logger = logging.getLogger(__name__)
@@ -141,6 +142,49 @@ class AptitudeWorkflow:
             json.dump(output_data, f, indent=2, ensure_ascii=False)
 
         logger.info("Saved output to %s", output_file)
+        output_data["outputFile"] = output_file
+        return output_data
+
+    def generate_study_guide(
+        self,
+        topic: str,
+    ) -> Dict[str, Any]:
+        """Generate a study guide for a topic.
+
+        Args:
+            topic: Topic slug or name (resolved via TOPIC_REGISTRY)
+
+        Returns:
+            Dict with 'topic' (slug), 'content' (markdown), and 'metadata'.
+        """
+        topic_info = resolve_topic(topic)
+        topic_slug = topic_info["slug"]
+        topic_name = topic_info["name"]
+        sub_category = topic_info["subCategory"]
+
+        logger.info("Generating study guide for: %s [%s]", topic_name, topic_slug)
+
+        generator = AptitudeStudyGuideGenerator()
+        content = generator.generate_guide(
+            topic=topic_name,
+            sub_category=sub_category,
+        )
+
+        output_data = {
+            "topic": topic_slug,
+            "content": content,
+            "metadata": {
+                "topicName": topic_name,
+                "subCategory": sub_category,
+                "generatedAt": datetime.now(timezone.utc).isoformat(),
+            },
+        }
+
+        output_file = os.path.join(self.output_dir, f"{topic_slug}_study_guide.json")
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(output_data, f, indent=2, ensure_ascii=False)
+
+        logger.info("Study guide saved to %s", output_file)
         output_data["outputFile"] = output_file
         return output_data
 

@@ -63,6 +63,76 @@ class AptitudeController:
         """Return all registered topics."""
         return TOPIC_REGISTRY
 
+    def generate_study_guide(self, topic: str) -> Dict[str, Any]:
+        """Generate a study guide for a single topic."""
+        result = self.workflow.generate_study_guide(topic=topic)
+        return {
+            "topic": result["topic"],
+            "content": result["content"],
+            "outputFile": result.get("outputFile"),
+            "message": f"Generated study guide for '{result['metadata']['topicName']}'",
+        }
+
+    def upload_study_guide(
+        self,
+        output_file: str,
+        api_url: Optional[str] = None,
+        admin_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Upload a generated study guide JSON to TBE-Web.
+
+        Reads the JSON file (same format as generate_study_guide output)
+        and POSTs { topic, content } to TBE-Web's study guide endpoint.
+        """
+        if not os.path.exists(output_file):
+            raise FileNotFoundError(f"Output file not found: {output_file}")
+
+        with open(output_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        topic = data.get("topic")
+        content = data.get("content")
+
+        if not topic or not content:
+            return {"ok": False, "message": "File must contain 'topic' and 'content' fields"}
+
+        secret = admin_secret or os.environ.get("TBE_ADMIN_SECRET", "TBEAdmin")
+
+        if api_url:
+            base_url = api_url.rstrip("/")
+            if "/api/v1" not in base_url:
+                base_url = f"{base_url}/api/v1"
+        else:
+            base_url = config.api_v1_url
+
+        url = f"{base_url}/interview-prep/aptitude/study-guide"
+
+        try:
+            response = requests.post(
+                url,
+                json={"topic": topic, "content": content},
+                headers={
+                    "Content-Type": "application/json",
+                    "x-admin-secret": secret,
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            resp_data = response.json()
+            return {
+                "ok": True,
+                "message": f"Uploaded study guide for topic '{topic}'",
+                "data": resp_data,
+            }
+        except requests.Timeout:
+            return {"ok": False, "message": "Upload timed out"}
+        except requests.ConnectionError:
+            return {"ok": False, "message": f"Could not connect to {url}"}
+        except requests.HTTPError as e:
+            return {"ok": False, "message": f"Upload failed ({e.response.status_code}): {e.response.text[:200]}"}
+        except Exception as e:
+            return {"ok": False, "message": f"Upload failed: {str(e)}"}
+
     def upload_to_api(
         self,
         output_file: str,

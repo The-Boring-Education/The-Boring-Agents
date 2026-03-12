@@ -18,6 +18,8 @@ from src.api.models.aptitude_models import (
     AptitudeGenerateResponse,
     AptitudeUploadRequest,
     SimpleStatus,
+    StudyGuideGenerateRequest,
+    StudyGuideGenerateResponse,
 )
 from src.utils.request_logging import log_action
 
@@ -77,6 +79,41 @@ def list_topics(request: Request):
     """List all registered aptitude topics with slugs."""
     log_action(request, "aptitude_list_topics")
     return controller.get_topic_registry()
+
+
+@router.post("/generate-study-guide", response_model=StudyGuideGenerateResponse)
+async def generate_study_guide(payload: StudyGuideGenerateRequest, request: Request):
+    """Generate a study guide for a single aptitude topic."""
+    log_action(request, "aptitude_generate_study_guide", topic=payload.topic)
+    try:
+        result = controller.generate_study_guide(topic=payload.topic)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Study guide generation failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload-study-guide", response_model=SimpleStatus)
+async def upload_study_guide(payload: AptitudeUploadRequest, request: Request):
+    """Upload a generated study guide JSON file to TBE-Web database.
+
+    Pass the outputFile path from generate-study-guide response.
+    """
+    log_action(request, "aptitude_upload_study_guide", file=payload.output_file)
+    try:
+        result = controller.upload_study_guide(
+            output_file=payload.output_file,
+            api_url=payload.api_url,
+            admin_secret=payload.admin_secret,
+        )
+        return result
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error("Study guide upload failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/upload", response_model=SimpleStatus)

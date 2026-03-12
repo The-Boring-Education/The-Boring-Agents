@@ -48,6 +48,14 @@ ANSWER_STRUCTURE_MAP = {
     "BEHAVIORAL": BEHAVIORAL_ANSWER_STRUCTURE,
 }
 
+# ─── Study Guide Structure ───────────────────────────────────────────────────
+
+STUDY_GUIDE_ANSWER_STRUCTURE = {
+    "Core Concepts": "Core Concepts",
+    "Step-by-Step Solving Plan": "Step-by-Step Solving Plan",
+    "Examples": "Examples",
+}
+
 # ─── Prompt Templates ────────────────────────────────────────────────────────
 
 SPEED_PROMPT = """You are an expert aptitude trainer who coaches students for campus placements at top Indian companies (TCS, Infosys, Wipro, Cognizant, Accenture, Deloitte, Goldman Sachs, Amazon, Microsoft).
@@ -193,6 +201,50 @@ WRITING RULES:
 - Templates should be fill-in-the-blank ready
 - Focus on Indian placement context
 - Use ##### for section headers only
+"""
+
+# ─── Study Guide Prompt ──────────────────────────────────────────────────────
+
+STUDY_GUIDE_PROMPT = """You are an expert aptitude trainer who coaches students for campus placements at top Indian companies (TCS, Infosys, Wipro, Cognizant, Accenture, Deloitte, Goldman Sachs, Amazon, Microsoft).
+
+Generate a comprehensive STUDY GUIDE for the following aptitude topic:
+
+Topic: {topic}
+Sub-Category: {sub_category}
+
+The study guide must follow this EXACT 3-section structure using EXACTLY these ### headers and horizontal rule separators:
+
+### Core Concepts
+
+[Content for core concepts...]
+
+---
+
+### Step-by-Step Solving Plan
+
+[Content for solving plan...]
+
+---
+
+### Examples
+
+[Content for examples...]
+
+FORMATTING RULES:
+1. You MUST use exactly three dashes `---` on a NEW LINE to separate the three main sections.
+2. You MUST use exactly these H3 headers: `### Core Concepts`, `### Step-by-Step Solving Plan`, `### Examples`.
+3. Do NOT use `---` anywhere else in the document.
+4. Use LaTeX notation with $ for mathematical expressions (e.g., $1/n$).
+5. Use **bold** for key terms and important points.
+6. Use numbered lists for steps and examples.
+
+CONTENT RULES:
+- Core Concepts: Definitions, key formulae, relationships.
+- Step-by-Step Solving Plan: 4-5 concrete steps to solve any problem in this topic.
+- Examples: 2-3 fully worked out examples with problem statement and solution.
+- Write for Indian college students preparing for campus placements.
+- Be concise but thorough — no filler content.
+- Keep the total length between 400-800 words.
 """
 
 # ─── Format Type → Prompt Mapping ────────────────────────────────────────────
