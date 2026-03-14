@@ -2,23 +2,31 @@
 Interview preparation API request/response models.
 """
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from src.agents.interview.generators import AnswerAgentType
 
 
 class CreateSheetRequest(BaseModel):
     """Request model for creating interview sheet with title and description."""
+
     model_config = ConfigDict(populate_by_name=True)
-    
+
     name: str = Field(..., description="Sheet name/title")
     description: str = Field(..., description="Sheet description")
-    agent_type: AnswerAgentType = Field(default=AnswerAgentType.GENERIC, alias="agentType")
-    roadmap: str = Field(default="Tech", description="Roadmap type: Frontend, Backend, Fullstack, Tech")
-    technology: Optional[str] = Field(default=None, description="Technology name for tech agent type")
+    agent_type: AnswerAgentType = Field(
+        default=AnswerAgentType.GENERIC, alias="agentType"
+    )
+    roadmap: str = Field(
+        default="Tech", description="Roadmap type: Frontend, Backend, Fullstack, Tech"
+    )
+    technology: Optional[str] = Field(
+        default=None, description="Technology name for tech agent type"
+    )
     question_count: int = Field(default=20, ge=1, le=100, alias="questionCount")
-    
+
     @field_validator("agent_type", mode="before")
     @classmethod
     def _normalize_agent_type(cls, value):
@@ -29,6 +37,7 @@ class CreateSheetRequest(BaseModel):
 
 class TopicGenerationRequest(BaseModel):
     """Request payload for single-topic generation."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     topic: str = Field(..., description="Topic name to generate questions for")
@@ -49,6 +58,7 @@ class TopicGenerationRequest(BaseModel):
 
 class InterviewQuestionResources(BaseModel):
     """Resources for interview questions."""
+
     youtubeURL: Optional[str] = None
     leetcodeURL: Optional[str] = None
     blogURL: Optional[str] = None
@@ -56,17 +66,23 @@ class InterviewQuestionResources(BaseModel):
 
 class InterviewSheetQuestionModel(BaseModel):
     """Interview question model - matches InterviewSheetQuestionModel in Sheet.ts."""
+
     title: str = Field(..., description="Question title")
     question: str = Field(..., description="Question text")
     answer: str = Field(..., description="Question answer")
-    frequency: str = Field(..., description="Frequency: Most Asked, Asked Frequently, Asked Sometimes")
+    frequency: str = Field(
+        ..., description="Frequency: Most Asked, Asked Frequently, Asked Sometimes"
+    )
     companyTypes: List[str] = Field(..., description="List of company types")
     priority: str = Field(default="Medium", description="Priority: High, Medium, Low")
-    resources: InterviewQuestionResources = Field(default_factory=InterviewQuestionResources)
+    resources: InterviewQuestionResources = Field(
+        default_factory=InterviewQuestionResources
+    )
 
 
 class InterviewSheetModel(BaseModel):
     """Interview sheet model - matches InterviewSheetModel in Sheet.ts."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     name: str
@@ -78,7 +94,7 @@ class InterviewSheetModel(BaseModel):
     roadmap: str
     questions: List[InterviewSheetQuestionModel]
     dsaQuestions: List[str] = Field(default_factory=list)  # List of ObjectIds
-    
+
     # Defaults
     isPremium: bool = False
     price: int = 0
@@ -89,27 +105,36 @@ class InterviewSheetModel(BaseModel):
 
 class UploadSheetRequest(BaseModel):
     """Request model for uploading interview sheet to database."""
+
     model_config = ConfigDict(populate_by_name=True)
-    
-    sheetData: InterviewSheetModel = Field(..., description="Sheet data matching DB schema")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata overrides")
-    api_url: Optional[str] = Field(default=None, alias="apiUrl")
-    admin_secret: Optional[str] = Field(default="TBEAdmin", alias="adminSecret")
+
+    sheetData: InterviewSheetModel = Field(
+        ..., description="Sheet data matching DB schema"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Metadata overrides"
+    )
+    environment: Optional[str] = Field(
+        default=None, description="Target env: local, dev, prod"
+    )
 
 
 class ValidateSheetRequest(BaseModel):
     """Request model for interview sheet validation."""
+
     sheetData: Dict[str, Any]
 
 
 class SimpleStatus(BaseModel):
     """Simple status response model."""
+
     ok: bool
     message: str
 
 
 class InterviewGenerationSession(BaseModel):
     """Interview generation session model."""
+
     sessionId: str
     topic: str
     agentType: str
@@ -125,15 +150,16 @@ class InterviewGenerationSession(BaseModel):
     error: Optional[str] = None
 
 
-
 class SessionResponse(BaseModel):
     """Response model for session operations."""
+
     sessionId: str
     message: str
 
 
 class TopicTemplate(BaseModel):
     """Topic template model."""
+
     name: str
     description: str
     agentTypes: List[str]
@@ -146,6 +172,7 @@ class TopicTemplate(BaseModel):
 
 class RoadmapSuggestion(BaseModel):
     """Roadmap suggestion model."""
+
     name: str
     description: str
     topics: List[str]

@@ -9,11 +9,11 @@ from typing import Any, Dict
 
 from langchain_core.prompts import PromptTemplate
 
-from src.agents.base import BaseAgent
 from src.agents.aptitude.prompts import (
-    STUDY_GUIDE_PROMPT,
     STUDY_GUIDE_ANSWER_STRUCTURE,
+    STUDY_GUIDE_PROMPT,
 )
+from src.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,9 @@ class AptitudeStudyGuideGenerator(BaseAgent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def generate_content(self, content_type: str = "study_guide", **kwargs) -> Dict[str, Any]:
+    def generate_content(
+        self, content_type: str = "study_guide", **kwargs
+    ) -> Dict[str, Any]:
         if content_type == "study_guide":
             guide = self.generate_guide(
                 topic=kwargs.get("topic", ""),
@@ -65,14 +67,17 @@ class AptitudeStudyGuideGenerator(BaseAgent):
     def _validate_sections(self, guide: str, topic: str, sub_category: str) -> str:
         """Verify all 3 required sections are present; patch missing ones."""
         missing = [
-            name for name, keyword in STUDY_GUIDE_ANSWER_STRUCTURE.items()
+            name
+            for name, keyword in STUDY_GUIDE_ANSWER_STRUCTURE.items()
             if keyword.lower() not in guide.lower()
         ]
 
         if not missing:
             return guide
 
-        self.logger.warning("Missing sections in study guide: %s — patching...", missing)
+        self.logger.warning(
+            "Missing sections in study guide: %s — patching...", missing
+        )
         for section in missing:
             patch_prompt = (
                 f"Generate a '{section}' section for a study guide on the aptitude topic: {topic}.\n"

@@ -36,6 +36,8 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
     "httpx>=0.24.0",
+    "ruff>=0.4.0",
+    "mypy>=1.0.0",
 ]
 
 [project.scripts]
@@ -84,4 +86,35 @@ exclude_lines = [
 ]
 show_missing = true
 fail_under = 50
+
+# ---------------------------------------------------------------------------
+# Ruff (linter + formatter — replaces black, isort, flake8)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py39"
+src = ["src", "tests"]
+exclude = [".venv", "output", "logs", "temp", "__pycache__"]
+
+[tool.ruff.lint]
+select = [
+    "F",   # Pyflakes — unused imports, undefined names
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "I",   # isort — import ordering
+    "UP",  # pyupgrade — modernise syntax
+    "B",   # bugbear — common bugs & design problems
+]
+ignore = [
+    "E501",   # line too long (let the formatter handle soft-wrapping)
+    "E712",   # comparison to True/False
+    "UP006",  # use `dict` instead of `Dict` — too noisy for existing code on py3.9
+    "UP035",  # deprecated typing imports — related to UP006
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 

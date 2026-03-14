@@ -5,58 +5,65 @@ Handles all business logic for session operations.
 """
 
 import os
-from typing import Optional, List, Dict, Any
-from fastapi import HTTPException, Query
+from typing import Any, Dict
+
+from fastapi import HTTPException
 
 # from src.agents.quiz.quiz_orchestrator import QuizOrchestrator
 from src.agents.interview.session import InterviewSessionManager
-from src.utils.session_logger import read_logs, get_log_file_path
-from src.utils.helpers import load_json_file
 from src.core.config import config
+from src.utils.helpers import load_json_file
+from src.utils.session_logger import get_log_file_path, read_logs
 
 
 class SessionController:
     """Controller for session management operations."""
-    
+
     def __init__(self):
         """Initialize the session controller."""
         # self.quiz_orchestrator = QuizOrchestrator()
         self.interview_session_manager = InterviewSessionManager()
-    
+
     def list_active_sessions(self) -> Dict[str, Any]:
         """Return active sessions from both interview and quiz workflows."""
         try:
             # quiz_sessions = self.quiz_orchestrator.list_active_sessions()
             interview_sessions = self.interview_session_manager.list_sessions()
-            
+
             # Format interview sessions to match expected structure
             formatted_interview_sessions = []
             for session in interview_sessions:
-                formatted_interview_sessions.append({
-                    "session_id": session["session_id"],
-                    "name": session["name"],
-                    "status": session["status"],
-                    "progress": session["progress"],
-                    "created_at": session["created_at"],
-                    "updated_at": session["updated_at"]
-                })
-            
+                formatted_interview_sessions.append(
+                    {
+                        "session_id": session["session_id"],
+                        "name": session["name"],
+                        "status": session["status"],
+                        "progress": session["progress"],
+                        "created_at": session["created_at"],
+                        "updated_at": session["updated_at"],
+                    }
+                )
+
             return {
                 "ok": True,
                 # "quiz": quiz_sessions.get("sessions", []),
                 "interview": formatted_interview_sessions,
             }
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to list active sessions: {str(e)}")
-    
+            raise HTTPException(
+                status_code=500, detail=f"Failed to list active sessions: {str(e)}"
+            )
+
     def get_session_logs(self, session_id: str, limit: int = 200) -> Dict[str, Any]:
         """Return recent JSONL logs for a given session id."""
         try:
             logs = read_logs(session_id=session_id, limit=limit)
             return {"ok": True, "session_id": session_id, "logs": logs}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get session logs: {str(e)}")
-    
+            raise HTTPException(
+                status_code=500, detail=f"Failed to get session logs: {str(e)}"
+            )
+
     def get_session_detail(self, session_id: str) -> Dict[str, Any]:
         """Fetch session progress JSON if present (quiz or interview)."""
         try:
@@ -89,8 +96,10 @@ class SessionController:
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get session detail: {str(e)}")
-    
+            raise HTTPException(
+                status_code=500, detail=f"Failed to get session detail: {str(e)}"
+            )
+
     def resume_session(self, session_id: str) -> Dict[str, Any]:
         """Resume a paused session if possible (quiz or interview)."""
         try:
@@ -104,6 +113,7 @@ class SessionController:
             if session:
                 # Use the workflow orchestrator to resume
                 from src.agents.interview.workflow import InterviewWorkflowOrchestrator
+
                 orchestrator = InterviewWorkflowOrchestrator()
                 result = orchestrator.resume_session(session_id)
                 if result.get("status") != "failed":
@@ -113,8 +123,10 @@ class SessionController:
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to resume session: {str(e)}")
-    
+            raise HTTPException(
+                status_code=500, detail=f"Failed to resume session: {str(e)}"
+            )
+
     def delete_session(self, session_id: str) -> Dict[str, Any]:
         """Delete a session's progress artifacts and logs (quiz and interview)."""
         removed: Dict[str, Any] = {
@@ -169,5 +181,6 @@ class SessionController:
 
             return {"ok": True, "removed": removed}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to delete session: {str(e)}")
-
+            raise HTTPException(
+                status_code=500, detail=f"Failed to delete session: {str(e)}"
+            )

@@ -6,15 +6,15 @@ Contains:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from langchain_core.prompts import PromptTemplate
 
-from src.agents.base import BaseAgent
 from src.agents.aptitude.prompts import (
     ANSWER_STRUCTURE_MAP,
     PROMPT_MAP,
 )
+from src.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +34,20 @@ class AptitudeAnswerGenerator(BaseAgent):
                 f"Must be one of: {list(PROMPT_MAP.keys())}"
             )
 
-    def generate_content(self, content_type: str = "answer", **kwargs) -> Dict[str, Any]:
+    def generate_content(
+        self, content_type: str = "answer", **kwargs
+    ) -> Dict[str, Any]:
         if content_type == "answer":
             answer = self.generate_answer(
                 question=kwargs.get("question", ""),
                 topic=kwargs.get("topic", ""),
                 sub_category=kwargs.get("sub_category", ""),
             )
-            return {"status": "success", "answer": answer, "format_type": self.format_type}
+            return {
+                "status": "success",
+                "answer": answer,
+                "format_type": self.format_type,
+            }
         raise ValueError(f"Unknown content type: {content_type}")
 
     def generate_answer(
@@ -76,7 +82,8 @@ class AptitudeAnswerGenerator(BaseAgent):
         """Verify all required sections are present; regenerate missing ones."""
         required = ANSWER_STRUCTURE_MAP[self.format_type]
         missing = [
-            name for name, keyword in required.items()
+            name
+            for name, keyword in required.items()
             if keyword.lower() not in answer.lower()
         ]
 

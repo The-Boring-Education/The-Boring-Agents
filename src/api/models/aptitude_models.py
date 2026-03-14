@@ -1,7 +1,8 @@
 """Aptitude API request/response models."""
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AptitudeGenerateRequest(BaseModel):
@@ -12,23 +13,44 @@ class AptitudeGenerateRequest(BaseModel):
     - topic + num_questions → auto-generates that many (min 10)
     - topic + questions → answers the provided questions (must have >= 1)
     """
+
     model_config = ConfigDict(populate_by_name=True)
 
-    topic: str = Field(..., alias="topicName", description="Topic slug or name (e.g., 'problem-on-trains' or 'Problem on Trains')")
-    questions: Optional[List[str]] = Field(default=None, description="Optional list of question strings to answer")
-    num_questions: int = Field(default=10, alias="questionCount", ge=1, description="Number of questions to generate (minimum 10 enforced)")
+    topic: str = Field(
+        ...,
+        alias="topicName",
+        description="Topic slug or name (e.g., 'problem-on-trains' or 'Problem on Trains')",
+    )
+    questions: Optional[List[str]] = Field(
+        default=None, description="Optional list of question strings to answer"
+    )
+    num_questions: int = Field(
+        default=10,
+        alias="questionCount",
+        ge=1,
+        description="Number of questions to generate (minimum 10 enforced)",
+    )
 
 
 class AptitudeBatchRequest(BaseModel):
     """Request to generate for multiple topics."""
+
     model_config = ConfigDict(populate_by_name=True)
 
-    topics: List[str] = Field(..., min_length=1, description="List of topic slugs or names")
-    num_questions: int = Field(default=10, alias="numQuestions", ge=1, description="Questions per topic (minimum 10 enforced)")
+    topics: List[str] = Field(
+        ..., min_length=1, description="List of topic slugs or names"
+    )
+    num_questions: int = Field(
+        default=10,
+        alias="numQuestions",
+        ge=1,
+        description="Questions per topic (minimum 10 enforced)",
+    )
 
 
 class AptitudeGenerateResponse(BaseModel):
     """Response after generating answers for a topic."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     topic: str = Field(description="Topic slug")
@@ -40,6 +62,7 @@ class AptitudeGenerateResponse(BaseModel):
 
 class AptitudeBatchResponse(BaseModel):
     """Response after batch generation."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     total_topics: int = Field(alias="totalTopics")
@@ -50,11 +73,15 @@ class AptitudeBatchResponse(BaseModel):
 
 class AptitudeUploadRequest(BaseModel):
     """Request to upload generated output to TBE-Web bulk upload API."""
+
     model_config = ConfigDict(populate_by_name=True)
 
-    output_file: str = Field(..., alias="outputFile", description="Path to generated JSON file")
-    api_url: Optional[str] = Field(default=None, alias="apiUrl")
-    admin_secret: Optional[str] = Field(default=None, alias="adminSecret")
+    output_file: str = Field(
+        ..., alias="outputFile", description="Path to generated JSON file"
+    )
+    environment: Optional[str] = Field(
+        default=None, description="Target env: local, dev, prod"
+    )
 
 
 class SimpleStatus(BaseModel):
@@ -64,6 +91,7 @@ class SimpleStatus(BaseModel):
 
 class StudyGuideGenerateRequest(BaseModel):
     """Request to generate a study guide for a topic."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     topic: str = Field(..., alias="topicName", description="Topic slug or name")
@@ -71,6 +99,7 @@ class StudyGuideGenerateRequest(BaseModel):
 
 class StudyGuideGenerateResponse(BaseModel):
     """Response after generating a study guide."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     topic: str = Field(description="Topic slug")

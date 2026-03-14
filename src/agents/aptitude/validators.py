@@ -7,15 +7,17 @@ Validates:
 
 from typing import Any, Dict, List, Optional
 
-from src.agents.aptitude.constants import MIN_QUESTIONS_PER_TOPIC, TOPIC_SLUG_SET
+from src.agents.aptitude.constants import TOPIC_SLUG_SET
 from src.agents.aptitude.prompts import ANSWER_STRUCTURE_MAP
 
 VALID_CATEGORIES = {"QUANTITATIVE", "VERBAL", "REASONING", "INTERVIEW"}
 VALID_SUB_CATEGORIES = {
-    "ARITHMETIC_APTITUDE", "DATA_INTERPRETATION",
+    "ARITHMETIC_APTITUDE",
+    "DATA_INTERPRETATION",
     "VERBAL_ABILITY",
     "LOGICAL_REASONING",
-    "GD_ROUND", "HR_INTERVIEW",
+    "GD_ROUND",
+    "HR_INTERVIEW",
 }
 VALID_FORMATS = {"SPEED", "RULES", "PERSPECTIVE", "BEHAVIORAL"}
 VALID_DIFFICULTIES = {"EASY", "MEDIUM", "HARD"}
@@ -61,7 +63,9 @@ def validate_question_payload(question_data: Dict[str, Any]) -> Dict[str, Any]:
 
     difficulty = question_data.get("difficulty", "MEDIUM")
     if isinstance(difficulty, str) and difficulty.upper() not in VALID_DIFFICULTIES:
-        errors.append(f"Invalid difficulty: {difficulty}. Valid: {sorted(VALID_DIFFICULTIES)}")
+        errors.append(
+            f"Invalid difficulty: {difficulty}. Valid: {sorted(VALID_DIFFICULTIES)}"
+        )
 
     return {"valid": len(errors) == 0, "errors": errors}
 

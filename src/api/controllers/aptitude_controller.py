@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from src.agents.aptitude.constants import TOPIC_REGISTRY, resolve_topic
+from src.agents.aptitude.constants import TOPIC_REGISTRY
 from src.agents.aptitude.validators import validate_batch_payload
 from src.agents.aptitude.workflow import AptitudeWorkflow
 from src.core.config import config
@@ -76,8 +76,7 @@ class AptitudeController:
     def upload_study_guide(
         self,
         output_file: str,
-        api_url: Optional[str] = None,
-        admin_secret: Optional[str] = None,
+        environment: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Upload a generated study guide JSON to TBE-Web.
 
@@ -87,25 +86,21 @@ class AptitudeController:
         if not os.path.exists(output_file):
             raise FileNotFoundError(f"Output file not found: {output_file}")
 
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             data = json.load(f)
 
         topic = data.get("topic")
         content = data.get("content")
 
         if not topic or not content:
-            return {"ok": False, "message": "File must contain 'topic' and 'content' fields"}
+            return {
+                "ok": False,
+                "message": "File must contain 'topic' and 'content' fields",
+            }
 
-        secret = admin_secret or os.environ.get("TBE_ADMIN_SECRET", "TBEAdmin")
-
-        if api_url:
-            base_url = api_url.rstrip("/")
-            if "/api/v1" not in base_url:
-                base_url = f"{base_url}/api/v1"
-        else:
-            base_url = config.api_v1_url
-
+        base_url = self._resolve_upload_v1_url(environment)
         url = f"{base_url}/interview-prep/aptitude/study-guide"
+        print("HERE", config.admin_secret)
 
         try:
             response = requests.post(
@@ -113,7 +108,7 @@ class AptitudeController:
                 json={"topic": topic, "content": content},
                 headers={
                     "Content-Type": "application/json",
-                    "x-admin-secret": secret,
+                    "x-admin-secret": config.admin_secret,
                 },
                 timeout=30,
             )
@@ -129,15 +124,17 @@ class AptitudeController:
         except requests.ConnectionError:
             return {"ok": False, "message": f"Could not connect to {url}"}
         except requests.HTTPError as e:
-            return {"ok": False, "message": f"Upload failed ({e.response.status_code}): {e.response.text[:200]}"}
+            return {
+                "ok": False,
+                "message": f"Upload failed ({e.response.status_code}): {e.response.text[:200]}",
+            }
         except Exception as e:
             return {"ok": False, "message": f"Upload failed: {str(e)}"}
 
     def upload_to_api(
         self,
         output_file: str,
-        api_url: Optional[str] = None,
-        admin_secret: Optional[str] = None,
+        environment: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Upload generated JSON to TBE-Web bulk upload API.
 
@@ -147,10 +144,10 @@ class AptitudeController:
         if not os.path.exists(output_file):
             raise FileNotFoundError(f"Output file not found: {output_file}")
 
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             data = json.load(f)
 
-        payload = {
+        upload_payload = {
             "topic": data["topic"],
             "questions": [
                 {
@@ -165,28 +162,19 @@ class AptitudeController:
             ],
         }
 
-        if not payload["questions"]:
+        if not upload_payload["questions"]:
             return {"ok": False, "message": "No questions with answers to upload"}
 
-        secret = admin_secret or os.environ.get("TBE_ADMIN_SECRET", "TBEAdmin")
-        
-        # Handle base URL and prefix
-        if api_url:
-            base_url = api_url.rstrip("/")
-            if "/api/v1" not in base_url:
-                base_url = f"{base_url}/api/v1"
-        else:
-            base_url = config.api_v1_url
-            
+        base_url = self._resolve_upload_v1_url(environment)
         url = f"{base_url}/interview-prep/aptitude/upload"
 
         try:
             response = requests.post(
                 url,
-                json=payload,
+                json=upload_payload,
                 headers={
                     "Content-Type": "application/json",
-                    "x-admin-secret": secret,
+                    "x-admin-secret": config.admin_secret,
                 },
                 timeout=30,
             )
@@ -194,7 +182,7 @@ class AptitudeController:
             resp_data = response.json()
             return {
                 "ok": True,
-                "message": f"Uploaded {len(payload['questions'])} questions for topic '{payload['topic']}'",
+                "message": f"Uploaded {len(upload_payload['questions'])} questions for topic '{upload_payload['topic']}'",
                 "data": resp_data,
             }
         except requests.Timeout:
@@ -202,6 +190,14 @@ class AptitudeController:
         except requests.ConnectionError:
             return {"ok": False, "message": f"Could not connect to {url}"}
         except requests.HTTPError as e:
-            return {"ok": False, "message": f"Upload failed ({e.response.status_code}): {e.response.text[:200]}"}
+            return {
+                "ok": False,
+                "message": f"Upload failed ({e.response.status_code}): {e.response.text[:200]}",
+            }
         except Exception as e:
             return {"ok": False, "message": f"Upload failed: {str(e)}"}
+
+    @staticmethod
+    def _resolve_upload_v1_url(environment: Optional[str] = None) -> str:
+        """Resolve the target API v1 URL from environment name or config default."""
+        return f"{config.get_api_base_url(environment).rstrip('/')}/api/v1"

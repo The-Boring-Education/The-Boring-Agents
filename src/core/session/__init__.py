@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Session types
 # ---------------------------------------------------------------------------
 
+
 class SessionStatus(str, Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
@@ -113,12 +114,15 @@ class BaseSessionData:
 # Base session manager
 # ---------------------------------------------------------------------------
 
+
 class BaseSessionManager(ABC):
     """File-backed session manager. Subclasses implement _create_session_data."""
 
     def __init__(self, workflow_type: str, sessions_dir: Optional[str] = None):
         self.workflow_type = workflow_type
-        self.sessions_dir = sessions_dir or os.path.join(config.temp_dir, f"{workflow_type}_sessions")
+        self.sessions_dir = sessions_dir or os.path.join(
+            config.temp_dir, f"{workflow_type}_sessions"
+        )
         os.makedirs(self.sessions_dir, exist_ok=True)
 
     def _get_session_file(self, session_id: str) -> str:
@@ -139,7 +143,7 @@ class BaseSessionManager(ABC):
         if not os.path.exists(path):
             return None
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             logger.error("Error loading session %s: %s", session_id, e)
@@ -164,8 +168,11 @@ class BaseSessionManager(ABC):
                 raise
 
     def update_status(
-        self, session_id: str, status: SessionStatus,
-        current_step: Optional[str] = None, error: Optional[str] = None,
+        self,
+        session_id: str,
+        status: SessionStatus,
+        current_step: Optional[str] = None,
+        error: Optional[str] = None,
     ) -> None:
         session_data = self.get_session(session_id)
         if not session_data:
@@ -178,8 +185,12 @@ class BaseSessionManager(ABC):
         self.save_session(session_id, session_data)
 
     def update_progress(
-        self, session_id: str, completed: Optional[int] = None,
-        total: Optional[int] = None, current_step: Optional[str] = None, **kwargs,
+        self,
+        session_id: str,
+        completed: Optional[int] = None,
+        total: Optional[int] = None,
+        current_step: Optional[str] = None,
+        **kwargs,
     ) -> None:
         session_data = self.get_session(session_id)
         if not session_data:
@@ -198,7 +209,9 @@ class BaseSessionManager(ABC):
             progress[k] = v
         self.save_session(session_id, session_data)
 
-    def list_sessions(self, status: Optional[SessionStatus] = None) -> List[Dict[str, Any]]:
+    def list_sessions(
+        self, status: Optional[SessionStatus] = None
+    ) -> List[Dict[str, Any]]:
         if not os.path.exists(self.sessions_dir):
             return []
         sessions = []
@@ -208,7 +221,9 @@ class BaseSessionManager(ABC):
             data = self.get_session(fname.replace(".json", ""))
             if data and (status is None or data.get("status") == status.value):
                 sessions.append(data)
-        sessions.sort(key=lambda x: x.get("updated_at", x.get("created_at", "")), reverse=True)
+        sessions.sort(
+            key=lambda x: x.get("updated_at", x.get("created_at", "")), reverse=True
+        )
         return sessions
 
     def get_progress(self, session_id: str) -> Optional[Dict[str, Any]]:

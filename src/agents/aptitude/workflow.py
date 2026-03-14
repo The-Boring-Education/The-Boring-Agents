@@ -14,16 +14,14 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from src.core.config import config
 from src.agents.aptitude.constants import (
     MIN_QUESTIONS_PER_TOPIC,
     resolve_topic,
-    validate_topic_slug,
 )
 from src.agents.aptitude.generators import get_aptitude_generator
 from src.agents.aptitude.question_generator import AptitudeQuestionGenerator
 from src.agents.aptitude.study_guide_generator import AptitudeStudyGuideGenerator
-from src.agents.aptitude.validators import validate_answer_structure
+from src.core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +70,9 @@ class AptitudeWorkflow:
         generator = get_aptitude_generator(format_type)
 
         if not questions:
-            count = max(num_questions or MIN_QUESTIONS_PER_TOPIC, MIN_QUESTIONS_PER_TOPIC)
+            count = max(
+                num_questions or MIN_QUESTIONS_PER_TOPIC, MIN_QUESTIONS_PER_TOPIC
+            )
             logger.info(
                 "No questions provided — generating %d for '%s'...", count, topic_name
             )
@@ -81,7 +81,10 @@ class AptitudeWorkflow:
 
         logger.info(
             "Processing topic: %s [%s] (%s format, %d questions)",
-            topic_name, topic_slug, format_type, len(questions),
+            topic_name,
+            topic_slug,
+            format_type,
+            len(questions),
         )
 
         results: List[Dict[str, Any]] = []
@@ -92,8 +95,13 @@ class AptitudeWorkflow:
             else:
                 question_text = str(q_item)
                 options = []
-            
-            logger.info("Generating answer %d/%d: %s...", idx, len(questions), question_text[:60])
+
+            logger.info(
+                "Generating answer %d/%d: %s...",
+                idx,
+                len(questions),
+                question_text[:60],
+            )
 
             try:
                 answer = generator.generate_answer(
@@ -104,22 +112,26 @@ class AptitudeWorkflow:
 
                 difficulty = self._assign_difficulty(idx, len(questions))
 
-                results.append({
-                    "question": question_text,
-                    "options": options,
-                    "answer": answer,
-                    "difficulty": difficulty,
-                    "order": idx,
-                })
+                results.append(
+                    {
+                        "question": question_text,
+                        "options": options,
+                        "answer": answer,
+                        "difficulty": difficulty,
+                        "order": idx,
+                    }
+                )
             except Exception as e:
                 logger.error("Failed to generate answer for Q%d: %s", idx, e)
-                results.append({
-                    "question": question_text,
-                    "options": options,
-                    "answer": "",
-                    "difficulty": "MEDIUM",
-                    "order": idx,
-                })
+                results.append(
+                    {
+                        "question": question_text,
+                        "options": options,
+                        "answer": "",
+                        "difficulty": "MEDIUM",
+                        "order": idx,
+                    }
+                )
 
         upload_payload = {
             "topic": topic_slug,
@@ -209,20 +221,24 @@ class AptitudeWorkflow:
                     topic=topic_identifier,
                     num_questions=num_questions,
                 )
-                results.append({
-                    "topic": result["topic"],
-                    "status": "success",
-                    "outputFile": result.get("outputFile"),
-                    "totalQuestions": result["metadata"]["totalQuestions"],
-                    "successfulAnswers": result["metadata"]["successfulAnswers"],
-                })
+                results.append(
+                    {
+                        "topic": result["topic"],
+                        "status": "success",
+                        "outputFile": result.get("outputFile"),
+                        "totalQuestions": result["metadata"]["totalQuestions"],
+                        "successfulAnswers": result["metadata"]["successfulAnswers"],
+                    }
+                )
             except Exception as e:
                 logger.error("Failed to process topic '%s': %s", topic_identifier, e)
-                results.append({
-                    "topic": topic_identifier,
-                    "status": "failed",
-                    "error": str(e),
-                })
+                results.append(
+                    {
+                        "topic": topic_identifier,
+                        "status": "failed",
+                        "error": str(e),
+                    }
+                )
 
         summary_file = os.path.join(self.output_dir, "_batch_summary.json")
         summary = {
@@ -237,7 +253,9 @@ class AptitudeWorkflow:
 
         logger.info(
             "Batch complete: %d/%d successful, saved summary to %s",
-            summary["successful"], summary["totalTopics"], summary_file,
+            summary["successful"],
+            summary["totalTopics"],
+            summary_file,
         )
         return summary
 

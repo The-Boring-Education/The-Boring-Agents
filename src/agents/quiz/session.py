@@ -6,7 +6,7 @@ category metadata, question management, and output file tracking.
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from src.core.session import BaseSessionManager, ProgressInfo, SessionStatus
 

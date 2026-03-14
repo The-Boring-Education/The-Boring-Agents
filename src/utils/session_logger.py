@@ -26,7 +26,9 @@ def get_log_file_path(session_id: str) -> str:
     return os.path.join(directory, f"{session_id}.log")
 
 
-def append_log(session_id: str, event: str, meta: Optional[Dict[str, Any]] = None) -> None:
+def append_log(
+    session_id: str, event: str, meta: Optional[Dict[str, Any]] = None
+) -> None:
     """Append a single JSONL log entry for the session.
 
     Args:
@@ -57,7 +59,7 @@ def read_logs(session_id: str, limit: int = 200) -> List[Dict[str, Any]]:
 
     # Efficiently read last N lines
     lines: List[str] = []
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         lines = f.readlines()[-limit:]
 
     results: List[Dict[str, Any]] = []
@@ -71,4 +73,3 @@ def read_logs(session_id: str, limit: int = 200) -> List[Dict[str, Any]]:
             # Best effort: skip malformed lines
             continue
     return results
-

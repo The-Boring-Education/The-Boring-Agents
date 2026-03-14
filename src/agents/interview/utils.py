@@ -18,7 +18,11 @@ from src.agents.base import BaseAgent
 # ---------------------------------------------------------------------------
 
 ROADMAPS: List[str] = ["Frontend", "Backend", "Fullstack", "Tech"]
-INTERVIEW_QUESTION_FREQUENCY: List[str] = ["Most Asked", "Asked Frequently", "Asked Sometimes"]
+INTERVIEW_QUESTION_FREQUENCY: List[str] = [
+    "Most Asked",
+    "Asked Frequently",
+    "Asked Sometimes",
+]
 PRIORITY_LEVELS: List[str] = ["High", "Medium", "Low"]
 COMPANY_TYPES: List[str] = ["Startup", "MidSize", "MNC", "FAANG"]
 
@@ -26,6 +30,7 @@ COMPANY_TYPES: List[str] = ["Startup", "MidSize", "MNC", "FAANG"]
 # ---------------------------------------------------------------------------
 # Schema helpers
 # ---------------------------------------------------------------------------
+
 
 def generate_slug(name: str) -> str:
     return slugify(name, lowercase=True)
@@ -74,7 +79,9 @@ def validate_sheet_structure(sheet_data: Dict[str, Any]) -> tuple[bool, List[str
         if field not in sheet_data:
             errors.append(f"Missing required field: {field}")
     if "roadmap" in sheet_data and not validate_roadmap(sheet_data["roadmap"]):
-        errors.append(f"Invalid roadmap value: {sheet_data['roadmap']}. Must be one of {ROADMAPS}")
+        errors.append(
+            f"Invalid roadmap value: {sheet_data['roadmap']}. Must be one of {ROADMAPS}"
+        )
     for i, q in enumerate(sheet_data.get("questions", [])):
         errors.extend(validate_question_structure(q, i))
     return len(errors) == 0, errors
@@ -88,9 +95,13 @@ def validate_question_structure(question: Dict[str, Any], index: int = 0) -> Lis
     if "title" in question and len(question["title"]) > 100:
         errors.append(f"Question {index}: Title exceeds 100 characters")
     if "frequency" in question and not validate_frequency(question["frequency"]):
-        errors.append(f"Question {index}: Invalid frequency value: {question['frequency']}")
+        errors.append(
+            f"Question {index}: Invalid frequency value: {question['frequency']}"
+        )
     if "priority" in question and not validate_priority(question["priority"]):
-        errors.append(f"Question {index}: Invalid priority value: {question['priority']}")
+        errors.append(
+            f"Question {index}: Invalid priority value: {question['priority']}"
+        )
     if "companyTypes" in question:
         if not isinstance(question["companyTypes"], list):
             errors.append(f"Question {index}: companyTypes must be a list")
@@ -111,13 +122,20 @@ def validate_question_structure(question: Dict[str, Any], index: int = 0) -> Lis
 # QuestionGenerator
 # ---------------------------------------------------------------------------
 
+
 class QuestionGenerator(BaseAgent):
     """Generates interview questions via LLM based on sheet parameters."""
 
     def _get_prompt_templates(self) -> Dict[str, PromptTemplate]:
         return {
             "generate_questions": PromptTemplate(
-                input_variables=["name", "description", "agent_type", "question_count", "roadmap"],
+                input_variables=[
+                    "name",
+                    "description",
+                    "agent_type",
+                    "question_count",
+                    "roadmap",
+                ],
                 template="""
 You are an expert interview question generator for The Boring Education. Generate comprehensive interview questions based on the following requirements.
 
@@ -165,7 +183,9 @@ Questions:
             )
         }
 
-    def generate_content(self, content_type: str = "generate_questions", **kwargs) -> Dict[str, Any]:
+    def generate_content(
+        self, content_type: str = "generate_questions", **kwargs
+    ) -> Dict[str, Any]:
         if content_type == "generate_questions":
             return self.generate_questions(
                 name=kwargs.get("name", ""),
@@ -177,11 +197,20 @@ Questions:
         raise ValueError(f"Unknown content type: {content_type}")
 
     def generate_questions(
-        self, name: str, description: str, agent_type: str, question_count: int = 20, roadmap: str = "Tech",
+        self,
+        name: str,
+        description: str,
+        agent_type: str,
+        question_count: int = 20,
+        roadmap: str = "Tech",
     ) -> List[str]:
         prompt = self._format_prompt(
-            "generate_questions", name=name, description=description,
-            agent_type=agent_type, question_count=question_count, roadmap=roadmap,
+            "generate_questions",
+            name=name,
+            description=description,
+            agent_type=agent_type,
+            question_count=question_count,
+            roadmap=roadmap,
         )
         result = self._generate_with_prompt(prompt)
         return self._parse_questions(result, question_count)
@@ -196,7 +225,7 @@ Questions:
             if line[0].isdigit():
                 for i, ch in enumerate(line):
                     if ch in (".", ")", "-") and i > 0:
-                        q = line[i + 1:].strip()
+                        q = line[i + 1 :].strip()
                         break
                 else:
                     q = line
@@ -214,6 +243,7 @@ Questions:
 # ---------------------------------------------------------------------------
 # MetadataGenerator
 # ---------------------------------------------------------------------------
+
 
 class MetadataGenerator(BaseAgent):
     """Generates sheet and question metadata via LLM."""
@@ -281,25 +311,37 @@ Company Types: [Startup, MidSize, MNC, FAANG] (select relevant ones, comma-separ
             ),
         }
 
-    def generate_content(self, content_type: str = "sheet_meta", **kwargs) -> Dict[str, Any]:
+    def generate_content(
+        self, content_type: str = "sheet_meta", **kwargs
+    ) -> Dict[str, Any]:
         if content_type == "sheet_meta":
             return self.generate_sheet_meta(
-                name=kwargs.get("name", ""), description=kwargs.get("description", ""),
+                name=kwargs.get("name", ""),
+                description=kwargs.get("description", ""),
                 roadmap=kwargs.get("roadmap", "Tech"),
             )
         if content_type == "question_metadata":
             return self.generate_question_metadata(
-                question=kwargs.get("question", ""), topic=kwargs.get("topic", ""),
+                question=kwargs.get("question", ""),
+                topic=kwargs.get("topic", ""),
                 context=kwargs.get("context", ""),
             )
         raise ValueError(f"Unknown content type: {content_type}")
 
-    def generate_sheet_meta(self, name: str, description: str, roadmap: str = "Tech") -> str:
-        prompt = self._format_prompt("sheet_meta", name=name, description=description, roadmap=roadmap)
+    def generate_sheet_meta(
+        self, name: str, description: str, roadmap: str = "Tech"
+    ) -> str:
+        prompt = self._format_prompt(
+            "sheet_meta", name=name, description=description, roadmap=roadmap
+        )
         return self._generate_with_prompt(prompt).strip()
 
-    def generate_question_metadata(self, question: str, topic: str, context: str = "") -> Dict[str, Any]:
-        prompt = self._format_prompt("question_metadata", question=question, topic=topic, context=context)
+    def generate_question_metadata(
+        self, question: str, topic: str, context: str = ""
+    ) -> Dict[str, Any]:
+        prompt = self._format_prompt(
+            "question_metadata", question=question, topic=topic, context=context
+        )
         result = self._generate_with_prompt(prompt)
         metadata = self._parse_metadata_result(result)
         if not validate_frequency(metadata["frequency"]):
@@ -312,7 +354,11 @@ Company Types: [Startup, MidSize, MNC, FAANG] (select relevant ones, comma-separ
 
     @staticmethod
     def _parse_metadata_result(result: str) -> Dict[str, Any]:
-        metadata: Dict[str, Any] = {"frequency": "Asked Sometimes", "priority": "Medium", "companyTypes": ["Startup", "MNC"]}
+        metadata: Dict[str, Any] = {
+            "frequency": "Asked Sometimes",
+            "priority": "Medium",
+            "companyTypes": ["Startup", "MNC"],
+        }
         for line in result.split("\n"):
             line = line.strip()
             if ":" not in line:
@@ -324,7 +370,9 @@ Company Types: [Startup, MidSize, MNC, FAANG] (select relevant ones, comma-separ
             elif key == "priority" and value in PRIORITY_LEVELS:
                 metadata["priority"] = value
             elif key == "company types":
-                valid = [ct.strip() for ct in value.split(",") if ct.strip() in COMPANY_TYPES]
+                valid = [
+                    ct.strip() for ct in value.split(",") if ct.strip() in COMPANY_TYPES
+                ]
                 if valid:
                     metadata["companyTypes"] = valid
         return metadata

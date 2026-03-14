@@ -8,7 +8,7 @@ Contains:
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_core.prompts import PromptTemplate
 
@@ -35,6 +35,7 @@ class AnswerAgentType(Enum):
 # ---------------------------------------------------------------------------
 # MDX formatting (inlined — single consumer)
 # ---------------------------------------------------------------------------
+
 
 def format_answer_as_mdx(answer: str) -> str:
     """Convert raw LLM answer to clean MDX."""
@@ -85,7 +86,12 @@ def _fix_lists(text: str) -> str:
         stripped = line.strip()
         if (stripped.startswith("- ") or stripped.startswith("* ")) and i > 0:
             prev = lines[i - 1].strip()
-            if prev and not prev.startswith("-") and not prev.startswith("*") and not prev.startswith("#"):
+            if (
+                prev
+                and not prev.startswith("-")
+                and not prev.startswith("*")
+                and not prev.startswith("#")
+            ):
                 result.append("")
         result.append(line)
     return "\n".join(result)
@@ -100,7 +106,9 @@ def _fix_spacing(text: str) -> str:
 def validate_mdx_structure(mdx_content: str) -> Dict[str, Any]:
     lines = mdx_content.split("\n")
     headers = [l.strip() for l in lines if l.strip().startswith("#")]
-    code_starts = sum(1 for l in lines if l.strip().startswith("```") and len(l.strip()) > 3)
+    code_starts = sum(
+        1 for l in lines if l.strip().startswith("```") and len(l.strip()) > 3
+    )
     code_ends = sum(1 for l in lines if l.strip() == "```")
     return {
         "valid": True,
@@ -116,6 +124,7 @@ def validate_mdx_structure(mdx_content: str) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Base answer generator
 # ---------------------------------------------------------------------------
+
 
 class BaseAnswerGenerator(BaseAgent, ABC):
     """Abstract base for answer generators.
@@ -145,8 +154,11 @@ class BaseAnswerGenerator(BaseAgent, ABC):
             company_types = ["Startup", "MNC"]
         self.logger.info("Generating answer for: %s...", question[:50])
         prompt = self._get_answer_prompt_template().format(
-            question=question, topic=topic, difficulty=difficulty,
-            frequency=frequency, priority=priority,
+            question=question,
+            topic=topic,
+            difficulty=difficulty,
+            frequency=frequency,
+            priority=priority,
             company_types=", ".join(company_types) if company_types else "All types",
         )
         raw = self._generate_with_prompt(prompt)
@@ -155,7 +167,9 @@ class BaseAnswerGenerator(BaseAgent, ABC):
         self.logger.info("Answer generated successfully")
         return mdx
 
-    def generate_content(self, content_type: str = "answer", **kwargs) -> Dict[str, Any]:
+    def generate_content(
+        self, content_type: str = "answer", **kwargs
+    ) -> Dict[str, Any]:
         if content_type == "answer":
             answer = self.generate_answer(
                 question=kwargs.get("question", ""),
@@ -168,9 +182,13 @@ class BaseAnswerGenerator(BaseAgent, ABC):
             return {"status": "success", "answer": answer, "content_type": "answer"}
         raise ValueError(f"Unknown content type: {content_type}")
 
-    def _apply_quality_improvements(self, answer: str, question: str, topic: str, difficulty: str) -> str:
+    def _apply_quality_improvements(
+        self, answer: str, question: str, topic: str, difficulty: str
+    ) -> str:
         required = self._get_answer_structure()
-        missing = [name for name, kw in required.items() if kw.lower() not in answer.lower()]
+        missing = [
+            name for name, kw in required.items() if kw.lower() not in answer.lower()
+        ]
         for section in missing:
             prompt = f"Generate a brief {section} section for this interview question: {question}\nTopic: {topic}"
             answer += f"\n\n{self._generate_with_prompt(prompt)}"
@@ -179,6 +197,7 @@ class BaseAnswerGenerator(BaseAgent, ABC):
     @staticmethod
     def _ensure_proper_formatting(answer: str) -> str:
         import re
+
         # Normalize all markdown headers (h1-h6) to h5 in a single pass
         answer = re.sub(
             r"^(#{1,6})\s+",
@@ -210,7 +229,14 @@ class BaseAnswerGenerator(BaseAgent, ABC):
 # Concrete generators
 # ---------------------------------------------------------------------------
 
-_PROMPT_VARS = ["question", "topic", "difficulty", "frequency", "priority", "company_types"]
+_PROMPT_VARS = [
+    "question",
+    "topic",
+    "difficulty",
+    "frequency",
+    "priority",
+    "company_types",
+]
 
 
 class GenericAnswerGenerator(BaseAnswerGenerator):
@@ -231,7 +257,9 @@ class DSAAnswerGenerator(BaseAnswerGenerator):
 
 class SystemDesignAnswerGenerator(BaseAnswerGenerator):
     def _get_answer_prompt_template(self) -> PromptTemplate:
-        return PromptTemplate(input_variables=_PROMPT_VARS, template=SYSTEM_DESIGN_PROMPT)
+        return PromptTemplate(
+            input_variables=_PROMPT_VARS, template=SYSTEM_DESIGN_PROMPT
+        )
 
     def _get_answer_structure(self) -> Dict[str, str]:
         return SYSTEM_DESIGN_ANSWER_STRUCTURE
@@ -246,7 +274,9 @@ class TechAnswerGenerator(BaseAnswerGenerator):
         self.custom_params["technology"] = self.technology
 
     def _get_answer_prompt_template(self) -> PromptTemplate:
-        return PromptTemplate(input_variables=_PROMPT_VARS, template=get_tech_prompt(self.technology))
+        return PromptTemplate(
+            input_variables=_PROMPT_VARS, template=get_tech_prompt(self.technology)
+        )
 
     def _get_answer_structure(self) -> Dict[str, str]:
         return TECH_ANSWER_STRUCTURE
@@ -265,8 +295,12 @@ class TechAnswerGenerator(BaseAnswerGenerator):
             self.technology = technology
             self.custom_params["technology"] = technology
         return super().generate_answer(
-            question=question, topic=topic, difficulty=difficulty,
-            frequency=frequency, priority=priority, company_types=company_types,
+            question=question,
+            topic=topic,
+            difficulty=difficulty,
+            frequency=frequency,
+            priority=priority,
+            company_types=company_types,
         )
 
 

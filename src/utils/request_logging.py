@@ -8,7 +8,7 @@ Used across all API routes for consistent logging patterns.
 import json
 import logging
 from datetime import datetime
-from typing import Optional, Any
+from typing import Any, Optional
 
 from fastapi import Request
 
@@ -21,10 +21,10 @@ env_manager = get_env_manager()
 def get_request_id(request: Request) -> str:
     """
     Extract request ID from request state.
-    
+
     Args:
         request: FastAPI Request object
-        
+
     Returns:
         Request ID string or 'unknown' if not set
     """
@@ -36,11 +36,11 @@ def log_action(
     action: str,
     level: str = "INFO",
     session_id: Optional[str] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Log an action with structured JSON format.
-    
+
     Provides consistent logging across all API routes with:
     - Timestamp in ISO format
     - Log level
@@ -49,7 +49,7 @@ def log_action(
     - Request ID (if request provided)
     - Session ID (if provided)
     - Additional context via kwargs
-    
+
     Args:
         request: Optional FastAPI Request object
         action: Name of the action being performed
@@ -63,19 +63,18 @@ def log_action(
         "action": action,
         "environment": env_manager.get("ENVIRONMENT", "dev"),
     }
-    
+
     if request:
         log_data["request_id"] = get_request_id(request)
     if session_id:
         log_data["session_id"] = session_id
-    
+
     log_data.update(kwargs)
     log_message = json.dumps(log_data)
-    
+
     if level == "ERROR":
         logger.error(log_message)
     elif level == "WARNING":
         logger.warning(log_message)
     else:
         logger.info(log_message)
-

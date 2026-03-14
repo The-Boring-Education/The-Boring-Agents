@@ -105,8 +105,7 @@ async def upload_study_guide(payload: AptitudeUploadRequest, request: Request):
     try:
         result = controller.upload_study_guide(
             output_file=payload.output_file,
-            api_url=payload.api_url,
-            admin_secret=payload.admin_secret,
+            environment=payload.environment,
         )
         return result
     except FileNotFoundError as e:
@@ -123,8 +122,7 @@ async def upload_to_api(payload: AptitudeUploadRequest, request: Request):
     try:
         result = controller.upload_to_api(
             output_file=payload.output_file,
-            api_url=payload.api_url,
-            admin_secret=payload.admin_secret,
+            environment=payload.environment,
         )
         return result
     except FileNotFoundError as e:

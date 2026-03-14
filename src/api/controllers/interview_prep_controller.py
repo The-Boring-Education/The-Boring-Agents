@@ -1,26 +1,27 @@
 """Interview preparation controller."""
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from fastapi import HTTPException, BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
 
 from src.agents.interview.workflow import InterviewWorkflowOrchestrator
-from src.core.session import SessionStatus
 from src.api.models.interview_prep_models import (
     CreateSheetRequest,
-    TopicGenerationRequest,
-    SessionResponse,
-    TopicTemplate,
     RoadmapSuggestion,
+    SessionResponse,
     SimpleStatus,
+    TopicGenerationRequest,
+    TopicTemplate,
     UploadSheetRequest,
     ValidateSheetRequest,
 )
-
 from src.core.constants import INTERVIEW_TEMPLATES, ROADMAP_SUGGESTIONS
+from src.core.session import SessionStatus
 
 logger = logging.getLogger(__name__)
+
+
 class InterviewPrepController:
     """Controller for interview preparation operations."""
 
@@ -33,7 +34,9 @@ class InterviewPrepController:
 
     # -- sheet / topic generation ---------------------------------------------
 
-    def create_sheet(self, payload: CreateSheetRequest, background_tasks: BackgroundTasks) -> SessionResponse:
+    def create_sheet(
+        self, payload: CreateSheetRequest, background_tasks: BackgroundTasks
+    ) -> SessionResponse:
         try:
             session_id = self.orchestrator.start_generation(
                 name=payload.name,
@@ -44,12 +47,17 @@ class InterviewPrepController:
                 question_count=payload.question_count,
             )
             background_tasks.add_task(self._execute_workflow_background, session_id)
-            return SessionResponse(sessionId=session_id, message=f"Started generating interview sheet: {payload.name}")
+            return SessionResponse(
+                sessionId=session_id,
+                message=f"Started generating interview sheet: {payload.name}",
+            )
         except Exception as e:
             logger.error("Error creating sheet: %s", e)
             raise HTTPException(status_code=400, detail=str(e))
 
-    def generate_topic(self, payload: TopicGenerationRequest, background_tasks: BackgroundTasks) -> SessionResponse:
+    def generate_topic(
+        self, payload: TopicGenerationRequest, background_tasks: BackgroundTasks
+    ) -> SessionResponse:
         try:
             description = f"Interview questions for {payload.topic}. Difficulty: {payload.difficulty}. Roadmap: {payload.roadmap}."
             session_id = self.orchestrator.session_manager.create_session(
@@ -63,7 +71,10 @@ class InterviewPrepController:
                 generate_answers=payload.generate_answers,
             )
             background_tasks.add_task(self._execute_workflow_background, session_id)
-            return SessionResponse(sessionId=session_id, message=f"Started generating questions for topic: {payload.topic}")
+            return SessionResponse(
+                sessionId=session_id,
+                message=f"Started generating questions for topic: {payload.topic}",
+            )
         except Exception as e:
             logger.error("Error generating topic: %s", e)
             raise HTTPException(status_code=400, detail=str(e))
@@ -89,22 +100,34 @@ class InterviewPrepController:
     def cancel_session(self, session_id: str) -> Dict[str, str]:
         try:
             session = self.orchestrator.get_session_status(session_id)
-            if session["status"] in ("in_progress", "pending", "metadata_generating", "questions_generating", "answers_generating"):
+            if session["status"] in (
+                "in_progress",
+                "pending",
+                "metadata_generating",
+                "questions_generating",
+                "answers_generating",
+            ):
                 self.orchestrator.session_manager.update_status(
-                    session_id, SessionStatus.FAILED,
-                    current_step="Cancelled by user", error="Cancelled by user",
+                    session_id,
+                    SessionStatus.FAILED,
+                    current_step="Cancelled by user",
+                    error="Cancelled by user",
                 )
             return {"message": "Session cancelled"}
         except ValueError:
             raise HTTPException(status_code=404, detail="Session not found")
 
-    def retry_session(self, session_id: str, background_tasks: BackgroundTasks) -> SessionResponse:
+    def retry_session(
+        self, session_id: str, background_tasks: BackgroundTasks
+    ) -> SessionResponse:
         try:
             status = self.orchestrator.get_session_status(session_id)
             if status["status"] == "completed":
                 raise HTTPException(status_code=400, detail="Session already completed")
             background_tasks.add_task(self._execute_workflow_background, session_id)
-            return SessionResponse(sessionId=session_id, message=f"Resuming session: {session_id}")
+            return SessionResponse(
+                sessionId=session_id, message=f"Resuming session: {session_id}"
+            )
         except ValueError:
             raise HTTPException(status_code=404, detail="Session not found")
 
@@ -117,16 +140,27 @@ class InterviewPrepController:
 
     # -- question CRUD --------------------------------------------------------
 
-    def update_question(self, session_id: str, question_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+    def update_question(
+        self, session_id: str, question_id: str, updates: Dict[str, Any]
+    ) -> Dict[str, Any]:
         try:
-            return self.orchestrator.session_manager.update_question_in_session(session_id, question_id, updates)
+            return self.orchestrator.session_manager.update_question_in_session(
+                session_id, question_id, updates
+            )
         except ValueError as e:
             raise HTTPException(status_code=404, detail=str(e))
         except Exception as e:
-            logger.error("Error updating question %s in session %s: %s", question_id, session_id, e)
+            logger.error(
+                "Error updating question %s in session %s: %s",
+                question_id,
+                session_id,
+                e,
+            )
             raise HTTPException(status_code=500, detail="Failed to update question")
 
-    def update_session_sheet(self, session_id: str, sheet_data: Dict[str, Any]) -> Dict[str, str]:
+    def update_session_sheet(
+        self, session_id: str, sheet_data: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Update the entire sheet data for a session."""
         try:
             self.orchestrator.session_manager.update_sheet_data(session_id, sheet_data)
@@ -135,37 +169,61 @@ class InterviewPrepController:
             raise HTTPException(status_code=404, detail=str(e))
         except Exception as e:
             logger.error("Error updating sheet data for session %s: %s", session_id, e)
-            raise HTTPException(status_code=500, detail="Failed to update session sheet")
+            raise HTTPException(
+                status_code=500, detail="Failed to update session sheet"
+            )
 
     def get_question(self, session_id: str, question_id: str) -> Dict[str, Any]:
         try:
-            question = self.orchestrator.session_manager.get_question(session_id, question_id)
+            question = self.orchestrator.session_manager.get_question(
+                session_id, question_id
+            )
             if not question:
                 raise HTTPException(status_code=404, detail="Question not found")
             return question
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Error getting question %s in session %s: %s", question_id, session_id, e)
+            logger.error(
+                "Error getting question %s in session %s: %s",
+                question_id,
+                session_id,
+                e,
+            )
             raise HTTPException(status_code=500, detail="Failed to get question")
 
     def delete_question(self, session_id: str, question_id: str) -> Dict[str, Any]:
         try:
-            if not self.orchestrator.session_manager.delete_question(session_id, question_id):
+            if not self.orchestrator.session_manager.delete_question(
+                session_id, question_id
+            ):
                 raise HTTPException(status_code=404, detail="Question not found")
             session = self.orchestrator.session_manager.get_session(session_id)
-            return {"message": "Question deleted", "remaining_questions": len(session.get("questions", [])) if session else 0}
+            return {
+                "message": "Question deleted",
+                "remaining_questions": len(session.get("questions", []))
+                if session
+                else 0,
+            }
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Error deleting question %s in session %s: %s", question_id, session_id, e)
+            logger.error(
+                "Error deleting question %s in session %s: %s",
+                question_id,
+                session_id,
+                e,
+            )
             raise HTTPException(status_code=500, detail="Failed to delete question")
 
     def add_question(self, session_id: str, question: Dict[str, Any]) -> Dict[str, Any]:
         try:
             added = self.orchestrator.session_manager.add_question(session_id, question)
             session = self.orchestrator.session_manager.get_session(session_id)
-            return {"question": added, "total_questions": len(session.get("questions", [])) if session else 0}
+            return {
+                "question": added,
+                "total_questions": len(session.get("questions", [])) if session else 0,
+            }
         except ValueError as e:
             raise HTTPException(status_code=404, detail=str(e))
         except Exception as e:
@@ -179,27 +237,29 @@ class InterviewPrepController:
         try:
             sheet_data = payload.sheetData
             errors = []
-            
+
             # Required core fields
             required_fields = ["name", "slug", "description", "questions"]
             for field in required_fields:
                 if field not in sheet_data:
                     errors.append(f"Missing required field: {field}")
-                    
+
             # Validate questions
             questions = sheet_data.get("questions", [])
             if not questions:
                 errors.append("Interview sheet must have at least one question")
             else:
                 for i, q in enumerate(questions):
-                    prefix = f"Question {i+1}"
+                    prefix = f"Question {i + 1}"
                     for q_field in ["title", "question", "answer", "frequency"]:
                         if q_field not in q:
                             errors.append(f"{prefix}: Missing field '{q_field}'")
-                            
+
             if errors:
-                return SimpleStatus(ok=False, message=f"Validation failed: {'; '.join(errors[:5])}")
-                
+                return SimpleStatus(
+                    ok=False, message=f"Validation failed: {'; '.join(errors[:5])}"
+                )
+
             return SimpleStatus(ok=True, message="Validation successful")
         except Exception as e:
             logger.error("Validation error: %s", e)
@@ -208,46 +268,61 @@ class InterviewPrepController:
     def upload_sheet(self, payload: UploadSheetRequest) -> SimpleStatus:
         """Upload interview sheet to the database via API."""
         import requests
+
         from src.core.config import config
-        
+
         try:
-            # Convert to dict for validation payload
-            sheet_dict = payload.sheetData.model_dump() if hasattr(payload.sheetData, 'model_dump') else payload.sheetData
-            
-            # Validate first
+            sheet_dict = (
+                payload.sheetData.model_dump()
+                if hasattr(payload.sheetData, "model_dump")
+                else payload.sheetData
+            )
+
             validation = self.validate_sheet(ValidateSheetRequest(sheetData=sheet_dict))
             if not validation.ok:
                 return validation
-                
-            api_url = (payload.api_url or config.api_base_url).rstrip('/')
+
+            api_url = self._resolve_upload_url(payload.environment)
             url = f"{api_url}/api/v1/interview-prep/upload"
-            
-            headers = {
-                'x-admin-secret': payload.admin_secret or 'TBEAdmin',
-                'Content-Type': 'application/json'
-            }
-            
-            # Pack payload exactly as upload.ts would output
+
+            headers = {"x-admin-secret": config.admin_secret, "Content-Type": "application/json"}
+
             upload_body = {
-                "sessionId": "direct-upload",  # The agent upload endpoint doesn't strictly need a genuine session ID
+                "sessionId": "direct-upload",
                 "metadata": payload.metadata,
-                "sheetData": sheet_dict
+                "sheetData": sheet_dict,
             }
-            
+
             response = requests.post(url, json=upload_body, headers=headers, timeout=30)
-            
+
             if response.status_code in [200, 201]:
-                return SimpleStatus(ok=True, message="Interview sheet uploaded successfully")
+                return SimpleStatus(
+                    ok=True, message="Interview sheet uploaded successfully"
+                )
             else:
-                return SimpleStatus(ok=False, message=f"Upload failed: HTTP {response.status_code} - {response.text}")
-                
+                return SimpleStatus(
+                    ok=False,
+                    message=f"Upload failed: HTTP {response.status_code} - {response.text}",
+                )
+
         except requests.exceptions.Timeout:
-            return SimpleStatus(ok=False, message="Upload timeout - API server may be slow")
+            return SimpleStatus(
+                ok=False, message="Upload timeout - API server may be slow"
+            )
         except requests.exceptions.ConnectionError:
-            return SimpleStatus(ok=False, message="Connection error - check if API server is running")
+            return SimpleStatus(
+                ok=False, message="Connection error - check if API server is running"
+            )
         except Exception as e:
             logger.error("Upload handler error: %s", e)
             raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+    @staticmethod
+    def _resolve_upload_url(environment: Optional[str] = None) -> str:
+        """Resolve the target API base URL from environment name or config default."""
+        from src.core.config import config
+
+        return config.get_api_base_url(environment).rstrip("/")
 
     # -- templates ------------------------------------------------------------
 
@@ -278,7 +353,9 @@ class InterviewPrepController:
             "status": session["status"],
             "progress": session.get("progress", {}),
             "startedAt": session.get("created_at"),
-            "completedAt": session.get("updated_at") if session["status"] == "completed" else None,
+            "completedAt": session.get("updated_at")
+            if session["status"] == "completed"
+            else None,
             "outputFile": session.get("output_file"),
             "sheetData": session.get("sheet_data"),
             "error": session.get("error"),

@@ -11,6 +11,14 @@ from typing import Any, Dict, List, Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
 
+from src.agents.interview.utils import generate_slug
+from src.agents.quiz.generators import (
+    QuizAgentType,
+    QuizDifficulty,
+    QuizMetadataGenerator,
+    QuizQuestionGenerator,
+)
+from src.agents.quiz.session import QuizSessionManager
 from src.core.config import config
 from src.core.orchestrator import (
     BaseWorkflowOrchestrator,
@@ -20,14 +28,6 @@ from src.core.orchestrator import (
     log_node_execution,
 )
 from src.core.session import SessionStatus
-from src.agents.quiz.generators import (
-    QuizAgentType,
-    QuizDifficulty,
-    QuizMetadataGenerator,
-    QuizQuestionGenerator,
-)
-from src.agents.quiz.session import QuizSessionManager
-from src.agents.interview.utils import generate_slug
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. State
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class QuizWorkflowState(TypedDict):
     session_id: str
@@ -103,7 +104,9 @@ def state_from_session(session_data: Dict[str, Any]) -> QuizWorkflowState:
         "target_audience": session_data.get("target_audience", "developers"),
         "difficulty": session_data.get("difficulty", "medium"),
         "status": session_data.get("status", "pending"),
-        "current_step": session_data.get("progress", {}).get("current_step", "Initializing..."),
+        "current_step": session_data.get("progress", {}).get(
+            "current_step", "Initializing..."
+        ),
         "error": None,
         "category_metadata": session_data.get("category_metadata"),
         "questions": session_data.get("questions", []),
@@ -146,7 +149,9 @@ def generate_questions_node(state: QuizWorkflowState) -> Dict[str, Any]:
     session_id = state["session_id"]
 
     if check_skip_condition(state, "questions", check_func=lambda q: q and len(q) > 0):
-        log_node_execution("generate_questions", session_id, "skipping (already generated)")
+        log_node_execution(
+            "generate_questions", session_id, "skipping (already generated)"
+        )
         return {
             "status": "metadata_generating",
             "current_step": "Generating category metadata...",
@@ -177,7 +182,9 @@ def generate_questions_node(state: QuizWorkflowState) -> Dict[str, Any]:
         "questions": questions,
         "status": "metadata_generating",
         "current_step": "Generating category metadata...",
-        "progress": get_progress_update(len(questions), state["question_count"], "Questions generated"),
+        "progress": get_progress_update(
+            len(questions), state["question_count"], "Questions generated"
+        ),
     }
 
 
@@ -186,7 +193,9 @@ def generate_category_metadata_node(state: QuizWorkflowState) -> Dict[str, Any]:
     session_id = state["session_id"]
 
     if check_skip_condition(state, "category_metadata"):
-        log_node_execution("generate_category_metadata", session_id, "skipping (already generated)")
+        log_node_execution(
+            "generate_category_metadata", session_id, "skipping (already generated)"
+        )
         return {
             "status": "finalizing",
             "current_step": "Finalizing quiz...",
@@ -232,7 +241,9 @@ def persist_state_node(state: QuizWorkflowState) -> Dict[str, Any]:
 def finalize_quiz_node(state: QuizWorkflowState) -> Dict[str, Any]:
     session_id = state["session_id"]
 
-    if check_skip_condition(state, "output_file") and check_skip_condition(state, "quiz_data"):
+    if check_skip_condition(state, "output_file") and check_skip_condition(
+        state, "quiz_data"
+    ):
         log_node_execution("finalize", session_id, "skipping (already finalized)")
         return {"status": "completed", "current_step": "Quiz completed"}
 
@@ -241,7 +252,9 @@ def finalize_quiz_node(state: QuizWorkflowState) -> Dict[str, Any]:
     category_metadata = state.get("category_metadata") or {}
     quiz_data = {
         "categoryName": category_metadata.get("categoryName", state.get("topic", "")),
-        "categoryDescription": category_metadata.get("categoryDescription", state.get("description", "")),
+        "categoryDescription": category_metadata.get(
+            "categoryDescription", state.get("description", "")
+        ),
         "categoryIcon": category_metadata.get("categoryIcon", ""),
         "questions": state["questions"],
         "isActive": True,
@@ -257,7 +270,9 @@ def finalize_quiz_node(state: QuizWorkflowState) -> Dict[str, Any]:
 
     sm = _get_session_manager()
     sm.set_output_file(session_id, output_file, quiz_data)
-    sm.update_status(session_id, SessionStatus.COMPLETED, current_step="Quiz finalized and saved")
+    sm.update_status(
+        session_id, SessionStatus.COMPLETED, current_step="Quiz finalized and saved"
+    )
 
     return {
         "quiz_data": quiz_data,
@@ -271,8 +286,11 @@ def finalize_quiz_node(state: QuizWorkflowState) -> Dict[str, Any]:
 # 3. Graph
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def create_workflow_graph():
-    wf = StateGraph[QuizWorkflowState, None, QuizWorkflowState, QuizWorkflowState](QuizWorkflowState)
+    wf = StateGraph[QuizWorkflowState, None, QuizWorkflowState, QuizWorkflowState](
+        QuizWorkflowState
+    )
 
     wf.add_node("generate_questions", generate_questions_node)
     wf.add_node("persist_after_questions", persist_state_node)
@@ -337,10 +355,12 @@ class QuizWorkflowOrchestrator(BaseWorkflowOrchestrator):
         base = super().get_session_status(session_id)
         data = self.session_manager.get_session(session_id)
         if data:
-            base.update({
-                "topic": data.get("topic"),
-                "description": data.get("description"),
-                "difficulty": data.get("difficulty"),
-                "target_audience": data.get("target_audience"),
-            })
+            base.update(
+                {
+                    "topic": data.get("topic"),
+                    "description": data.get("description"),
+                    "difficulty": data.get("difficulty"),
+                    "target_audience": data.get("target_audience"),
+                }
+            )
         return base

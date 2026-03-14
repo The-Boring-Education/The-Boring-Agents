@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Enums (canonical definitions for the agent layer)
 # ---------------------------------------------------------------------------
 
+
 class QuizAgentType(Enum):
     GENERIC = "generic"
     TECH = "tech"
@@ -46,6 +47,7 @@ class QuizDifficulty(Enum):
 # ---------------------------------------------------------------------------
 # Private JSON parsing helpers
 # ---------------------------------------------------------------------------
+
 
 def _parse_json_object(response: str) -> Optional[Dict[str, Any]]:
     """Extract the first JSON object from an LLM response string."""
@@ -87,6 +89,7 @@ def _get_default_icon(topic: str) -> str:
 # QuizMetadataGenerator
 # ---------------------------------------------------------------------------
 
+
 class QuizMetadataGenerator(BaseAgent):
     """Generates quiz category metadata (name, description, icon)."""
 
@@ -98,7 +101,9 @@ class QuizMetadataGenerator(BaseAgent):
             ),
         }
 
-    def generate_content(self, content_type: str = "generate_category_metadata", **kwargs) -> Dict[str, Any]:
+    def generate_content(
+        self, content_type: str = "generate_category_metadata", **kwargs
+    ) -> Dict[str, Any]:
         if content_type == "generate_category_metadata":
             return self.generate_category_metadata(
                 topic=kwargs.get("topic", ""),
@@ -156,22 +161,37 @@ class QuizMetadataGenerator(BaseAgent):
 # QuizQuestionGenerator
 # ---------------------------------------------------------------------------
 
+
 class QuizQuestionGenerator(BaseAgent):
     """Generates quiz questions with multiple-choice options."""
 
     def _get_prompt_templates(self) -> Dict[str, PromptTemplate]:
         return {
             "generate_question": PromptTemplate(
-                input_variables=["topic", "concept", "difficulty", "target_audience", "question_type"],
+                input_variables=[
+                    "topic",
+                    "concept",
+                    "difficulty",
+                    "target_audience",
+                    "question_type",
+                ],
                 template=SINGLE_QUESTION_PROMPT,
             ),
             "generate_batch_questions": PromptTemplate(
-                input_variables=["topic", "question_count", "difficulty", "target_audience", "concepts"],
+                input_variables=[
+                    "topic",
+                    "question_count",
+                    "difficulty",
+                    "target_audience",
+                    "concepts",
+                ],
                 template=BATCH_QUESTIONS_PROMPT,
             ),
         }
 
-    def generate_content(self, content_type: str = "generate_question", **kwargs) -> Dict[str, Any]:
+    def generate_content(
+        self, content_type: str = "generate_question", **kwargs
+    ) -> Dict[str, Any]:
         if content_type == "generate_question":
             return self.generate_question(
                 topic=kwargs.get("topic", ""),
@@ -198,7 +218,9 @@ class QuizQuestionGenerator(BaseAgent):
         target_audience: str = "developers",
         question_type: str = "conceptual",
     ) -> Dict[str, Any]:
-        diff_value = difficulty.value if isinstance(difficulty, QuizDifficulty) else difficulty
+        diff_value = (
+            difficulty.value if isinstance(difficulty, QuizDifficulty) else difficulty
+        )
         prompt = self._format_prompt(
             "generate_question",
             topic=topic,
@@ -227,7 +249,9 @@ class QuizQuestionGenerator(BaseAgent):
         if concepts is None:
             concepts = [f"{topic} concept {i + 1}" for i in range(question_count)]
 
-        diff_value = difficulty.value if isinstance(difficulty, QuizDifficulty) else difficulty
+        diff_value = (
+            difficulty.value if isinstance(difficulty, QuizDifficulty) else difficulty
+        )
         concepts_str = "\n".join(f"- {c}" for c in concepts[:20])
 
         prompt = self._format_prompt(
@@ -249,7 +273,11 @@ class QuizQuestionGenerator(BaseAgent):
             questions = []
             question_types = ("conceptual", "code_based", "scenario")
             for i in range(question_count):
-                concept = concepts[i % len(concepts)] if concepts else f"{topic} concept {i + 1}"
+                concept = (
+                    concepts[i % len(concepts)]
+                    if concepts
+                    else f"{topic} concept {i + 1}"
+                )
                 try:
                     q = self.generate_question(
                         topic=topic,
@@ -276,8 +304,15 @@ class QuizQuestionGenerator(BaseAgent):
 # Question validation (shared)
 # ---------------------------------------------------------------------------
 
+
 def _validate_question(question: Dict[str, Any]) -> Dict[str, Any]:
-    required = ("question", "options", "correctAnswer", "explanation", "detailedExplanation")
+    required = (
+        "question",
+        "options",
+        "correctAnswer",
+        "explanation",
+        "detailedExplanation",
+    )
     for field in required:
         if field not in question:
             raise ValueError(f"Missing required field: {field}")
@@ -293,7 +328,9 @@ def _validate_question(question: Dict[str, Any]) -> Dict[str, Any]:
     difficulty = question.get("difficulty", "medium")
     if isinstance(difficulty, str):
         difficulty = difficulty.lower()
-    question["difficulty"] = difficulty if difficulty in ("easy", "medium", "hard") else "medium"
+    question["difficulty"] = (
+        difficulty if difficulty in ("easy", "medium", "hard") else "medium"
+    )
 
     return question
 

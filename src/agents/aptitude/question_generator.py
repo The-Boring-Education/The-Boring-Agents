@@ -4,8 +4,9 @@ import logging
 from typing import List
 
 from langchain_core.prompts import PromptTemplate
-from src.agents.base import BaseAgent
+
 from src.agents.aptitude.constants import MIN_QUESTIONS_PER_TOPIC
+from src.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,15 @@ class AptitudeQuestionGenerator(BaseAgent):
         if content_type == "questions":
             topic = kwargs.get("topic", "")
             count = kwargs.get("count", MIN_QUESTIONS_PER_TOPIC)
-            return {"status": "success", "questions": self.generate_questions(topic, count)}
+            return {
+                "status": "success",
+                "questions": self.generate_questions(topic, count),
+            }
         raise ValueError(f"Unknown content type: {content_type}")
 
-    def generate_questions(self, topic: str, count: int = MIN_QUESTIONS_PER_TOPIC) -> List[dict]:
+    def generate_questions(
+        self, topic: str, count: int = MIN_QUESTIONS_PER_TOPIC
+    ) -> List[dict]:
         count = max(count, MIN_QUESTIONS_PER_TOPIC)
         self.logger.info("Generating %d questions for topic: %s...", count, topic)
 
@@ -47,12 +53,12 @@ Each object must follow this exact schema:
 Make sure exactly one option has "isCorrect": true. 
 Vary which option is the correct one!
 
-Questions JSON Array:"""
+Questions JSON Array:""",
         )
 
         prompt = prompt_template.format(topic=topic, count=count)
         raw_output = self._generate_with_prompt(prompt)
-        
+
         # Clean up output
         cleaned_json = raw_output.strip()
         if cleaned_json.startswith("```json"):
@@ -64,16 +70,20 @@ Questions JSON Array:"""
         try:
             import json
             import random
+
             questions_data = json.loads(cleaned_json)
             if not isinstance(questions_data, list):
                 raise ValueError("LLM did not return a list")
-            
+
             # Shuffle options to ensure "Option A" isn't always the correct one
             for q in questions_data:
                 if "options" in q and isinstance(q["options"], list):
                     random.shuffle(q["options"])
-            
-            self.logger.info("Successfully generated %d questions with options.", len(questions_data[:count]))
+
+            self.logger.info(
+                "Successfully generated %d questions with options.",
+                len(questions_data[:count]),
+            )
             return questions_data[:count]
         except Exception as e:
             self.logger.error("Failed to parse JSON questions: %s", e)

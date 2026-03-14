@@ -12,16 +12,6 @@ from typing import Any, Dict, List, Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from src.core.config import config
-from src.core.orchestrator import (
-    BaseWorkflowOrchestrator,
-    check_skip_condition,
-    create_error_state,
-    get_progress_update,
-    handle_node_errors,
-    log_node_execution,
-)
-from src.core.session import SessionStatus
 from src.agents.interview.generators import AnswerAgentType, get_generator
 from src.agents.interview.session import InterviewSessionManager
 from src.agents.interview.utils import (
@@ -35,6 +25,16 @@ from src.agents.interview.utils import (
     validate_priority,
     validate_sheet_structure,
 )
+from src.core.config import config
+from src.core.orchestrator import (
+    BaseWorkflowOrchestrator,
+    check_skip_condition,
+    create_error_state,
+    get_progress_update,
+    handle_node_errors,
+    log_node_execution,
+)
+from src.core.session import SessionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. State
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class InterviewWorkflowState(TypedDict):
     session_id: str
@@ -65,19 +66,37 @@ class InterviewWorkflowState(TypedDict):
     sheet_data: Optional[Dict[str, Any]]
 
 
-_DEFAULT_PROGRESS: Dict[str, Any] = {"current_step": "Initializing...", "completed": 0, "total": 0}
+_DEFAULT_PROGRESS: Dict[str, Any] = {
+    "current_step": "Initializing...",
+    "completed": 0,
+    "total": 0,
+}
 
 
 def create_initial_state(
-    session_id: str, name: str, description: str,
-    agent_type: str, roadmap: str, question_count: int = 20,
+    session_id: str,
+    name: str,
+    description: str,
+    agent_type: str,
+    roadmap: str,
+    question_count: int = 20,
 ) -> InterviewWorkflowState:
     return {
-        "session_id": session_id, "name": name, "description": description,
-        "agent_type": agent_type, "roadmap": roadmap, "question_count": question_count,
-        "status": "pending", "current_step": "Initializing...", "error": None,
-        "meta": None, "questions": [], "question_texts": [],
-        "progress": {**_DEFAULT_PROGRESS}, "output_file": None, "sheet_data": None,
+        "session_id": session_id,
+        "name": name,
+        "description": description,
+        "agent_type": agent_type,
+        "roadmap": roadmap,
+        "question_count": question_count,
+        "status": "pending",
+        "current_step": "Initializing...",
+        "error": None,
+        "meta": None,
+        "questions": [],
+        "question_texts": [],
+        "progress": {**_DEFAULT_PROGRESS},
+        "output_file": None,
+        "sheet_data": None,
     }
 
 
@@ -90,7 +109,9 @@ def state_from_session(session_data: Dict[str, Any]) -> InterviewWorkflowState:
         "roadmap": session_data.get("roadmap", "Tech"),
         "question_count": session_data.get("question_count", 20),
         "status": session_data.get("status", "pending"),
-        "current_step": session_data.get("progress", {}).get("current_step", "Initializing..."),
+        "current_step": session_data.get("progress", {}).get(
+            "current_step", "Initializing..."
+        ),
         "error": None,
         "meta": session_data.get("meta"),
         "questions": session_data.get("questions", []),
@@ -129,7 +150,9 @@ def validate_state_transition(from_status: str, to_status: str) -> bool:
     return to_status in VALID_TRANSITIONS.get(from_status, [])
 
 
-def get_questions_needing_answers(questions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def get_questions_needing_answers(
+    questions: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     return [q for q in questions if not q.get("answer")]
 
 
@@ -154,10 +177,15 @@ def normalize_question_metadata(question: Dict[str, Any]) -> Dict[str, Any]:
     if len(title) > 100:
         title = title[:100]
     return {
-        "title": title, "question": question.get("question", ""),
-        "answer": question.get("answer", ""), "frequency": frequency,
-        "priority": priority, "companyTypes": company_types,
-        "resources": question.get("resources", {"youtubeURL": None, "leetcodeURL": None, "blogURL": None}),
+        "title": title,
+        "question": question.get("question", ""),
+        "answer": question.get("answer", ""),
+        "frequency": frequency,
+        "priority": priority,
+        "companyTypes": company_types,
+        "resources": question.get(
+            "resources", {"youtubeURL": None, "leetcodeURL": None, "blogURL": None}
+        ),
     }
 
 
@@ -179,47 +207,80 @@ def _get_session_manager() -> InterviewSessionManager:
 def generate_metadata_node(state: InterviewWorkflowState) -> Dict[str, Any]:
     session_id = state["session_id"]
     if check_skip_condition(state, "meta"):
-        log_node_execution("generate_metadata", session_id, "skipping (already generated)")
-        return {"status": "questions_generating", "current_step": "Generating questions..."}
+        log_node_execution(
+            "generate_metadata", session_id, "skipping (already generated)"
+        )
+        return {
+            "status": "questions_generating",
+            "current_step": "Generating questions...",
+        }
     log_node_execution("generate_metadata", session_id)
     meta = MetadataGenerator().generate_sheet_meta(
-        name=state["name"], description=state["description"], roadmap=state["roadmap"],
+        name=state["name"],
+        description=state["description"],
+        roadmap=state["roadmap"],
     )
     _get_session_manager().set_meta(session_id, meta)
-    return {"meta": meta, "status": "questions_generating", "current_step": "Generating questions..."}
+    return {
+        "meta": meta,
+        "status": "questions_generating",
+        "current_step": "Generating questions...",
+    }
 
 
 @handle_node_errors("generate_questions", "failed")
 def generate_questions_node(state: InterviewWorkflowState) -> Dict[str, Any]:
     session_id = state["session_id"]
     if check_skip_condition(state, "questions", check_func=lambda q: q and len(q) > 0):
-        log_node_execution("generate_questions", session_id, "skipping (already generated)")
+        log_node_execution(
+            "generate_questions", session_id, "skipping (already generated)"
+        )
         questions = state.get("questions", [])
         return {
-            "status": "answers_generating", "current_step": "Generating answers...",
+            "status": "answers_generating",
+            "current_step": "Generating answers...",
             "progress": get_progress_update(0, len(questions), "Generating answers..."),
         }
     log_node_execution("generate_questions", session_id)
     question_texts = QuestionGenerator().generate_questions(
-        name=state["name"], description=state["description"],
-        agent_type=state["agent_type"], question_count=state.get("question_count", 20),
+        name=state["name"],
+        description=state["description"],
+        agent_type=state["agent_type"],
+        question_count=state.get("question_count", 20),
         roadmap=state["roadmap"],
     )
     metadata_gen = MetadataGenerator()
     questions = []
     for text in question_texts:
-        meta = metadata_gen.generate_question_metadata(question=text, topic=state["name"], context=state["description"])
-        questions.append(normalize_question_metadata({
-            "title": text[:100], "question": text, "answer": "",
-            "frequency": meta["frequency"], "priority": meta["priority"], "companyTypes": meta["companyTypes"],
-        }))
+        meta = metadata_gen.generate_question_metadata(
+            question=text, topic=state["name"], context=state["description"]
+        )
+        questions.append(
+            normalize_question_metadata(
+                {
+                    "title": text[:100],
+                    "question": text,
+                    "answer": "",
+                    "frequency": meta["frequency"],
+                    "priority": meta["priority"],
+                    "companyTypes": meta["companyTypes"],
+                }
+            )
+        )
     sm = _get_session_manager()
     for q in questions:
         sm.add_question(session_id, q)
-    sm.update_progress(session_id, completed=0, total=len(questions), current_step="Questions generated, ready for answers")
+    sm.update_progress(
+        session_id,
+        completed=0,
+        total=len(questions),
+        current_step="Questions generated, ready for answers",
+    )
     return {
-        "questions": questions, "question_texts": question_texts,
-        "status": "answers_generating", "current_step": "Generating answers...",
+        "questions": questions,
+        "question_texts": question_texts,
+        "status": "answers_generating",
+        "current_step": "Generating answers...",
         "progress": get_progress_update(0, len(questions), "Generating answers..."),
     }
 
@@ -233,31 +294,53 @@ def generate_answers_node(state: InterviewWorkflowState) -> Dict[str, Any]:
         return create_error_state("No questions to generate answers for")
     needing = get_questions_needing_answers(questions)
     if not needing:
-        log_node_execution("generate_answers", session_id, "skipping (all answers generated)")
+        log_node_execution(
+            "generate_answers", session_id, "skipping (all answers generated)"
+        )
         return {
-            "status": "finalizing", "current_step": "Finalizing sheet...",
-            "progress": get_progress_update(len(questions), len(questions), "All answers generated"),
+            "status": "finalizing",
+            "current_step": "Finalizing sheet...",
+            "progress": get_progress_update(
+                len(questions), len(questions), "All answers generated"
+            ),
         }
-    log_node_execution("generate_answers", session_id, f"generating {len(needing)} answers")
+    log_node_execution(
+        "generate_answers", session_id, f"generating {len(needing)} answers"
+    )
     sm = _get_session_manager()
     session_data = sm.get_session(session_id)
     technology = session_data.get("technology") if session_data else None
-    generator = get_generator(state["agent_type"], technology=technology) if technology else get_generator(state["agent_type"])
+    generator = (
+        get_generator(state["agent_type"], technology=technology)
+        if technology
+        else get_generator(state["agent_type"])
+    )
     completed_count = count_completed_answers(questions)
     for question in needing:
         idx = questions.index(question)
         logger.info("Generating answer %d/%d", idx + 1, len(questions))
         question["answer"] = generator.generate_answer(
-            question=question["question"], topic=state["name"], difficulty="Medium",
-            frequency=question["frequency"], priority=question["priority"],
+            question=question["question"],
+            topic=state["name"],
+            difficulty="Medium",
+            frequency=question["frequency"],
+            priority=question["priority"],
             company_types=question["companyTypes"],
         )
         completed_count += 1
-        sm.update_progress(session_id, completed=completed_count, total=len(questions),
-                           current_step=f"Generated answer {completed_count}/{len(questions)}")
+        sm.update_progress(
+            session_id,
+            completed=completed_count,
+            total=len(questions),
+            current_step=f"Generated answer {completed_count}/{len(questions)}",
+        )
     return {
-        "questions": questions, "status": "finalizing", "current_step": "Finalizing sheet...",
-        "progress": get_progress_update(len(questions), len(questions), "All answers generated"),
+        "questions": questions,
+        "status": "finalizing",
+        "current_step": "Finalizing sheet...",
+        "progress": get_progress_update(
+            len(questions), len(questions), "All answers generated"
+        ),
     }
 
 
@@ -280,21 +363,28 @@ def persist_state_node(state: InterviewWorkflowState) -> Dict[str, Any]:
 @handle_node_errors("finalize", "failed")
 def finalize_node(state: InterviewWorkflowState) -> Dict[str, Any]:
     session_id = state["session_id"]
-    if check_skip_condition(state, "output_file") and check_skip_condition(state, "sheet_data"):
+    if check_skip_condition(state, "output_file") and check_skip_condition(
+        state, "sheet_data"
+    ):
         log_node_execution("finalize", session_id, "skipping (already finalized)")
         return {"status": "completed", "current_step": "Sheet completed"}
     log_node_execution("finalize", session_id)
     defaults = get_schema_defaults()
     sheet_data = {
-        "name": state["name"], "slug": generate_slug(state["name"]),
-        "description": state["description"], "meta": state.get("meta", ""),
+        "name": state["name"],
+        "slug": generate_slug(state["name"]),
+        "description": state["description"],
+        "meta": state.get("meta", ""),
         "coverImageURL": generate_cover_image_url(state["name"]),
         "liveOn": datetime.now(timezone.utc).isoformat(),
         "roadmap": state["roadmap"],
-        "isPremium": defaults["isPremium"], "price": defaults["price"],
+        "isPremium": defaults["isPremium"],
+        "price": defaults["price"],
         "discountPercentage": defaults["discountPercentage"],
-        "appliedCoupon": defaults["appliedCoupon"], "features": defaults["features"],
-        "questions": state["questions"], "dsaQuestions": defaults["dsaQuestions"],
+        "appliedCoupon": defaults["appliedCoupon"],
+        "features": defaults["features"],
+        "questions": state["questions"],
+        "dsaQuestions": defaults["dsaQuestions"],
     }
     is_valid, errors = validate_sheet_structure(sheet_data)
     if not is_valid:
@@ -306,10 +396,14 @@ def finalize_node(state: InterviewWorkflowState) -> Dict[str, Any]:
         json.dump(sheet_data, f, indent=2, ensure_ascii=False)
     sm = _get_session_manager()
     sm.set_output_file(session_id, output_file, sheet_data)
-    sm.update_status(session_id, SessionStatus.COMPLETED, current_step="Sheet finalized and saved")
+    sm.update_status(
+        session_id, SessionStatus.COMPLETED, current_step="Sheet finalized and saved"
+    )
     return {
-        "sheet_data": sheet_data, "output_file": output_file,
-        "status": "completed", "current_step": "Sheet completed successfully",
+        "sheet_data": sheet_data,
+        "output_file": output_file,
+        "status": "completed",
+        "current_step": "Sheet completed successfully",
     }
 
 
@@ -317,8 +411,11 @@ def finalize_node(state: InterviewWorkflowState) -> Dict[str, Any]:
 # 3. Graph
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def create_workflow_graph():
-    wf = StateGraph[InterviewWorkflowState, None, InterviewWorkflowState, InterviewWorkflowState](InterviewWorkflowState)
+    wf = StateGraph[
+        InterviewWorkflowState, None, InterviewWorkflowState, InterviewWorkflowState
+    ](InterviewWorkflowState)
     wf.add_node("generate_metadata", generate_metadata_node)
     wf.add_node("persist_after_metadata", persist_state_node)
     wf.add_node("generate_questions", generate_questions_node)
@@ -355,16 +452,24 @@ class InterviewWorkflowOrchestrator(BaseWorkflowOrchestrator):
         )
 
     def start_generation(
-        self, name: str, description: str, agent_type: str,
-        roadmap: str = "Tech", technology: Optional[str] = None, question_count: int = 20,
+        self,
+        name: str,
+        description: str,
+        agent_type: str,
+        roadmap: str = "Tech",
+        technology: Optional[str] = None,
+        question_count: int = 20,
     ) -> str:
         try:
             AnswerAgentType(agent_type.lower())
         except ValueError:
             raise ValueError(f"Invalid agent type: {agent_type}")
         session_id = self.session_manager.create_session(
-            name=name, description=description, agent_type=agent_type.lower(),
-            roadmap=roadmap, question_count=question_count,
+            name=name,
+            description=description,
+            agent_type=agent_type.lower(),
+            roadmap=roadmap,
+            question_count=question_count,
         )
         if technology:
             data = self.session_manager.get_session(session_id)
@@ -378,5 +483,11 @@ class InterviewWorkflowOrchestrator(BaseWorkflowOrchestrator):
         base = super().get_session_status(session_id)
         data = self.session_manager.get_session(session_id)
         if data:
-            base.update({"name": data.get("name"), "roadmap": data.get("roadmap"), "description": data.get("description")})
+            base.update(
+                {
+                    "name": data.get("name"),
+                    "roadmap": data.get("roadmap"),
+                    "description": data.get("description"),
+                }
+            )
         return base

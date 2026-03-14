@@ -5,7 +5,7 @@ Must stay in sync with TBE-Web's APTITUDE_TOPICS constant in lib/constants/api.t
 When adding a new topic, update BOTH this file and TBE-Web.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List
 
 SUB_CATEGORY_FORMAT_MAP: Dict[str, str] = {
     "ARITHMETIC_APTITUDE": "SPEED",
@@ -27,72 +27,347 @@ MIN_QUESTIONS_PER_TOPIC = 10
 
 TOPIC_REGISTRY: List[Dict[str, Any]] = [
     # ─── Quantitative > Arithmetic Aptitude ───────────────────────────────
-    {"name": "Problem on Trains", "slug": "problem-on-trains", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Time and Distance", "slug": "time-and-distance", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Height and Distance", "slug": "height-and-distance", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Time and Work", "slug": "time-and-work", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Simple Interest", "slug": "simple-interest", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Compound Interest", "slug": "compound-interest", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Profit and Loss", "slug": "profit-and-loss", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Partnership", "slug": "partnership", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Percentage", "slug": "percentage", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Calendar", "slug": "calendar", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Probability", "slug": "probability", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Clocks", "slug": "clocks", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Average", "slug": "average", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Area", "slug": "area", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Volume and Surface Areas", "slug": "volume-and-surface-areas", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Ratio", "slug": "ratio", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Proportion", "slug": "proportion", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Surds and Indices", "slug": "surds-and-indices", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Pipes and Cisterns", "slug": "pipes-and-cisterns", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Races and Games", "slug": "races-and-games", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Logarithms", "slug": "logarithms", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Stocks and Shares", "slug": "stocks-and-shares", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "Simplification", "slug": "simplification", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-    {"name": "HCF and LCM", "slug": "hcf-and-lcm", "category": "QUANTITATIVE", "subCategory": "ARITHMETIC_APTITUDE"},
-
+    {
+        "name": "Problem on Trains",
+        "slug": "problem-on-trains",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Time and Distance",
+        "slug": "time-and-distance",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Height and Distance",
+        "slug": "height-and-distance",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Time and Work",
+        "slug": "time-and-work",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Simple Interest",
+        "slug": "simple-interest",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Compound Interest",
+        "slug": "compound-interest",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Profit and Loss",
+        "slug": "profit-and-loss",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Partnership",
+        "slug": "partnership",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Percentage",
+        "slug": "percentage",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Calendar",
+        "slug": "calendar",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Probability",
+        "slug": "probability",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Clocks",
+        "slug": "clocks",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Average",
+        "slug": "average",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Area",
+        "slug": "area",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Volume and Surface Areas",
+        "slug": "volume-and-surface-areas",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Ratio",
+        "slug": "ratio",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Proportion",
+        "slug": "proportion",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Surds and Indices",
+        "slug": "surds-and-indices",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Pipes and Cisterns",
+        "slug": "pipes-and-cisterns",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Races and Games",
+        "slug": "races-and-games",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Logarithms",
+        "slug": "logarithms",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Stocks and Shares",
+        "slug": "stocks-and-shares",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "Simplification",
+        "slug": "simplification",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
+    {
+        "name": "HCF and LCM",
+        "slug": "hcf-and-lcm",
+        "category": "QUANTITATIVE",
+        "subCategory": "ARITHMETIC_APTITUDE",
+    },
     # ─── Quantitative > Data Interpretation ───────────────────────────────
-    {"name": "Table Charts", "slug": "table-charts", "category": "QUANTITATIVE", "subCategory": "DATA_INTERPRETATION"},
-    {"name": "Bar Charts", "slug": "bar-charts", "category": "QUANTITATIVE", "subCategory": "DATA_INTERPRETATION"},
-    {"name": "Pie Charts", "slug": "pie-charts", "category": "QUANTITATIVE", "subCategory": "DATA_INTERPRETATION"},
-    {"name": "Line Charts", "slug": "line-charts", "category": "QUANTITATIVE", "subCategory": "DATA_INTERPRETATION"},
-
+    {
+        "name": "Table Charts",
+        "slug": "table-charts",
+        "category": "QUANTITATIVE",
+        "subCategory": "DATA_INTERPRETATION",
+    },
+    {
+        "name": "Bar Charts",
+        "slug": "bar-charts",
+        "category": "QUANTITATIVE",
+        "subCategory": "DATA_INTERPRETATION",
+    },
+    {
+        "name": "Pie Charts",
+        "slug": "pie-charts",
+        "category": "QUANTITATIVE",
+        "subCategory": "DATA_INTERPRETATION",
+    },
+    {
+        "name": "Line Charts",
+        "slug": "line-charts",
+        "category": "QUANTITATIVE",
+        "subCategory": "DATA_INTERPRETATION",
+    },
     # ─── Verbal > Verbal Ability ──────────────────────────────────────────
-    {"name": "Spotting Errors", "slug": "spotting-errors", "category": "VERBAL", "subCategory": "VERBAL_ABILITY"},
-    {"name": "Synonyms", "slug": "synonyms", "category": "VERBAL", "subCategory": "VERBAL_ABILITY"},
-    {"name": "Antonyms", "slug": "antonyms", "category": "VERBAL", "subCategory": "VERBAL_ABILITY"},
-
+    {
+        "name": "Spotting Errors",
+        "slug": "spotting-errors",
+        "category": "VERBAL",
+        "subCategory": "VERBAL_ABILITY",
+    },
+    {
+        "name": "Synonyms",
+        "slug": "synonyms",
+        "category": "VERBAL",
+        "subCategory": "VERBAL_ABILITY",
+    },
+    {
+        "name": "Antonyms",
+        "slug": "antonyms",
+        "category": "VERBAL",
+        "subCategory": "VERBAL_ABILITY",
+    },
     # ─── Reasoning > Logical Reasoning ────────────────────────────────────
-    {"name": "Number Series", "slug": "number-series", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Letter and Symbol Series", "slug": "letter-and-symbol-series", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Verbal Classification", "slug": "verbal-classification", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Analogies", "slug": "analogies", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Matching Definition", "slug": "matching-definition", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Logical Games", "slug": "logical-games", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Cause and Effect", "slug": "cause-and-effect", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Statement and Assumption", "slug": "statement-and-assumption", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Logical Distance", "slug": "logical-distance", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Deduction", "slug": "deduction", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Theme Detection", "slug": "theme-detection", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Analyzing Arguments", "slug": "analyzing-arguments", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Logical Problems", "slug": "logical-problems", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-    {"name": "Making Judgments", "slug": "making-judgments", "category": "REASONING", "subCategory": "LOGICAL_REASONING"},
-
+    {
+        "name": "Number Series",
+        "slug": "number-series",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Letter and Symbol Series",
+        "slug": "letter-and-symbol-series",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Verbal Classification",
+        "slug": "verbal-classification",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Analogies",
+        "slug": "analogies",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Matching Definition",
+        "slug": "matching-definition",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Logical Games",
+        "slug": "logical-games",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Cause and Effect",
+        "slug": "cause-and-effect",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Statement and Assumption",
+        "slug": "statement-and-assumption",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Logical Distance",
+        "slug": "logical-distance",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Deduction",
+        "slug": "deduction",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Theme Detection",
+        "slug": "theme-detection",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Analyzing Arguments",
+        "slug": "analyzing-arguments",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Logical Problems",
+        "slug": "logical-problems",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
+    {
+        "name": "Making Judgments",
+        "slug": "making-judgments",
+        "category": "REASONING",
+        "subCategory": "LOGICAL_REASONING",
+    },
     # ─── Interview > GD Round ─────────────────────────────────────────────
-    {"name": "Politics", "slug": "politics", "category": "INTERVIEW", "subCategory": "GD_ROUND"},
-    {"name": "Economics", "slug": "economics", "category": "INTERVIEW", "subCategory": "GD_ROUND"},
-    {"name": "Social Issues", "slug": "social-issues", "category": "INTERVIEW", "subCategory": "GD_ROUND"},
-    {"name": "Technology", "slug": "technology", "category": "INTERVIEW", "subCategory": "GD_ROUND"},
-    {"name": "General Topics", "slug": "general-topics", "category": "INTERVIEW", "subCategory": "GD_ROUND"},
-
+    {
+        "name": "Politics",
+        "slug": "politics",
+        "category": "INTERVIEW",
+        "subCategory": "GD_ROUND",
+    },
+    {
+        "name": "Economics",
+        "slug": "economics",
+        "category": "INTERVIEW",
+        "subCategory": "GD_ROUND",
+    },
+    {
+        "name": "Social Issues",
+        "slug": "social-issues",
+        "category": "INTERVIEW",
+        "subCategory": "GD_ROUND",
+    },
+    {
+        "name": "Technology",
+        "slug": "technology",
+        "category": "INTERVIEW",
+        "subCategory": "GD_ROUND",
+    },
+    {
+        "name": "General Topics",
+        "slug": "general-topics",
+        "category": "INTERVIEW",
+        "subCategory": "GD_ROUND",
+    },
     # ─── Interview > HR Interview ─────────────────────────────────────────
-    {"name": "Self Introduction", "slug": "self-introduction", "category": "INTERVIEW", "subCategory": "HR_INTERVIEW"},
-    {"name": "Career Goals", "slug": "career-goals", "category": "INTERVIEW", "subCategory": "HR_INTERVIEW"},
-    {"name": "Work Experience", "slug": "work-experience", "category": "INTERVIEW", "subCategory": "HR_INTERVIEW"},
-    {"name": "Behavioral Questions", "slug": "behavioral-questions", "category": "INTERVIEW", "subCategory": "HR_INTERVIEW"},
-    {"name": "Strengths and Weaknesses", "slug": "strengths-and-weaknesses", "category": "INTERVIEW", "subCategory": "HR_INTERVIEW"},
-    {"name": "General HR Questions", "slug": "general-hr-questions", "category": "INTERVIEW", "subCategory": "HR_INTERVIEW"},
+    {
+        "name": "Self Introduction",
+        "slug": "self-introduction",
+        "category": "INTERVIEW",
+        "subCategory": "HR_INTERVIEW",
+    },
+    {
+        "name": "Career Goals",
+        "slug": "career-goals",
+        "category": "INTERVIEW",
+        "subCategory": "HR_INTERVIEW",
+    },
+    {
+        "name": "Work Experience",
+        "slug": "work-experience",
+        "category": "INTERVIEW",
+        "subCategory": "HR_INTERVIEW",
+    },
+    {
+        "name": "Behavioral Questions",
+        "slug": "behavioral-questions",
+        "category": "INTERVIEW",
+        "subCategory": "HR_INTERVIEW",
+    },
+    {
+        "name": "Strengths and Weaknesses",
+        "slug": "strengths-and-weaknesses",
+        "category": "INTERVIEW",
+        "subCategory": "HR_INTERVIEW",
+    },
+    {
+        "name": "General HR Questions",
+        "slug": "general-hr-questions",
+        "category": "INTERVIEW",
+        "subCategory": "HR_INTERVIEW",
+    },
 ]
 
 TOPIC_SLUG_SET = frozenset(t["slug"] for t in TOPIC_REGISTRY)
@@ -114,10 +389,7 @@ def get_format_for_sub_category(sub_category: str) -> str:
 
 def get_topics_for_sub_category(sub_category: str) -> List[Dict[str, Any]]:
     """Return all topics for a given sub-category."""
-    return [
-        t for t in TOPIC_REGISTRY
-        if t["subCategory"] == sub_category.upper()
-    ]
+    return [t for t in TOPIC_REGISTRY if t["subCategory"] == sub_category.upper()]
 
 
 def validate_topic_slug(slug: str) -> bool:
