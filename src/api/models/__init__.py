@@ -25,6 +25,11 @@ from src.api.models.interview_prep_models import (
     RoadmapSuggestion,
 )
 
+from src.api.models.dsa_content_models import (
+    DSAContentGenerateRequest,
+    DSAContentGenerateResponse,
+)
+
 __all__ = [
     # Quiz models
     "CreateQuizRequest",
@@ -45,4 +50,8 @@ __all__ = [
     "InterviewGenerationSession",
     "TopicTemplate",
     "RoadmapSuggestion",
+    # DSA content models
+    "DSAContentGenerateRequest",
+    "DSAContentGenerateResponse",
 ]
+

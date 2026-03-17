@@ -327,3 +327,51 @@ def get_roadmap_suggestions(request: Request):
     """Get roadmap suggestions."""
     log_action(request, "get_roadmap_suggestions")
     return controller.get_roadmap_suggestions()
+
+
+# ---------------------------------------------------------------------------
+# DSA Content Generation
+# ---------------------------------------------------------------------------
+
+from src.api.controllers.dsa_content_controller import DSAContentController
+from src.api.models.dsa_content_models import (
+    DSAContentGenerateRequest,
+    DSAContentGenerateResponse,
+)
+
+dsa_content_controller = DSAContentController()
+
+
+@router.post("/dsa-content/generate", response_model=DSAContentGenerateResponse)
+async def generate_dsa_content(payload: DSAContentGenerateRequest, request: Request):
+    """Generate structured DSA content sections for a question.
+
+    Produces a JSON object with 8 educational sections:
+    first_principles, constraints, examples, ways_to_solve,
+    how_to_approach, pseudo_code, working_code, common_mistakes.
+    """
+    log_action(
+        request,
+        "generate_dsa_content",
+        question=payload.question[:60],
+        topic=payload.topic,
+        difficulty=payload.difficulty,
+    )
+    try:
+        result = dsa_content_controller.generate_content(payload)
+        log_action(
+            request,
+            "generate_dsa_content",
+            status="success" if result.status == "success" else "error",
+            question=payload.question[:60],
+        )
+        return result
+    except Exception as e:
+        log_action(
+            request,
+            "generate_dsa_content",
+            level="ERROR",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise
