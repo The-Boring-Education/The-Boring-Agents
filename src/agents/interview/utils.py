@@ -204,7 +204,7 @@ Questions:
                 q = line[1:].strip()
             else:
                 continue
-            if q and len(q) > 10:
+            if q and len(q) > 5:
                 questions.append(q)
                 if len(questions) >= max_questions:
                     break

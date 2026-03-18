@@ -6,8 +6,10 @@ Import everything you need from the flat module files:
   workflow.py    — InterviewWorkflowOrchestrator, state helpers
   utils.py       — schema/mdx utils, QuestionGenerator, MetadataGenerator
   prompts.py     — prompt templates as constants
+  dsa_content_generator.py — DSAContentGenerator for structured JSON output
 """
 
+from src.agents.interview.dsa_content_generator import DSAContentGenerator
 from src.agents.interview.generators import (
     AnswerAgentType,
     BaseAnswerGenerator,
@@ -24,6 +26,7 @@ __all__ = [
     "AnswerAgentType",
     "BaseAnswerGenerator",
     "DSAAnswerGenerator",
+    "DSAContentGenerator",
     "GenericAnswerGenerator",
     "SystemDesignAnswerGenerator",
     "TechAnswerGenerator",
@@ -31,3 +34,4 @@ __all__ = [
     "InterviewSessionManager",
     "InterviewWorkflowOrchestrator",
 ]
+

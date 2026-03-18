@@ -30,6 +30,7 @@ class AnswerAgentType(Enum):
     DSA = "dsa"
     TECH = "tech"
     SYSTEM_DESIGN = "system_design"
+    DSA_CONTENT = "dsa_content"
 
 
 # ---------------------------------------------------------------------------
@@ -274,11 +275,15 @@ class TechAnswerGenerator(BaseAnswerGenerator):
 # Generator registry / factory
 # ---------------------------------------------------------------------------
 
+# Import here to avoid circular imports
+from src.agents.interview.dsa_content_generator import DSAContentGenerator
+
 _GENERATOR_REGISTRY: Dict[AnswerAgentType, type] = {
     AnswerAgentType.GENERIC: GenericAnswerGenerator,
     AnswerAgentType.DSA: DSAAnswerGenerator,
     AnswerAgentType.TECH: TechAnswerGenerator,
     AnswerAgentType.SYSTEM_DESIGN: SystemDesignAnswerGenerator,
+    AnswerAgentType.DSA_CONTENT: DSAContentGenerator,
 }
 
 

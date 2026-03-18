@@ -404,7 +404,8 @@ class TestFinalizeNode:
             "price": 0,
             "discountPercentage": 0,
             "appliedCoupon": None,
-            "features": []
+            "features": [],
+            "dsaQuestions": []
         }
         mock_validate.return_value = (True, [])
         mock_join.return_value = "/path/to/output.json"
