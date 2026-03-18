@@ -183,6 +183,14 @@ The-Boring-Agents/
 - `POST /api/v1/interview/sessions/{session_id}/retry` - Retry a failed session
 - `DELETE /api/v1/interview/sessions/{session_id}` - Delete a session
 
+#### Content Migration
+
+- `POST /api/v1/migration/migrate` - Full migration (export + sync) between environments
+- `POST /api/v1/migration/export` - Export content from an environment
+- `POST /api/v1/migration/sync` - Sync content to an environment
+- `GET /api/v1/migration/exports` - List saved export files
+- `GET /api/v1/migration/status` - Migration system health and config
+
 #### Session Management
 
 - `GET /api/v1/sessions/active` - List all active sessions (quiz + interview)
@@ -249,6 +257,155 @@ curl http://localhost:8000/api/v1/quiz/progress/{session_id}
 ```bash
 curl http://localhost:8000/api/v1/sessions/logs/{session_id}?limit=100
 ```
+
+## Content Migration
+
+Sync content between **Local**, **Dev**, and **Prod** environments. Use this to:
+
+- **Dev → Local**: Bring tested content from Dev DB to your local machine
+- **Dev → Prod**: Promote validated Dev content to production
+- **Prod → Local**: Pull production data locally for debugging (use with caution)
+
+### How It Works
+
+1. **Export**: The Agents API calls the TBE-Web API (`/api/v1/content/export`) on the **source** environment to fetch content.
+2. **Sync**: The Agents API calls the TBE-Web API (`/api/v1/content/sync`) on the **target** environment to write content.
+
+Each environment has its own MongoDB instance. The migration orchestrates data flow between them via the TBE-Web API endpoints.
+
+### Prerequisites
+
+1. **The-Boring-Agents** running on port 8000:
+
+   ```bash
+   cd The-Boring-Agents
+   source .venv/bin/activate
+   python run.py
+   ```
+
+2. **TBE-Web API** running for the **target** environment when migrating **to** local:
+
+   ```bash
+   cd TBE-Web
+   pnpm dev:api   # Runs API on http://localhost:3004
+   ```
+
+3. **Environment URLs** in The-Boring-Agents `.env`:
+
+   ```bash
+   LOCAL_API_BASE_URL=http://localhost:3000
+   DEV_API_BASE_URL=https://tbe-dev-git-development-tbe.vercel.app
+   PROD_API_BASE_URL=https://www.theboringeducation.com
+   ```
+
+4. **Admin secrets** must match the `ADMIN_SECRET` configured in each TBE-Web API deployment (local, dev, prod).
+
+### Migration Steps
+
+#### 1. Dev → Local (bring tested content to your machine)
+
+**Use case**: Team has tested content on Dev; you want it locally.
+
+1. Start The-Boring-Agents: `python run.py`
+2. Start TBE-Web API locally: `pnpm dev:api` (from TBE-Web root)
+3. Ensure local TBE-Web API uses `MONGODB_URI` for your local MongoDB
+4. **Dry run first** (preview only, no writes):
+
+   ```bash
+   curl -sS -X POST "http://localhost:8000/api/v1/migration/migrate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "content_types": ["all"],
+       "dry_run": true,
+       "source_env": "dev",
+       "target_env": "local",
+       "filters": null,
+       "source_admin_secret": "YOUR_DEV_ADMIN_SECRET",
+       "target_admin_secret": "YOUR_LOCAL_ADMIN_SECRET"
+     }'
+   ```
+
+5. If the dry run looks correct, **run the actual migration**:
+
+   ```bash
+   curl -sS -X POST "http://localhost:8000/api/v1/migration/migrate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "content_types": ["all"],
+       "dry_run": false,
+       "source_env": "dev",
+       "target_env": "local",
+       "filters": null,
+       "source_admin_secret": "YOUR_DEV_ADMIN_SECRET",
+       "target_admin_secret": "YOUR_LOCAL_ADMIN_SECRET"
+     }'
+   ```
+
+#### 2. Dev → Prod (promote validated content to production)
+
+**Use case**: Dev DB is validated; promote to production.
+
+1. Start The-Boring-Agents: `python run.py`
+2. **Dry run first**:
+
+   ```bash
+   curl -sS -X POST "http://localhost:8000/api/v1/migration/migrate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "content_types": ["all"],
+       "dry_run": true,
+       "source_env": "dev",
+       "target_env": "prod",
+       "filters": null,
+       "source_admin_secret": "YOUR_DEV_ADMIN_SECRET",
+       "target_admin_secret": "YOUR_PROD_ADMIN_SECRET"
+     }'
+   ```
+
+3. If the dry run looks correct, **run the actual migration**:
+
+   ```bash
+   curl -sS -X POST "http://localhost:8000/api/v1/migration/migrate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "content_types": ["all"],
+       "dry_run": false,
+       "source_env": "dev",
+       "target_env": "prod",
+       "filters": null,
+       "source_admin_secret": "YOUR_DEV_ADMIN_SECRET",
+       "target_admin_secret": "YOUR_PROD_ADMIN_SECRET"
+     }'
+   ```
+
+#### 3. Prod → Local (for debugging; use with caution)
+
+Same pattern as Dev → Local, but with `source_env: "prod"` and `target_env: "local"`. Ensure you have the correct admin secrets for both environments.
+
+### Migration Parameters
+
+| Parameter               | Description                                                                 |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `content_types`         | `["all"]` or specific: `["dsa-questions"]`, `["interview-sheets"]`, `["aptitude"]`, `["quizzes"]` |
+| `dry_run`               | `true` = preview only; `false` = execute migration                         |
+| `source_env`            | `"local"` \| `"dev"` \| `"prod"`                                            |
+| `target_env`            | `"local"` \| `"dev"` \| `"prod"`                                            |
+| `filters`               | Optional: `topics`, `slugs`, `roadmap`, `domain`, `difficulty`, `categoryNames` |
+| `source_admin_secret`    | Admin secret for source TBE-Web API                                         |
+| `target_admin_secret`    | Admin secret for target TBE-Web API                                         |
+
+### Other Migration Endpoints
+
+- `GET /api/v1/migration/status` — Health check and config info
+- `POST /api/v1/migration/export` — Export only (no sync)
+- `POST /api/v1/migration/sync` — Sync from provided payload
+- `GET /api/v1/migration/exports` — List saved export files
+
+### Troubleshooting
+
+- **401 Unauthorized**: Admin secret does not match `ADMIN_SECRET` in the TBE-Web API for that environment.
+- **Connection refused**: Target API not running (e.g. start `pnpm dev:api` for local).
+- **Export phase failed**: Source API unreachable or returned an error; check source URL and admin secret.
 
 ## Logging
 
