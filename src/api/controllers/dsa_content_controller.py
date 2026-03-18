@@ -1,10 +1,11 @@
 """DSA content generation controller."""
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.agents.interview.dsa_content_generator import DSAContentGenerator
 from src.api.models.dsa_content_models import (
+    DSAContentEnrichRequest,
     DSAContentGenerateRequest,
     DSAContentGenerateResponse,
 )
@@ -89,4 +90,86 @@ class DSAContentController:
             return DSAContentGenerateResponse(
                 status="error",
                 error=f"Internal error: {str(e)}",
+            )
+
+    def enrich_content(
+        self, question_id: str, payload: DSAContentEnrichRequest
+    ) -> DSAContentGenerateResponse:
+        """Fetch existing question from TBE-Web, enrich it, and push back.
+
+        Args:
+            question_id: TBE-Web DSA question ID.
+            payload: Enrichment options (admin secret, etc).
+
+        Returns:
+            Response with success/error status.
+        """
+        import requests
+        from src.core.config import config
+
+        api_url = (payload.api_url or config.api_base_url).rstrip("/")
+        get_url = f"{api_url}/api/v1/interview-prep/dsa-sheet/{question_id}"
+        patch_url = get_url  # Same endpoint for PATCH
+
+        headers = {
+            "x-admin-secret": payload.admin_secret or "TBEAdmin",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            # 1. Fetch existing question
+            logger.info("Enriching question %s: Fetching metadata...", question_id)
+            get_response = requests.get(get_url, headers=headers, timeout=10)
+            if get_response.status_code != 200:
+                return DSAContentGenerateResponse(
+                    status="error",
+                    error=f"Failed to fetch question: HTTP {get_response.status_code}",
+                )
+
+            question_data = get_response.json().get("data", {})
+            if not question_data:
+                return DSAContentGenerateResponse(
+                    status="error",
+                    error="Question data not found in TBE response",
+                )
+
+            # 2. Extract info for generation
+            # Note: TBE-Web uses 'title' for name, agent uses 'question'
+            # TBE-Web uses 'resources.leetcodeURL', agent uses 'leetcodeUrl'
+            resources = question_data.get("resources", {})
+            gen_payload = DSAContentGenerateRequest(
+                question=question_data.get("title", ""),
+                topic=question_data.get("topics", ["Array"])[0],
+                difficulty=question_data.get("difficulty", "Medium"),
+                constraints=[],  # TBE doesn't seem to store raw constraints list
+                examples=[],  # TBE doesn't store structured examples
+                leetcodeUrl=resources.get("leetcodeURL", ""),
+            )
+
+            # 3. Generate content
+            logger.info("Enriching question %s: Generating sections...", question_id)
+            gen_result = self.generate_content(gen_payload)
+            if gen_result.status != "success":
+                return gen_result
+
+            # 4. Push back to TBE-Web
+            logger.info("Enriching question %s: Pushing sections to DB...", question_id)
+            sections = gen_result.sections
+            patch_response = requests.patch(
+                patch_url, json={"sections": sections}, headers=headers, timeout=30
+            )
+
+            if patch_response.status_code not in (200, 201):
+                return DSAContentGenerateResponse(
+                    status="error",
+                    error=f"Failed to push sections: HTTP {patch_response.status_code} - {patch_response.text}",
+                )
+
+            logger.info("Enriching question %s: Success!", question_id)
+            return gen_result
+
+        except Exception as e:
+            logger.error("Enrichment error: %s", e, exc_info=True)
+            return DSAContentGenerateResponse(
+                status="error", error=f"Enrichment failed: {str(e)}"
             )

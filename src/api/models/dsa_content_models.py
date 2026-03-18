@@ -39,7 +39,18 @@ class DSAContentGenerateRequest(BaseModel):
         alias="leetcodeUrl",
         description="URL to the LeetCode problem",
     )
-
+class DSAContentEnrichRequest(BaseModel):
+    """Request model for auto-enriching a DSA question by ID."""
+    admin_secret: Optional[str] = Field(
+        default="TBEAdmin",
+        alias="adminSecret",
+        description="Admin secret for TBE-Web API",
+    )
+    api_url: Optional[str] = Field(
+        default=None,
+        alias="apiUrl",
+        description="Base URL for TBE-Web API (defaults to config)",
+    )
 
 # ---------------------------------------------------------------------------
 # Response models

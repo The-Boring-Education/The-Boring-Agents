@@ -226,7 +226,7 @@ async def update_question(session_id: str, question_id: str, updates: dict, requ
         raise
     except Exception as e:
         log_action(request, "update_question", level="ERROR", session_id=session_id, question_id=question_id, error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to update question")
 
 
 @router.get("/sessions/{session_id}/questions/{question_id}")
@@ -335,6 +335,7 @@ def get_roadmap_suggestions(request: Request):
 
 from src.api.controllers.dsa_content_controller import DSAContentController
 from src.api.models.dsa_content_models import (
+    DSAContentEnrichRequest,
     DSAContentGenerateRequest,
     DSAContentGenerateResponse,
 )
@@ -374,4 +375,31 @@ async def generate_dsa_content(payload: DSAContentGenerateRequest, request: Requ
             error=str(e),
             error_type=type(e).__name__,
         )
-        raise
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/dsa-content/enrich/{question_id}", response_model=DSAContentGenerateResponse)
+async def enrich_dsa_content(
+    question_id: str, payload: DSAContentEnrichRequest, request: Request
+):
+    """Auto-enrich a DSA question by fetching its metadata from TBE-Web,
+    generating interactive content sections, and pushing them back.
+    """
+    log_action(request, "enrich_dsa_content", question_id=question_id)
+    try:
+        result = dsa_content_controller.enrich_content(question_id, payload)
+        log_action(
+            request,
+            "enrich_dsa_content",
+            status="success" if result.status == "success" else "error",
+            question_id=question_id,
+        )
+        return result
+    except Exception as e:
+        log_action(
+            request,
+            "enrich_dsa_content",
+            level="ERROR",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise HTTPException(status_code=500, detail=str(e))
