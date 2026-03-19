@@ -235,20 +235,68 @@ class MigrationController:
 
         type_data_map = self._prepare_sync_payloads(content_types, raw_data)
 
+        # Batch size for sync (to avoid 1MB limit)
+        BATCH_SIZE = 5
+
         for sync_type, sync_data in type_data_map.items():
             if not sync_data:
                 continue
 
-            result = self.sync_content(
-                env=target_env,
-                content_type=sync_type,
-                data=sync_data,
-                dry_run=dry_run,
-                admin_secret=target_admin_secret,
-            )
-            sync_results[sync_type] = result
-            if not result.get("ok"):
-                sync_errors.append(f"{sync_type}: {result.get('message')}")
+            # Identify the list to chunk
+            list_key = None
+            if "questions" in sync_data:
+                list_key = "questions"
+            elif "sheets" in sync_data:
+                list_key = "sheets"
+            elif "topics" in sync_data:
+                list_key = "topics"
+            elif "quizzes" in sync_data:
+                list_key = "quizzes"
+
+            if list_key and len(sync_data[list_key]) > BATCH_SIZE:
+                items = sync_data[list_key]
+                logger.info(
+                    "Chunking %s: %d items into batches of %d",
+                    sync_type,
+                    len(items),
+                    BATCH_SIZE,
+                )
+                
+                batch_results = []
+                for i in range(0, len(items), BATCH_SIZE):
+                    batch = items[i : i + BATCH_SIZE]
+                    batch_payload = {list_key: batch}
+                    
+                    result = self.sync_content(
+                        env=target_env,
+                        content_type=sync_type,
+                        data=batch_payload,
+                        dry_run=dry_run,
+                        admin_secret=target_admin_secret,
+                    )
+                    batch_results.append(result)
+                    if not result.get("ok"):
+                        sync_errors.append(
+                            f"{sync_type} (batch {i//BATCH_SIZE + 1}): {result.get('message')}"
+                        )
+                
+                # Merge results for a single status
+                sync_results[sync_type] = {
+                    "ok": all(r.get("ok") for r in batch_results),
+                    "batches": len(batch_results),
+                    "results": batch_results
+                }
+            else:
+                result = self.sync_content(
+                    env=target_env,
+                    content_type=sync_type,
+                    data=sync_data,
+                    dry_run=dry_run,
+                    admin_secret=target_admin_secret,
+                )
+                sync_results[sync_type] = result
+                if not result.get("ok"):
+                    sync_errors.append(f"{sync_type}: {result.get('message')}")
 
         return {
             "ok": len(sync_errors) == 0,
