@@ -35,7 +35,7 @@ class Config(BaseSettings):
     
     # Content Generation Settings
     default_model: str = Field(default="gpt-4o-mini", env="DEFAULT_MODEL")
-    max_tokens: int = Field(default=4000, env="MAX_TOKENS")
+    max_tokens: int = Field(default=8000, env="MAX_TOKENS")
     temperature: float = Field(default=0.8, env="TEMPERATURE")
     max_context_length: int = Field(default=16000, env="MAX_CONTEXT_LENGTH")
     

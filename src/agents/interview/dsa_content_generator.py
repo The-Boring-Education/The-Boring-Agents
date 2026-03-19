@@ -83,7 +83,7 @@ class DSAContentGenerator(BaseAgent):
 
         examples_str = self._format_examples_for_prompt(examples)
 
-        # Build and send prompt
+        # 2. Build and send prompt
         prompt = self._format_prompt(
             "dsa_content",
             question=question,
@@ -94,31 +94,47 @@ class DSAContentGenerator(BaseAgent):
             leetcode_url=leetcode_url or "Not provided",
         )
 
-        raw_response = self._generate_with_prompt(prompt)
-
-        # Parse JSON from response
-        sections = self._parse_json_response(raw_response)
-
-        # Validate all required sections are present
-        validation = self._validate_sections(sections)
-        if not validation["valid"]:
-            self.logger.warning(
-                "Missing sections: %s — attempting repair",
-                validation["missing"],
-            )
-            sections = self._repair_missing_sections(
-                sections, validation["missing"],
-                question, topic, difficulty,
-            )
-
-        self.logger.info("DSA content generated successfully for: %s", question[:60])
-
+        attempts = 2
+        last_error = None
+        
+        for attempt in range(attempts):
+            try:
+                raw_response = self._generate_with_prompt(prompt)
+                
+                # 3. Parse JSON from response
+                sections = self._parse_json_response(raw_response)
+                
+                # 4. Validate all required sections are present
+                validation = self._validate_sections(sections)
+                if not validation["valid"]:
+                    self.logger.warning(
+                        "Missing sections: %s — attempting repair",
+                        validation["missing"],
+                    )
+                    sections = self._repair_missing_sections(
+                        sections, validation["missing"],
+                        question, topic, difficulty,
+                    )
+                
+                self.logger.info("DSA content generated successfully for: %s (attempt %d)", question[:60], attempt + 1)
+                return {
+                    "status": "success",
+                    "sections": sections,
+                    "question": question,
+                    "topic": topic,
+                    "difficulty": difficulty,
+                }
+            except Exception as e:
+                last_error = e
+                self.logger.warning("Attempt %d failed for %s: %s", attempt + 1, question[:60], e)
+                if attempt < attempts - 1:
+                    self.logger.info("Retrying generation for: %s...", question[:60])
+        
+        # If we got here, all attempts failed
+        self.logger.error("All generation attempts failed for %s: %s", question[:60], last_error)
         return {
-            "status": "success",
-            "sections": sections,
-            "question": question,
-            "topic": topic,
-            "difficulty": difficulty,
+            "status": "error",
+            "error": f"Content generation failed after {attempts} attempts: {str(last_error)}",
         }
 
     def _format_examples_for_prompt(self, examples: List[Dict[str, str]]) -> str:
@@ -142,43 +158,92 @@ class DSAContentGenerator(BaseAgent):
         """Extract and parse JSON from the LLM response.
 
         The LLM may wrap the JSON in markdown code fences or add
-        text before/after. This method handles all those cases.
+        text before/after. This method handles those cases and
+        attempts to repair truncated JSON.
         """
         # Strip markdown code fences if present
         cleaned = raw.strip()
         if cleaned.startswith("```"):
-            # Remove opening fence (```json or ```)
-            first_newline = cleaned.index("\n")
-            cleaned = cleaned[first_newline + 1:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
+            try:
+                # Find first newline after ```
+                first_newline = cleaned.index("\n")
+                cleaned = cleaned[first_newline + 1:]
+                # Remove closing fence if present
+                if "```" in cleaned:
+                    cleaned = cleaned[:cleaned.rindex("```")]
+            except ValueError:
+                # If no newline, just strip ```
+                cleaned = cleaned.replace("```json", "").replace("```", "")
+        
         cleaned = cleaned.strip()
 
-        # Try direct parse first
-        try:
-            return json.loads(cleaned)
-        except json.JSONDecodeError:
-            pass
+        def try_parse(s: str) -> Optional[Dict]:
+            try:
+                return json.loads(s)
+            except json.JSONDecodeError:
+                return None
 
-        # Try to find JSON object between first { and last }
+        # 1. Direct parse
+        result = try_parse(cleaned)
+        if result: return result
+
+        # 2. Extract between braces
         first_brace = cleaned.find("{")
         last_brace = cleaned.rfind("}")
-        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
-            json_str = cleaned[first_brace:last_brace + 1]
-            try:
-                return json.loads(json_str)
-            except json.JSONDecodeError:
-                pass
+        if first_brace != -1:
+            if last_brace != -1 and last_brace > first_brace:
+                result = try_parse(cleaned[first_brace:last_brace + 1])
+                if result: return result
+            
+            # 3. Truncated result? Attempt repair by closing strings/braces/brackets
+            # Track state to close strings and handle escaped quotes
+            potential_json = cleaned[first_brace:]
+            stack = []
+            in_string = False
+            escaped = False
+            
+            for char in potential_json:
+                if escaped:
+                    escaped = False
+                    continue
+                if char == "\\":
+                    escaped = True
+                    continue
+                if char == '"':
+                    in_string = not in_string
+                    continue
+                
+                if not in_string:
+                    if char == "{": stack.append("}")
+                    elif char == "[": stack.append("]")
+                    elif char == "}": 
+                        if stack and stack[-1] == "}": stack.pop()
+                    elif char == "]":
+                        if stack and stack[-1] == "]": stack.pop()
+            
+            # Close state
+            repair_suffix = ""
+            if in_string:
+                repair_suffix += '"'
+            if stack:
+                repair_suffix += "".join(reversed(stack))
+            
+            if repair_suffix:
+                repaired = potential_json + repair_suffix
+                result = try_parse(repaired)
+                if result:
+                    self.logger.warning("Successfully repaired truncated JSON response (added: %s)", repair_suffix)
+                    return result
 
-        # Last resort: try to fix common JSON issues
+        # 4. Last resort: simple regex cleanup for trailing commas
         try:
-            # Remove trailing commas before } or ]
             fixed = re.sub(r",\s*([}\]])", r"\1", cleaned)
-            first_brace = fixed.find("{")
-            last_brace = fixed.rfind("}")
-            if first_brace != -1 and last_brace != -1:
-                return json.loads(fixed[first_brace:last_brace + 1])
-        except json.JSONDecodeError:
+            first = fixed.find("{")
+            last = fixed.rfind("}")
+            if first != -1 and last != -1:
+                result = try_parse(fixed[first:last + 1])
+                if result: return result
+        except Exception:
             pass
 
         self.logger.error("Failed to parse JSON from response (length=%d)", len(raw))

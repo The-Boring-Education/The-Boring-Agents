@@ -34,7 +34,7 @@ class DSAContentGenerateRequest(BaseModel):
         default_factory=list,
         description="List of examples with input/output",
     )
-    leetcode_url: str = Field(
+    leetcode_url: Optional[str] = Field(
         default="",
         alias="leetcodeUrl",
         description="URL to the LeetCode problem",
@@ -52,12 +52,41 @@ class DSAContentEnrichRequest(BaseModel):
         description="Base URL for TBE-Web API (defaults to config)",
     )
 
+
+class DSAContentBulkEnrichRequest(BaseModel):
+    """Request model for bulk enriching DSA questions."""
+
+    admin_secret: Optional[str] = Field(
+        default="TBEAdmin",
+        alias="adminSecret",
+        description="Admin secret for TBE-Web API",
+    )
+    api_url: Optional[str] = Field(
+        default=None,
+        alias="apiUrl",
+        description="Base URL for TBE-Web API (defaults to config)",
+    )
+    limit: int = Field(
+        default=5,
+        description="Limit the number of questions to enrich in one go",
+    )
+    delay: float = Field(
+        default=2.0,
+        description="Delay in seconds between enrichments to avoid rate limits",
+    )
+    force: bool = Field(
+        default=False,
+        description="If true, re-enrich questions that already have sections",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Response models
 # ---------------------------------------------------------------------------
 
 class DSAContentGenerateResponse(BaseModel):
     """Response model for DSA content generation."""
+
     status: str = Field(..., description="success or error")
     sections: Optional[Dict[str, Any]] = Field(
         default=None,
@@ -70,3 +99,17 @@ class DSAContentGenerateResponse(BaseModel):
         default=None,
         description="Error message if status is error",
     )
+
+
+class DSAContentBulkEnrichResponse(BaseModel):
+    """Response model for bulk DSA content enrichment."""
+
+    status: str = Field(..., description="success or error")
+    total_found: int = Field(..., description="Total un-enriched questions found")
+    enriched_count: int = Field(..., description="Number of questions successfully enriched")
+    failed_count: int = Field(..., description="Number of questions that failed enrichment")
+    details: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Individual results for each question",
+    )
+    error: Optional[str] = None

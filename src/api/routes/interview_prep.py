@@ -335,6 +335,8 @@ def get_roadmap_suggestions(request: Request):
 
 from src.api.controllers.dsa_content_controller import DSAContentController
 from src.api.models.dsa_content_models import (
+    DSAContentBulkEnrichRequest,
+    DSAContentBulkEnrichResponse,
     DSAContentEnrichRequest,
     DSAContentGenerateRequest,
     DSAContentGenerateResponse,
@@ -377,7 +379,10 @@ async def generate_dsa_content(payload: DSAContentGenerateRequest, request: Requ
         )
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/dsa-content/enrich/{question_id}", response_model=DSAContentGenerateResponse)
+
+@router.post(
+    "/dsa-content/enrich/{question_id}", response_model=DSAContentGenerateResponse
+)
 async def enrich_dsa_content(
     question_id: str, payload: DSAContentEnrichRequest, request: Request
 ):
@@ -398,6 +403,43 @@ async def enrich_dsa_content(
         log_action(
             request,
             "enrich_dsa_content",
+            level="ERROR",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    "/dsa-content/bulk-enrich", response_model=DSAContentBulkEnrichResponse
+)
+async def bulk_enrich_dsa_content(
+    payload: DSAContentBulkEnrichRequest, request: Request
+):
+    """Bulk enrich DSA questions that are missing interactive content sections.
+    Includes rate limiting to avoid API exhaustion.
+    """
+    log_action(
+        request,
+        "bulk_enrich_dsa_content",
+        limit=payload.limit,
+        delay=payload.delay,
+        force=payload.force,
+    )
+    try:
+        result = dsa_content_controller.bulk_enrich_content(payload)
+        log_action(
+            request,
+            "bulk_enrich_dsa_content",
+            status=result.status,
+            enriched=result.enriched_count,
+            failed=result.failed_count,
+        )
+        return result
+    except Exception as e:
+        log_action(
+            request,
+            "bulk_enrich_dsa_content",
             level="ERROR",
             error=str(e),
             error_type=type(e).__name__,
