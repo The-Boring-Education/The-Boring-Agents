@@ -1,0 +1,193 @@
+---
+description: Rules for LangGraph workflow agents — State, Graph, Nodes, and Orchestrator patterns
+globs: ["src/agents/**/*.py", "src/core/orchestrator.py", "src/core/session/**/*.py"]
+alwaysApply: false
+---
+
+# LangGraph Agent Workflow Skill
+
+## Purpose
+Each AI agent (quiz, interview, aptitude) follows the same LangGraph pipeline: TypedDict state → StateGraph with nodes → BaseWorkflowOrchestrator that drives execution and persists session to disk. This skill ensures all new agents are consistent with the existing patterns.
+
+## Rules
+1. **State must be a `TypedDict`** with clearly typed fields — never `Dict[str, Any]` as the state type.
+2. **Initial state must be created by a `create_initial_state()` factory function** — never inline state dicts.
+3. **Every node function signature is `(state: WorkflowState) -> Dict[str, Any]`** — it receives the full state and returns a partial update dict.
+4. **Every node must be decorated with `@handle_node_errors(node_name, error_status)`** from `src/core/orchestrator.py`.
+5. **Every node must call `log_node_execution(node_name, session_id)`** at the start.
+6. **Skip conditions must use `check_skip_condition(state, field)`** — never manual `if state.get(field):`.
+7. **Progress updates must use `get_progress_update(completed, total, step)`** — never inline dict.
+8. **The graph is built in a `create_workflow_graph()` function** — returns a compiled `StateGraph`.
+9. **The orchestrator class inherits from `BaseWorkflowOrchestrator`** and implements `run_workflow(state)`.
+10. **Sessions are persisted as JSON files** via `BaseSessionManager` — never store session state in memory only.
+11. **All LLM calls go through the generator classes** (e.g. `QuizQuestionGenerator`) — never call `ChatOpenAI` directly in a node.
+12. **Async nodes are not used** — all nodes are synchronous. Async runs via `BackgroundTasks` in FastAPI.
+
+## Patterns
+
+### Workflow state definition
+```python
+# src/agents/myagent/workflow.py
+from typing import Any, Dict, List, Optional, TypedDict
+
+class MyAgentState(TypedDict):
+    session_id: str
+    topic: str
+    
+    # pipeline output fields
+    generated_content: Optional[Dict[str, Any]]
+    questions: List[Dict[str, Any]]
+    
+    # control fields (always present)
+    status: str
+    current_step: str
+    error: Optional[str]
+    progress: Dict[str, Any]
+    output_file: Optional[str]
+
+
+_DEFAULT_PROGRESS: Dict[str, Any] = {
+    "current_step": "Initializing...",
+    "completed": 0,
+    "total": 0,
+}
+
+
+def create_initial_state(session_id: str, topic: str) -> MyAgentState:
+    return {
+        "session_id": session_id,
+        "topic": topic,
+        "generated_content": None,
+        "questions": [],
+        "status": "running",
+        "current_step": "Starting...",
+        "error": None,
+        "progress": _DEFAULT_PROGRESS.copy(),
+        "output_file": None,
+    }
+```
+
+### Node function with decorators
+```python
+from src.core.orchestrator import (
+    handle_node_errors,
+    check_skip_condition,
+    log_node_execution,
+    get_progress_update,
+)
+
+@handle_node_errors("generate_content", error_status="failed")
+def generate_content_node(state: MyAgentState) -> Dict[str, Any]:
+    session_id = state["session_id"]
+    log_node_execution("generate_content", session_id)
+
+    # Skip if already done
+    if check_skip_condition(state, "generated_content"):
+        return {}
+
+    # Do the work
+    generator = ContentGenerator()
+    content = generator.generate(state["topic"])
+
+    return {
+        "generated_content": content,
+        "progress": get_progress_update(1, 3, "Content generated"),
+    }
+```
+
+### Graph construction
+```python
+from langgraph.graph import END, StateGraph
+
+def create_workflow_graph():
+    graph = StateGraph(MyAgentState)
+    
+    graph.add_node("generate_content", generate_content_node)
+    graph.add_node("process_output", process_output_node)
+    graph.add_node("save_results", save_results_node)
+    
+    graph.set_entry_point("generate_content")
+    graph.add_edge("generate_content", "process_output")
+    graph.add_edge("process_output", "save_results")
+    graph.add_edge("save_results", END)
+    
+    return graph.compile()
+```
+
+### Orchestrator class
+```python
+from src.core.orchestrator import BaseWorkflowOrchestrator
+from src.core.session import SessionStatus
+
+class MyAgentOrchestrator(BaseWorkflowOrchestrator):
+    def __init__(self):
+        self.graph = create_workflow_graph()
+        self.session_manager = MyAgentSessionManager()
+    
+    def start_generation(self, topic: str, session_id: Optional[str] = None) -> str:
+        session_id = session_id or self._generate_session_id()
+        initial_state = create_initial_state(session_id=session_id, topic=topic)
+        self.session_manager.create_session(session_id, initial_state)
+        return session_id
+    
+    def run_workflow(self, state: MyAgentState) -> Dict[str, Any]:
+        try:
+            result = self.graph.invoke(state)
+            self.session_manager.update_status(state["session_id"], SessionStatus.COMPLETED)
+            return result
+        except Exception as e:
+            logger.error("Workflow failed: %s", e, exc_info=True)
+            self.session_manager.update_status(state["session_id"], SessionStatus.FAILED)
+            raise
+```
+
+## Anti-Patterns
+
+### ❌ Plain dict as state type
+```python
+# BAD
+def my_node(state: dict) -> dict:
+    ...
+```
+```python
+# GOOD
+def my_node(state: MyAgentState) -> Dict[str, Any]:
+    ...
+```
+
+### ❌ Direct ChatOpenAI call in a node
+```python
+# BAD
+from langchain_openai import ChatOpenAI
+
+@handle_node_errors("my_node", "failed")
+def my_node(state: MyAgentState) -> Dict[str, Any]:
+    llm = ChatOpenAI(model="gpt-4o-mini")  # wrong place
+    result = llm.invoke("prompt")
+    ...
+```
+```python
+# GOOD — use the generator class
+from src.agents.myagent.generators import ContentGenerator
+
+@handle_node_errors("my_node", "failed")
+def my_node(state: MyAgentState) -> Dict[str, Any]:
+    generator = ContentGenerator()
+    result = generator.generate(state["topic"])
+    ...
+```
+
+### ❌ Missing error decorator on node
+```python
+# BAD — exceptions crash the entire graph run
+def generate_content_node(state: MyAgentState) -> Dict[str, Any]:
+    content = risky_llm_call()
+    return {"generated_content": content}
+```
+```python
+# GOOD
+@handle_node_errors("generate_content", error_status="failed")
+def generate_content_node(state: MyAgentState) -> Dict[str, Any]:
+    content = risky_llm_call()
+    return {"generated_content": content}
+```

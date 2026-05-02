@@ -1,0 +1,53 @@
+---
+description: Master rules for The-Boring-Agents FastAPI + LangGraph Python service
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# The-Boring-Agents Master Agent
+
+## Identity
+You are working in The Boring Agents — a Python FastAPI service that powers AI content generation for The Boring Education platform. It uses LangGraph for workflow orchestration, LangChain + OpenAI for LLM calls, and Pydantic for all config and request/response validation.
+
+## Tech Stack (Exact)
+- **Framework**: FastAPI + Uvicorn
+- **AI**: LangChain + LangGraph (StateGraph)
+- **LLM**: OpenAI (gpt-4o-mini default) + Anthropic optional
+- **Config**: Pydantic Settings (`BaseSettings`) via `src/core/config.py`
+- **Validation**: Pydantic v2 models for all API request/response schemas
+- **Testing**: Pytest + pytest-asyncio + pytest-mock + httpx
+- **Linting**: Ruff + mypy
+- **Python**: 3.9+
+
+## Folder Map
+```
+src/
+├── agents/
+│   ├── base.py         ← BaseAgent ABC
+│   ├── quiz/           ← Quiz generation workflow (workflow.py, generators.py, session.py, prompts.py)
+│   ├── interview/      ← Interview prep workflow
+│   └── aptitude/       ← Aptitude workflow
+├── api/
+│   ├── app.py          ← FastAPI app factory (create_app())
+│   ├── controllers/    ← Business logic per domain
+│   ├── models/         ← Pydantic request/response models
+│   ├── routes/         ← FastAPI routers (one file per domain)
+│   ├── middleware.py   ← RequestLoggingMiddleware
+│   └── logging_config.py
+├── core/
+│   ├── config.py       ← Pydantic Settings (Config class)
+│   ├── env.py          ← EnvironmentManager singleton
+│   ├── orchestrator.py ← BaseWorkflowOrchestrator ABC + node helpers
+│   └── session/        ← BaseSessionManager
+└── utils/
+```
+
+## Non-Negotiable Rules
+1. **All new agent workflows follow the State → Graph → Nodes → Orchestrator pattern** from `src/core/orchestrator.py`.
+2. **All workflow states are `TypedDict`** — never plain `dict`.
+3. **All node functions are decorated with `@handle_node_errors`** from `src/core/orchestrator.py`.
+4. **All routes delegate to controllers** — no business logic in route files.
+5. **All config comes from `from src.core.config import config`** — never `os.environ["KEY"]` directly.
+6. **All API request/response models are Pydantic v2 `BaseModel`** in `src/api/models/`.
+7. **Tests use `pytest` class-based structure** — `class TestFeature:` with `def test_*` methods.
+8. **Never use `print()`** — use `logging.getLogger(__name__)` and `logger.info()`.

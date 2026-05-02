@@ -1,0 +1,156 @@
+---
+description: Rules for pytest tests in The-Boring-Agents
+globs: ["tests/**/*.py"]
+alwaysApply: false
+---
+
+# The-Boring-Agents Testing Skill
+
+## Purpose
+Tests use pytest with class-based structure. All LLM and external calls are mocked using `unittest.mock`. The `conftest.py` provides shared fixtures. This skill enforces consistent test naming, fixture usage, and mocking patterns.
+
+## Rules
+1. **Tests are grouped in classes** — `class TestFeatureName:` with `def test_*` methods.
+2. **Class names describe the unit under test** — `class TestQuizWorkflowOrchestratorInit:`.
+3. **Every test method has a docstring** — single sentence describing what is asserted.
+4. **All LLM calls are mocked** — never make real API calls in tests. Use `@patch` or `pytest-mock`'s `mocker`.
+5. **Use `with patch(...)` context managers** for temporary mocks inside a test.
+6. **Fixtures go in `conftest.py`** — temp directories, mock clients, etc.
+7. **Use `pytest.fixture` for shared setup** — never `setUp`/`tearDown` (that's unittest, not pytest).
+8. **Async tests use `@pytest.mark.asyncio`** — from `pytest-asyncio`.
+9. **Never import from `unittest.TestCase`** — use plain `class TestX:` without a base class.
+10. **Assert specific values** — never `assert result is not None` alone; check the actual shape.
+
+## Patterns
+
+### Class-based test structure
+```python
+# tests/myagent/test_workflow.py
+import pytest
+from unittest.mock import MagicMock, patch
+from typing import Dict, Any
+
+from src.agents.myagent.workflow import MyAgentOrchestrator, create_initial_state
+
+
+class TestMyAgentOrchestratorInit:
+    """Tests for MyAgentOrchestrator initialization."""
+
+    def test_initialization(self, temp_sessions_dir):
+        """Test that orchestrator can be initialized without errors."""
+        with patch("src.agents.myagent.workflow.create_workflow_graph") as mock_graph:
+            mock_graph.return_value = MagicMock()
+            orchestrator = MyAgentOrchestrator()
+            assert orchestrator is not None
+
+    def test_has_session_manager(self, temp_sessions_dir):
+        """Test that orchestrator has a session manager."""
+        with patch("src.agents.myagent.workflow.create_workflow_graph") as mock_graph:
+            mock_graph.return_value = MagicMock()
+            orchestrator = MyAgentOrchestrator()
+            assert orchestrator.session_manager is not None
+
+
+class TestCreateInitialState:
+    """Tests for create_initial_state factory function."""
+
+    def test_returns_correct_keys(self):
+        """Test that initial state contains all required keys."""
+        state = create_initial_state(session_id="s1", topic="React")
+        assert "session_id" in state
+        assert "topic" in state
+        assert "status" in state
+        assert "error" in state
+
+    def test_status_is_running(self):
+        """Test that initial status is 'running'."""
+        state = create_initial_state(session_id="s1", topic="React")
+        assert state["status"] == "running"
+
+    def test_error_is_none(self):
+        """Test that initial error is None."""
+        state = create_initial_state(session_id="s1", topic="React")
+        assert state["error"] is None
+```
+
+### Fixture in conftest.py
+```python
+# tests/conftest.py
+import pytest
+import tempfile
+import os
+
+
+@pytest.fixture
+def temp_sessions_dir():
+    """Provide a temporary directory for session files during tests."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
+
+
+@pytest.fixture
+def mock_openai_client():
+    """Provide a mock OpenAI client."""
+    with patch("src.agents.base.ChatOpenAI") as mock:
+        mock_instance = MagicMock()
+        mock.return_value = mock_instance
+        yield mock_instance
+```
+
+### HTTP endpoint test with httpx
+```python
+# tests/api/test_resource_routes.py
+import pytest
+from httpx import AsyncClient
+from src.api.app import create_app
+
+
+class TestResourceRoutes:
+    """Tests for resource API endpoints."""
+
+    @pytest.mark.asyncio
+    async def test_create_resource_returns_session_id(self):
+        """Test that POST /resource returns a session ID."""
+        app = create_app()
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            with patch("src.api.controllers.resource_controller.ResourceController.create_resource") as mock_create:
+                mock_create.return_value = {"session_id": "sess_123", "status": "running", "message": "Started"}
+                response = await client.post("/api/v1/resource/", json={"topic": "React", "difficulty": "medium"})
+
+        assert response.status_code == 200
+        assert response.json()["session_id"] == "sess_123"
+```
+
+## Anti-Patterns
+
+### ❌ Real LLM call in test
+```python
+# BAD — makes real API call, costs money, is slow and non-deterministic
+def test_generate_quiz():
+    orchestrator = QuizWorkflowOrchestrator()
+    result = orchestrator.run_workflow(state)
+    assert len(result["questions"]) > 0
+```
+```python
+# GOOD — mock the LLM generator
+def test_generate_quiz(self):
+    with patch("src.agents.quiz.generators.QuizQuestionGenerator.generate") as mock_gen:
+        mock_gen.return_value = [{"question": "Q1", "options": [], "answer": "A"}]
+        # test the workflow plumbing, not the LLM output
+```
+
+### ❌ unittest.TestCase inheritance
+```python
+# BAD
+import unittest
+class TestOrchestrator(unittest.TestCase):
+    def setUp(self): ...
+    def test_init(self): ...
+```
+```python
+# GOOD — plain pytest class
+class TestOrchestrator:
+    @pytest.fixture(autouse=True)
+    def setup(self, temp_sessions_dir): ...
+    def test_init(self): ...
+```

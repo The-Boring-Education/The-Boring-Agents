@@ -1,0 +1,166 @@
+---
+description: Rules for FastAPI route and controller patterns in The-Boring-Agents
+globs: ["src/api/routes/**/*.py", "src/api/controllers/**/*.py", "src/api/models/**/*.py"]
+alwaysApply: false
+---
+
+# FastAPI Routes Skill
+
+## Purpose
+The API follows a strict routes → controllers → agents delegation chain. Routes only handle request/response, controllers hold business logic, agent orchestrators run workflows. This skill ensures that pattern is maintained and routes stay thin.
+
+## Rules
+1. **Routes are thin** — they call a controller method and log the action. No business logic in route files.
+2. **All route functions are `async`** — use `async def`, even if not awaiting.
+3. **All request bodies are Pydantic `BaseModel`** defined in `src/api/models/`.
+4. **Response models are declared in `@router.post(..., response_model=ResponseModel)`** — never return untyped dicts.
+5. **Background tasks use `FastAPI`'s `BackgroundTasks`** — never `threading.Thread` or `asyncio.create_task`.
+6. **All exceptions raise `HTTPException`** with a meaningful `detail` string — never `return {"error": ...}` on failure.
+7. **Log every action with `log_action(request, action_name, **kwargs)`** from `src/utils/request_logging`.
+8. **Controllers are instantiated once at module level** — `controller = ResourceController()` — not inside each route function.
+9. **Router prefix is declared on the `APIRouter`** — `router = APIRouter(prefix="/resource", tags=["resource"])`.
+10. **All routers are registered in `src/api/routes/__init__.py`** and added to the app in `src/api/app.py`.
+
+## Patterns
+
+### Standard route file
+```python
+# src/api/routes/resource.py
+import logging
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+
+from src.api.controllers.resource_controller import ResourceController
+from src.api.models.resource_models import CreateResourceRequest, SessionResponse
+from src.utils.request_logging import log_action
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/resource", tags=["resource"])
+controller = ResourceController()
+
+
+@router.post("/", response_model=SessionResponse)
+async def create_resource(
+    payload: CreateResourceRequest,
+    background_tasks: BackgroundTasks,
+    request: Request,
+):
+    """Create a new resource."""
+    log_action(request, "create_resource", topic=payload.topic)
+
+    try:
+        result = controller.create_resource(payload, background_tasks)
+        log_action(request, "create_resource", status="success", session_id=result.session_id)
+        return result
+    except Exception as e:
+        log_action(request, "create_resource", status="error", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to create resource: {str(e)}")
+
+
+@router.get("/sessions/{session_id}", response_model=SessionResponse)
+async def get_session(session_id: str, request: Request):
+    """Get session progress."""
+    try:
+        result = controller.get_session(session_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+### Pydantic request/response models
+```python
+# src/api/models/resource_models.py
+from enum import Enum
+from typing import Optional
+from pydantic import BaseModel, Field
+
+
+class ResourceDifficulty(str, Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
+
+class CreateResourceRequest(BaseModel):
+    topic: str = Field(..., description="Topic for resource generation")
+    difficulty: ResourceDifficulty = Field(default=ResourceDifficulty.MEDIUM)
+    count: int = Field(default=10, ge=1, le=50)
+
+
+class SessionResponse(BaseModel):
+    session_id: str
+    status: str
+    message: str
+```
+
+### Controller
+```python
+# src/api/controllers/resource_controller.py
+import logging
+from fastapi import BackgroundTasks
+
+from src.agents.myagent.workflow import MyAgentOrchestrator
+
+logger = logging.getLogger(__name__)
+
+
+class ResourceController:
+    def __init__(self):
+        self.orchestrator = MyAgentOrchestrator()
+
+    def create_resource(self, payload: CreateResourceRequest, background_tasks: BackgroundTasks) -> SessionResponse:
+        session_id = self.orchestrator.start_generation(topic=payload.topic)
+        initial_state = self.orchestrator.session_manager.get_session(session_id)
+        background_tasks.add_task(self.orchestrator.run_workflow, initial_state)
+        return SessionResponse(session_id=session_id, status="running", message="Generation started")
+
+    def get_session(self, session_id: str) -> Optional[SessionResponse]:
+        session = self.orchestrator.session_manager.get_session(session_id)
+        if not session:
+            return None
+        return SessionResponse(session_id=session_id, status=session["status"], message=session["current_step"])
+```
+
+## Anti-Patterns
+
+### ❌ Business logic in route function
+```python
+# BAD
+@router.post("/resource")
+async def create_resource(payload: CreateResourceRequest, background_tasks: BackgroundTasks):
+    orchestrator = MyAgentOrchestrator()
+    session_id = orchestrator.start_generation(payload.topic)
+    # ... 30 more lines of logic
+```
+```python
+# GOOD
+@router.post("/resource", response_model=SessionResponse)
+async def create_resource(payload: CreateResourceRequest, background_tasks: BackgroundTasks, request: Request):
+    log_action(request, "create_resource", topic=payload.topic)
+    try:
+        return controller.create_resource(payload, background_tasks)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+### ❌ Returning dict on errors
+```python
+# BAD
+@router.get("/resource/{id}")
+async def get_resource(id: str):
+    resource = controller.get_resource(id)
+    if not resource:
+        return {"error": "not found"}  # wrong — this is 200 OK!
+```
+```python
+# GOOD
+@router.get("/resource/{id}", response_model=ResourceResponse)
+async def get_resource(id: str):
+    resource = controller.get_resource(id)
+    if not resource:
+        raise HTTPException(status_code=404, detail=f"Resource {id} not found")
+    return resource
+```
