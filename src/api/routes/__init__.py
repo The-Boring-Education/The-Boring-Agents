@@ -5,6 +5,7 @@ Routes define endpoints and delegate to controllers for business logic.
 """
 
 from src.api.routes.aptitude import router as aptitude_router
+from src.api.routes.dsa import router as dsa_router
 from src.api.routes.interview_prep import router as interview_prep_router
 from src.api.routes.quiz import router as quiz_router
 from src.api.routes.session import router as session_router
@@ -14,4 +15,5 @@ __all__ = [
     "interview_prep_router",
     "session_router",
     "aptitude_router",
+    "dsa_router",
 ]

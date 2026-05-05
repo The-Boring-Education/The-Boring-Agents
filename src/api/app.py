@@ -12,6 +12,7 @@ from src.api.logging_config import setup_api_logging
 from src.api.middleware import RequestLoggingMiddleware
 from src.api.routes import (
     aptitude_router,
+    dsa_router,
     interview_prep_router,
     quiz_router,
     session_router,
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(interview_prep_router, prefix="/api/v1")
     app.include_router(session_router, prefix="/api/v1")
     app.include_router(aptitude_router, prefix="/api/v1")
+    app.include_router(dsa_router, prefix="/api/v1")
 
     # Root API endpoint
     @app.get("/api/v1")
@@ -89,6 +91,12 @@ def create_app() -> FastAPI:
                     "upload_study_guide": "POST /api/v1/aptitude/upload-study-guide",
                     "topics": "GET /api/v1/aptitude/topics",
                     "upload": "POST /api/v1/aptitude/upload",
+                },
+                "dsa": {
+                    "generate_topic": "POST /api/v1/dsa/topics",
+                    "generate_topic_alias": "POST /api/v1/dsa/generate-topic",
+                    "sessions": "GET /api/v1/dsa/sessions",
+                    "session_output": "GET /api/v1/dsa/sessions/{id}/output",
                 },
             },
             "docs": "/docs",

@@ -267,20 +267,20 @@ src/api/
 | 1.6 | Add unified job queue model | ✅ | Job dataclass with status, type, constraints |
 | 1.7 | Write tests for new core infra | ✅ | Unit tests with mocked LLM |
 
-### Phase 2: DSA Yatra Agent ⬜
+### Phase 2: DSA Yatra Agent ⏳
 > Generate DSA questions, study guides, real-world problems
 
 | # | Task | Status | Details |
 |---|------|--------|---------|
-| 2.1 | Create DSA Question Generator | ⬜ | Deep sections matching TBE-Web schema |
-| 2.2 | Create DSA Study Guide Generator | ⬜ | 4 section types (intro, concept, pattern, cheatsheet) |
-| 2.3 | Create DSA Real-World Problem Generator | ⬜ | `isRealWorldProblem: true` variant |
-| 2.4 | Create DSA LangGraph Workflow | ⬜ | Chunked: generate N questions per run |
-| 2.5 | Create DSA Session Manager | ⬜ | Track topic, difficulty, count, progress |
-| 2.6 | Create DSA API routes + controller | ⬜ | POST /api/v1/dsa/questions, /study-guide |
-| 2.7 | Create DSA Pydantic models | ⬜ | Request/response validation |
-| 2.8 | Create DSA output validators | ⬜ | Validate against TBE-Web schema |
-| 2.9 | Write DSA agent tests | ⬜ | Mocked LLM, schema validation |
+| 2.1 | Create DSA Question Generator | ✅ | Deep sections matching TBE-Web schema |
+| 2.2 | Create DSA Study Guide Generator | ✅ | 4 section types (intro, concept, pattern, cheatsheet) |
+| 2.3 | Create DSA Real-World Problem Generator | ✅ | `isRealWorldProblem: true` by default |
+| 2.4 | Create DSA LangGraph Workflow | ✅ | Dedicated topic -> questions -> study guide pipeline |
+| 2.5 | Create DSA Session Manager | ✅ | Track topic, difficulty, count, progress |
+| 2.6 | Create DSA API routes + controller | ✅ | Topic-first endpoints for admin integration |
+| 2.7 | Create DSA Pydantic models | ✅ | Request/response validation |
+| 2.8 | Create DSA output validators | ✅ | Normalize and enforce schema defaults |
+| 2.9 | Write DSA agent tests | ✅ | Validator/model tests for topic-first defaults |
 | 2.10 | Push-to-DB: DSA questions endpoint | ⬜ | POST to `/api/v1/interview-prep/dsa-sheet/` |
 | 2.11 | Push-to-DB: Study guides endpoint | ⬜ | POST to `/api/v1/interview-prep/study-guide/` |
 

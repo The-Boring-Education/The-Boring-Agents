@@ -11,6 +11,13 @@ from src.api.models.interview_prep_models import (
 from src.api.models.interview_prep_models import (
     TopicGenerationRequest as InterviewTopicGenerationRequest,
 )
+from src.api.models.dsa_models import (
+    DSAOutputModel,
+    DSAQuestionModel,
+    DSASessionResponse,
+    DSAStudyGuideModel,
+    DSATopicGenerationRequest,
+)
 from src.api.models.quiz_models import (
     CreateQuizRequest,
     QuizAgentType,
@@ -48,4 +55,10 @@ __all__ = [
     "InterviewGenerationSession",
     "TopicTemplate",
     "RoadmapSuggestion",
+    # DSA models
+    "DSATopicGenerationRequest",
+    "DSASessionResponse",
+    "DSAQuestionModel",
+    "DSAStudyGuideModel",
+    "DSAOutputModel",
 ]
