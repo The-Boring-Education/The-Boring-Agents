@@ -27,8 +27,7 @@ class Config(BaseSettings):
 
     # API Keys
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
-    anthropic_api_key: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
-    huggingface_api_key: Optional[str] = Field(default=None, env="HUGGINGFACE_API_KEY")
+    gemini_api_key: Optional[str] = Field(default=None, env="GEMINI_API_KEY")
 
     # Application Settings
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
@@ -36,6 +35,9 @@ class Config(BaseSettings):
     temp_dir: str = Field(default="./temp", env="TEMP_DIR")
 
     # Content Generation Settings
+    default_llm_provider: str = Field(
+        default="openai", env="DEFAULT_LLM_PROVIDER"
+    )
     default_model: str = Field(default="gpt-4o-mini", env="DEFAULT_MODEL")
     max_tokens: int = Field(default=4000, env="MAX_TOKENS")
     temperature: float = Field(default=0.8, env="TEMPERATURE")
@@ -103,6 +105,19 @@ class Config(BaseSettings):
         Uses the EnvironmentManager for validation with proper logging.
         """
         return env_validate_api_keys()
+
+    def get_llm_api_key(self, provider: str) -> Optional[str]:
+        """Return configured API key for the requested LLM provider."""
+        provider_name = provider.strip().lower()
+        provider_key_map = {
+            "openai": self.openai_api_key,
+            "gemini": self.gemini_api_key,
+        }
+        return provider_key_map.get(provider_name)
+
+    def resolve_llm_provider(self, provider: Optional[str] = None) -> str:
+        """Resolve provider with fallback to configured default provider."""
+        return (provider or self.default_llm_provider).strip().lower()
 
 
 # Global configuration instance

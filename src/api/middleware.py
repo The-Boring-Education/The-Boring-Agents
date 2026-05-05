@@ -44,8 +44,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         "authorization",
         "auth",
         "openai_api_key",
-        "anthropic_api_key",
-        "huggingface_api_key",
+        "gemini_api_key",
     ]
 
     def __init__(self, app: ASGIApp, environment: str = "dev"):

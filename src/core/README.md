@@ -75,8 +75,7 @@ The environment manager loads variables in the following order (later files over
 #### API Keys (At least one required)
 
 - `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
-- `HUGGINGFACE_API_KEY`
+- `GEMINI_API_KEY`
 
 #### Application Settings
 

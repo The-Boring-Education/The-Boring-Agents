@@ -10,11 +10,10 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
 
 from src.core.config import config
+from src.core.llm import LLMProvider, get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +23,14 @@ class BaseAgent(ABC):
 
     CUSTOM_PARAM_KEYS = frozenset({"technology"})
 
-    def __init__(self, model_name: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        model_name: Optional[str] = None,
+        llm_provider: Optional[str] = None,
+        **kwargs,
+    ):
         self.model_name = model_name or config.default_model
+        self.llm_provider = config.resolve_llm_provider(llm_provider)
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.model_kwargs = {
@@ -35,31 +40,32 @@ class BaseAgent(ABC):
             k: v for k, v in kwargs.items() if k in self.CUSTOM_PARAM_KEYS
         }
 
-        self._llm: Optional[BaseChatModel] = None
+        self._llm: Optional[LLMProvider] = None
         self.prompt_templates = self._get_prompt_templates()
 
         self.logger.info(
-            "%s initialized | model=%s temperature=%s max_tokens=%s",
+            "%s initialized | provider=%s model=%s temperature=%s max_tokens=%s",
             self.__class__.__name__,
+            self.llm_provider,
             self.model_name,
             config.temperature,
             config.max_tokens,
         )
 
     @property
-    def llm(self) -> BaseChatModel:
+    def llm(self) -> LLMProvider:
         if self._llm is None:
             self._llm = self._initialize_llm(**self.model_kwargs)
         return self._llm
 
-    def _initialize_llm(self, **kwargs) -> BaseChatModel:
-        if not config.openai_api_key:
+    def _initialize_llm(self, **kwargs) -> LLMProvider:
+        if not config.get_llm_api_key(self.llm_provider):
             raise ValueError(
-                "No valid API key found. Please set OPENAI_API_KEY in your environment."
+                f"No valid API key found for provider '{self.llm_provider}'."
             )
-        return ChatOpenAI(
-            model_name=self.model_name,
-            openai_api_key=config.openai_api_key,
+        return get_llm(
+            provider=self.llm_provider,
+            model=self.model_name,
             temperature=config.temperature,
             max_tokens=config.max_tokens,
             **kwargs,
@@ -94,8 +100,7 @@ class BaseAgent(ABC):
                         "Truncating prompt from %d to %d words", len(words), max_words
                     )
                     prompt = " ".join(words[:max_words])
-            response = self.llm.invoke(prompt)
-            return response.content.strip()
+            return self.llm.generate(prompt).strip()
         except Exception as e:
             self.logger.error("Error generating content: %s", e)
             raise

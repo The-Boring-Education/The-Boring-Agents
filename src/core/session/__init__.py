@@ -209,6 +209,83 @@ class BaseSessionManager(ABC):
             progress[k] = v
         self.save_session(session_id, session_data)
 
+    def initialize_chunk_tracking(
+        self,
+        session_id: str,
+        target_count: int,
+        chunk_size: int,
+        items_generated: int = 0,
+    ) -> None:
+        """Initialize standardized chunk-tracking metadata for a session."""
+        if target_count < 0:
+            raise ValueError("target_count must be non-negative")
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than zero")
+
+        session_data = self.get_session(session_id)
+        if not session_data:
+            raise ValueError(f"Session {session_id} not found")
+
+        metadata = session_data.setdefault("metadata", {})
+        metadata["target_count"] = target_count
+        metadata["chunk_size"] = chunk_size
+        metadata["items_generated"] = max(0, items_generated)
+        metadata["remaining_items"] = max(
+            0, metadata["target_count"] - metadata["items_generated"]
+        )
+
+        self.save_session(session_id, session_data)
+
+        self.update_progress(
+            session_id,
+            completed=metadata["items_generated"],
+            total=metadata["target_count"],
+            target_count=metadata["target_count"],
+            chunk_size=metadata["chunk_size"],
+            items_generated=metadata["items_generated"],
+            remaining_items=metadata["remaining_items"],
+        )
+
+    def increment_generated_items(
+        self,
+        session_id: str,
+        generated_delta: int,
+        current_step: Optional[str] = None,
+    ) -> Dict[str, int]:
+        """Increment generated item count and keep progress in sync."""
+        if generated_delta < 0:
+            raise ValueError("generated_delta must be non-negative")
+
+        session_data = self.get_session(session_id)
+        if not session_data:
+            raise ValueError(f"Session {session_id} not found")
+
+        metadata = session_data.setdefault("metadata", {})
+        target_count = int(metadata.get("target_count", 0))
+        items_generated = int(metadata.get("items_generated", 0)) + generated_delta
+        if target_count > 0:
+            items_generated = min(items_generated, target_count)
+
+        metadata["items_generated"] = items_generated
+        metadata["remaining_items"] = max(0, target_count - items_generated)
+        self.save_session(session_id, session_data)
+
+        self.update_progress(
+            session_id,
+            completed=items_generated,
+            total=target_count,
+            current_step=current_step,
+            items_generated=items_generated,
+            remaining_items=metadata["remaining_items"],
+            target_count=target_count,
+            chunk_size=int(metadata.get("chunk_size", 0)),
+        )
+        return {
+            "items_generated": items_generated,
+            "target_count": target_count,
+            "remaining_items": metadata["remaining_items"],
+        }
+
     def list_sessions(
         self, status: Optional[SessionStatus] = None
     ) -> List[Dict[str, Any]]:

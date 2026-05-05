@@ -43,6 +43,7 @@ class EnvironmentManager:
         "TEMP_DIR": "./temp",
         "ENVIRONMENT": "dev",  # local, dev, or prod
         # Content Generation Settings
+        "DEFAULT_LLM_PROVIDER": "openai",
         "DEFAULT_MODEL": "gpt-4o-mini",
         "MAX_TOKENS": 4000,
         "TEMPERATURE": 0.8,
@@ -61,8 +62,7 @@ class EnvironmentManager:
     # API Key variables (at least one required)
     API_KEY_VARS = [
         "OPENAI_API_KEY",
-        "ANTHROPIC_API_KEY",
-        "HUGGINGFACE_API_KEY",
+        "GEMINI_API_KEY",
     ]
 
     _instance: Optional["EnvironmentManager"] = None
