@@ -13,6 +13,8 @@ from src.api.models.interview_prep_models import (
 )
 from src.api.models.dsa_models import (
     DSAOutputModel,
+    DSAPushRequest,
+    DSAPushResponse,
     DSAQuestionModel,
     DSASessionResponse,
     DSAStudyGuideModel,
@@ -58,6 +60,8 @@ __all__ = [
     # DSA models
     "DSATopicGenerationRequest",
     "DSASessionResponse",
+    "DSAPushRequest",
+    "DSAPushResponse",
     "DSAQuestionModel",
     "DSAStudyGuideModel",
     "DSAOutputModel",

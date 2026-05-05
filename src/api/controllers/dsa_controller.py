@@ -9,6 +9,8 @@ from fastapi import BackgroundTasks, HTTPException
 
 from src.agents.dsa.workflow import DSAWorkflowOrchestrator
 from src.api.models.dsa_models import DSASessionResponse, DSATopicGenerationRequest
+from src.core.config import config
+from src.core.pipeline import PushToDB
 from src.core.session import SessionStatus
 
 logger = logging.getLogger(__name__)
@@ -145,3 +147,98 @@ class DSAController:
             return {"message": "Session deleted"}
         except Exception:
             raise HTTPException(status_code=404, detail="Session not found")
+
+    def push_session_to_db(
+        self,
+        session_id: str,
+        *,
+        environment: Optional[str] = None,
+        push_questions: bool = True,
+        push_study_guide: bool = True,
+    ) -> Dict[str, Any]:
+        """Push generated DSA session output to TBE-Web API endpoints."""
+        if not push_questions and not push_study_guide:
+            return {
+                "ok": False,
+                "message": "Nothing to push. Enable push_questions and/or push_study_guide.",
+                "data": {},
+            }
+
+        session_data = self.orchestrator.session_manager.get_session(session_id)
+        if not session_data:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        output_payload = session_data.get("dsa_data")
+        if not output_payload:
+            output_payload = self.get_session_output(session_id).get("output")
+
+        if not output_payload:
+            return {
+                "ok": False,
+                "message": "No generated output found for session.",
+                "data": {},
+            }
+
+        base_v1_url = f"{config.get_api_base_url(environment).rstrip('/')}/api/v1"
+        pusher = PushToDB(base_url=base_v1_url)
+
+        questions = output_payload.get("questions", [])
+        study_guide = output_payload.get("studyGuide")
+
+        question_push_results = []
+        question_failures = []
+
+        if push_questions:
+            for index, question in enumerate(questions):
+                try:
+                    push_result = pusher.push(
+                        "/interview-prep/dsa-sheet/",
+                        question,
+                    )
+                    question_push_results.append(
+                        {
+                            "index": index,
+                            "title": question.get("title", ""),
+                            "status_code": push_result.get("status_code"),
+                        }
+                    )
+                except Exception as exc:
+                    question_failures.append(
+                        {
+                            "index": index,
+                            "title": question.get("title", ""),
+                            "error": str(exc),
+                        }
+                    )
+
+        study_guide_result = None
+        study_guide_error = None
+        if push_study_guide and study_guide:
+            try:
+                study_guide_result = pusher.push(
+                    "/interview-prep/study-guide",
+                    study_guide,
+                )
+            except Exception as exc:
+                study_guide_error = str(exc)
+
+        ok = len(question_failures) == 0 and not study_guide_error
+
+        return {
+            "ok": ok,
+            "message": (
+                "DSA session pushed successfully"
+                if ok
+                else "DSA session push completed with partial failures"
+            ),
+            "data": {
+                "sessionId": session_id,
+                "environment": environment or config.environment,
+                "questionsAttempted": len(questions) if push_questions else 0,
+                "questionsPushed": len(question_push_results),
+                "questionsFailed": len(question_failures),
+                "questionFailures": question_failures,
+                "studyGuidePushed": bool(study_guide_result),
+                "studyGuideError": study_guide_error,
+            },
+        }

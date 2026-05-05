@@ -97,6 +97,7 @@ def create_app() -> FastAPI:
                     "generate_topic_alias": "POST /api/v1/dsa/generate-topic",
                     "sessions": "GET /api/v1/dsa/sessions",
                     "session_output": "GET /api/v1/dsa/sessions/{id}/output",
+                    "push_session": "POST /api/v1/dsa/sessions/{id}/push",
                 },
             },
             "docs": "/docs",

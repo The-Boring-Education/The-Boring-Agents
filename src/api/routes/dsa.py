@@ -5,7 +5,12 @@ import logging
 from fastapi import APIRouter, BackgroundTasks, Request
 
 from src.api.controllers.dsa_controller import DSAController
-from src.api.models.dsa_models import DSASessionResponse, DSATopicGenerationRequest
+from src.api.models.dsa_models import (
+    DSAPushRequest,
+    DSAPushResponse,
+    DSASessionResponse,
+    DSATopicGenerationRequest,
+)
 from src.utils.request_logging import log_action
 
 logger = logging.getLogger(__name__)
@@ -97,3 +102,26 @@ def delete_session(session_id: str, request: Request):
     """Delete a DSA session."""
     log_action(request, "dsa_delete_session", session_id=session_id)
     return controller.delete_session(session_id)
+
+
+@router.post("/sessions/{session_id}/push", response_model=DSAPushResponse)
+def push_session_to_db(
+    session_id: str,
+    payload: DSAPushRequest,
+    request: Request,
+):
+    """Push generated DSA questions/study-guide to TBE-Web."""
+    log_action(
+        request,
+        "dsa_push_session",
+        session_id=session_id,
+        environment=payload.environment,
+        push_questions=payload.push_questions,
+        push_study_guide=payload.push_study_guide,
+    )
+    return controller.push_session_to_db(
+        session_id,
+        environment=payload.environment,
+        push_questions=payload.push_questions,
+        push_study_guide=payload.push_study_guide,
+    )

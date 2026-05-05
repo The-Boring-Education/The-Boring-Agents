@@ -281,8 +281,8 @@ src/api/
 | 2.7 | Create DSA Pydantic models | ✅ | Request/response validation |
 | 2.8 | Create DSA output validators | ✅ | Normalize and enforce schema defaults |
 | 2.9 | Write DSA agent tests | ✅ | Validator/model tests for topic-first defaults |
-| 2.10 | Push-to-DB: DSA questions endpoint | ⬜ | POST to `/api/v1/interview-prep/dsa-sheet/` |
-| 2.11 | Push-to-DB: Study guides endpoint | ⬜ | POST to `/api/v1/interview-prep/study-guide/` |
+| 2.10 | Push-to-DB: DSA questions endpoint | ✅ | POST to `/api/v1/interview-prep/dsa-sheet/` via session push |
+| 2.11 | Push-to-DB: Study guides endpoint | ✅ | POST to `/api/v1/interview-prep/study-guide` via session push |
 
 ### Phase 3: Shiksha (Course) Agent ⬜
 > Generate full courses with MDX chapters

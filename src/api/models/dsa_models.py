@@ -53,3 +53,24 @@ class DSAOutputModel(BaseModel):
     questions: List[DSAQuestionModel] = Field(default_factory=list)
     studyGuide: Optional[DSAStudyGuideModel] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DSAPushRequest(BaseModel):
+    """Request payload for publishing generated DSA content to TBE-Web."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    environment: Optional[str] = Field(
+        default=None,
+        description="Target env: local, dev, prod. Defaults to configured environment.",
+    )
+    push_questions: bool = Field(default=True, alias="pushQuestions")
+    push_study_guide: bool = Field(default=True, alias="pushStudyGuide")
+
+
+class DSAPushResponse(BaseModel):
+    """Response payload for DSA publish operations."""
+
+    ok: bool
+    message: str
+    data: Dict[str, Any] = Field(default_factory=dict)
