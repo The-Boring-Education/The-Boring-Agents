@@ -2,6 +2,15 @@
 
 from typing import Any, Dict, List
 
+from src.agents.dsa.schema import (
+    ALLOWED_COMPANY_TYPES,
+    ALLOWED_DSA_DIFFICULTY,
+    ALLOWED_DSA_DOMAIN,
+    ALLOWED_DSA_TOPICS,
+    COMPANY_ALIAS_MAP,
+    TOPIC_ALIAS_MAP,
+)
+
 
 def topic_to_slug(topic: str) -> str:
     """Convert user topic into URL-friendly slug."""
@@ -19,6 +28,54 @@ def _as_string_list(value: Any) -> List[str]:
     return [str(item).strip() for item in value if str(item).strip()]
 
 
+def _normalize_domain(values: List[str]) -> List[str]:
+    normalized = [value.strip().upper() for value in values if value.strip()]
+    valid = [value for value in normalized if value in ALLOWED_DSA_DOMAIN]
+    return valid or ["DSA"]
+
+
+def _normalize_company_types(values: List[str]) -> List[str]:
+    normalized = []
+    for value in values:
+        key = value.strip().lower().replace("-", "_").replace(" ", "_")
+        canonical = COMPANY_ALIAS_MAP.get(key)
+        if canonical and canonical in ALLOWED_COMPANY_TYPES:
+            normalized.append(canonical)
+    if not normalized:
+        return ["MNC", "FAANG"]
+    return list(dict.fromkeys(normalized))
+
+
+def _normalize_topics(values: List[str], *, topic: str) -> List[str]:
+    normalized = []
+    for value in values:
+        stripped = value.strip()
+        if not stripped:
+            continue
+        alias = TOPIC_ALIAS_MAP.get(stripped.lower())
+        topic_enum = alias or topic_to_enum(stripped)
+        if topic_enum in ALLOWED_DSA_TOPICS:
+            normalized.append(topic_enum)
+
+    if not normalized:
+        fallback = TOPIC_ALIAS_MAP.get(topic.strip().lower()) or topic_to_enum(topic)
+        if fallback in ALLOWED_DSA_TOPICS:
+            normalized = [fallback]
+        else:
+            normalized = ["ARRAY"]
+    return list(dict.fromkeys(normalized))
+
+
+def _normalize_difficulty(value: str, default_difficulty: str) -> str:
+    normalized_default = default_difficulty.upper()
+    if normalized_default not in ALLOWED_DSA_DIFFICULTY:
+        normalized_default = "MEDIUM"
+    candidate = value.upper()
+    if candidate in ALLOWED_DSA_DIFFICULTY:
+        return candidate
+    return normalized_default
+
+
 def normalize_question(
     item: Dict[str, Any],
     *,
@@ -32,13 +89,13 @@ def normalize_question(
 
     title = str(item.get("title") or f"{topic.title()} Question {index + 1}").strip()
     answer = str(item.get("answer") or "Solution explanation not provided.").strip()
-    difficulty = str(item.get("difficulty") or default_difficulty).upper()
-    if difficulty not in {"EASY", "MEDIUM", "HARD"}:
-        difficulty = default_difficulty
+    difficulty = _normalize_difficulty(
+        str(item.get("difficulty") or default_difficulty), default_difficulty
+    )
 
-    domains = _as_string_list(item.get("domain")) or ["CODING"]
-    company_types = _as_string_list(item.get("companyTypes")) or ["MNC", "STARTUP"]
-    topics = _as_string_list(item.get("topics")) or [topic_enum]
+    domains = _normalize_domain(_as_string_list(item.get("domain")))
+    company_types = _normalize_company_types(_as_string_list(item.get("companyTypes")))
+    topics = _normalize_topics(_as_string_list(item.get("topics")) or [topic_enum], topic=topic)
 
     resources = item.get("resources") if isinstance(item.get("resources"), dict) else {}
     sections = item.get("sections") if isinstance(item.get("sections"), dict) else {}
@@ -168,10 +225,18 @@ def normalize_study_guide(
                     "openingParagraph": f"Learn {topic.title()} from first principles to interview-level confidence.",
                     "prereqCards": [],
                     "callouts": [],
+                    "howToUseHeading": "How to use this guide",
+                    "howToUseParagraphs": [
+                        "Read concepts first, then pattern section, then practice from cheatsheet groups.",
+                    ],
                 },
             },
             {
+                "id": None,
+                "label": "Concepts",
                 "type": "concept",
+                "isDivider": False,
+                "dividerLabel": None,
                 "sortOrder": 2,
                 "content": {
                     "pageTitle": f"{topic.title()} Core Concepts",
@@ -180,13 +245,19 @@ def normalize_study_guide(
                         {
                             "subheading": "Core idea",
                             "bodyText": f"Understand the key invariant for {topic.title()} problems.",
+                            "tableData": None,
                             "codeBlocks": [],
+                            "sortOrder": 1,
                         }
                     ],
                 },
             },
             {
+                "id": None,
+                "label": "Patterns",
                 "type": "pattern",
+                "isDivider": False,
+                "dividerLabel": None,
                 "sortOrder": 3,
                 "content": {
                     "pageTitle": f"{topic.title()} Patterns",
@@ -195,16 +266,32 @@ def normalize_study_guide(
                     "triggerPhrases": ["find", "optimize", "track"],
                     "whenNotToUse": "When constraints require a different paradigm.",
                     "codeTemplates": [],
+                    "visualAscii": None,
                     "workedExample": {
                         "problemTitle": question_titles[0] if question_titles else f"{topic.title()} Example",
                         "problemStatement": "Solve the example using the chosen pattern.",
+                        "inputExample": "Input: [sample]",
+                        "outputExample": "Output: [result]",
+                        "bruteForceDesc": "Try all possibilities first as baseline.",
                         "coreTrick": "Preserve the core invariant while iterating.",
+                        "dryRunSteps": [],
+                        "solutionCode": [],
+                        "timeComplexity": "O(n)",
+                        "timeReason": "Single pass over input",
+                        "spaceComplexity": "O(n)",
+                        "spaceReason": "Auxiliary structure",
+                        "leetcodeUrl": "",
+                        "youtubeSearch": "",
                     },
                     "practiceQuestions": [],
                 },
             },
             {
+                "id": None,
+                "label": "Cheatsheet",
                 "type": "cheatsheet",
+                "isDivider": False,
+                "dividerLabel": None,
                 "sortOrder": 4,
                 "content": {
                     "pageTitle": f"{topic.title()} Cheatsheet",
@@ -218,6 +305,15 @@ def normalize_study_guide(
                 },
             },
         ]
+
+        sections[0].update(
+            {
+                "id": None,
+                "label": "Intro",
+                "isDivider": False,
+                "dividerLabel": None,
+            }
+        )
 
     return {
         "topicId": str(study_guide.get("topicId") or slug),

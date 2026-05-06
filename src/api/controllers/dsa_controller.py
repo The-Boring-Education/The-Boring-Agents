@@ -214,15 +214,12 @@ class DSAController:
         study_guide_result = None
         study_guide_error = None
         if push_study_guide and study_guide:
-            try:
-                study_guide_result = pusher.push(
-                    "/interview-prep/study-guide",
-                    study_guide,
-                )
-            except Exception as exc:
-                study_guide_error = str(exc)
+            # TBE-Web currently exposes read-only study guide route for DSA.
+            study_guide_error = (
+                "Skipped: no dedicated study-guide write endpoint is available in TBE-Web yet."
+            )
 
-        ok = len(question_failures) == 0 and not study_guide_error
+        ok = len(question_failures) == 0
 
         return {
             "ok": ok,

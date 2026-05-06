@@ -14,9 +14,9 @@ Each item MUST follow this shape:
   "title": "string",
   "answer": "string",
   "difficulty": "EASY|MEDIUM|HARD",
-  "domain": ["CODING"],
-  "companyTypes": ["FAANG","MNC","STARTUP"],
-  "topics": ["TOPIC_ENUM"],
+  "domain": ["DSA"],
+  "companyTypes": ["FAANG","MNC","Startup"],
+  "topics": ["ARRAY|STRING|HASHMAP|SLIDING_WINDOW|..."],
   "isRealWorldProblem": boolean,
   "resources": {{
     "youtubeURL": "string or empty",
@@ -57,6 +57,8 @@ Each item MUST follow this shape:
 
 Constraints:
 - At least one item must have "isRealWorldProblem": true when include_real_world=true.
+- Use only allowed domain values: FRONTEND, BACKEND, GENERAL, FULLSTACK, DSA.
+- Use only allowed companyTypes values with exact casing.
 - Keep answers practical and interview oriented.
 - No markdown fences and no explanation text, JSON only.
 """

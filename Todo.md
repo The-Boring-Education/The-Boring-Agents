@@ -330,7 +330,7 @@ src/api/
 
 | # | Task | Status | Details |
 |---|------|--------|---------|
-| 6.1 | Add DSA agent API hooks in tbe-admin | ⬜ | `src/api/dsaAgentsApi.ts` |
+| 6.1 | Add DSA agent API hooks in tbe-admin | ✅ | `src/api/dsaAgentsApi.ts` |
 | 6.2 | Add Course agent API hooks | ⬜ | `src/api/courseAgentsApi.ts` |
 | 6.3 | Add Project agent API hooks | ⬜ | `src/api/projectAgentsApi.ts` |
 | 6.4 | Create unified Agent Dashboard page | ⬜ | View all agent types, sessions, progress |
