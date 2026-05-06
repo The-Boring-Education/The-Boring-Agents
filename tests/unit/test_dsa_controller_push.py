@@ -58,3 +58,47 @@ class TestDSAControllerPush:
         )
         assert result["ok"] is False
         assert "Nothing to push" in result["message"]
+
+    def test_update_session_question(self):
+        """Question updates should persist on session dsa_data and questions."""
+        controller = DSAController()
+
+        session_data = {
+            "session_id": "session-2",
+            "dsa_data": {
+                "questions": [
+                    {
+                        "title": "Old title",
+                        "answer": "Old answer",
+                        "difficulty": "EASY",
+                        "isRealWorldProblem": False,
+                    }
+                ]
+            },
+            "questions": [
+                {
+                    "title": "Old title",
+                    "answer": "Old answer",
+                    "difficulty": "EASY",
+                    "isRealWorldProblem": False,
+                }
+            ],
+        }
+
+        controller.orchestrator.session_manager.get_session = Mock(return_value=session_data)
+        controller.orchestrator.session_manager.save_session = Mock()
+
+        updated = controller.update_session_question(
+            "session-2",
+            0,
+            {
+                "title": "New title",
+                "difficulty": "HARD",
+                "isRealWorldProblem": True,
+            },
+        )
+
+        assert updated["ok"] is True
+        assert updated["question"]["title"] == "New title"
+        assert updated["question"]["difficulty"] == "HARD"
+        assert updated["question"]["isRealWorldProblem"] is True
