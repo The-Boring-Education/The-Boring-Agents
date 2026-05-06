@@ -148,6 +148,49 @@ class DSAController:
         except Exception:
             raise HTTPException(status_code=404, detail="Session not found")
 
+    def update_session_question(
+        self,
+        session_id: str,
+        question_index: int,
+        updates: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Update one generated question before publishing to DB."""
+        session_data = self.orchestrator.session_manager.get_session(session_id)
+        if not session_data:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        dsa_data = session_data.get("dsa_data")
+        if not isinstance(dsa_data, dict):
+            dsa_data = self.get_session_output(session_id).get("output")
+
+        if not isinstance(dsa_data, dict):
+            raise HTTPException(status_code=400, detail="No DSA output found for session")
+
+        questions = dsa_data.get("questions")
+        if not isinstance(questions, list):
+            raise HTTPException(status_code=400, detail="No generated questions found")
+
+        if question_index < 0 or question_index >= len(questions):
+            raise HTTPException(status_code=404, detail="Question index out of range")
+
+        allowed_fields = {"title", "answer", "difficulty", "isRealWorldProblem"}
+        safe_updates = {k: v for k, v in updates.items() if k in allowed_fields and v is not None}
+        if not safe_updates:
+            raise HTTPException(status_code=400, detail="No valid fields provided for update")
+
+        questions[question_index].update(safe_updates)
+        dsa_data["questions"] = questions
+
+        session_data["dsa_data"] = dsa_data
+        session_data["questions"] = questions
+        self.orchestrator.session_manager.save_session(session_id, session_data)
+
+        return {
+            "ok": True,
+            "message": "Question updated",
+            "question": questions[question_index],
+        }
+
     def push_session_to_db(
         self,
         session_id: str,

@@ -8,6 +8,8 @@ from src.api.controllers.dsa_controller import DSAController
 from src.api.models.dsa_models import (
     DSAPushRequest,
     DSAPushResponse,
+    DSAQuestionUpdateRequest,
+    DSAQuestionUpdateResponse,
     DSASessionResponse,
     DSATopicGenerationRequest,
 )
@@ -124,4 +126,28 @@ def push_session_to_db(
         environment=payload.environment,
         push_questions=payload.push_questions,
         push_study_guide=payload.push_study_guide,
+    )
+
+
+@router.put(
+    "/sessions/{session_id}/questions/{question_index}",
+    response_model=DSAQuestionUpdateResponse,
+)
+def update_session_question(
+    session_id: str,
+    question_index: int,
+    payload: DSAQuestionUpdateRequest,
+    request: Request,
+):
+    """Update one generated DSA question before push to DB."""
+    log_action(
+        request,
+        "dsa_update_question",
+        session_id=session_id,
+        question_index=question_index,
+    )
+    return controller.update_session_question(
+        session_id,
+        question_index,
+        payload.model_dump(exclude_none=True),
     )

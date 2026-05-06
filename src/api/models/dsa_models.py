@@ -74,3 +74,20 @@ class DSAPushResponse(BaseModel):
     ok: bool
     message: str
     data: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DSAQuestionUpdateRequest(BaseModel):
+    """Request payload for updating one generated DSA question in-session."""
+
+    title: Optional[str] = None
+    answer: Optional[str] = None
+    difficulty: Optional[str] = None
+    isRealWorldProblem: Optional[bool] = None
+
+
+class DSAQuestionUpdateResponse(BaseModel):
+    """Response payload for question update operations."""
+
+    ok: bool
+    message: str
+    question: Dict[str, Any]
