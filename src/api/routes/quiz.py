@@ -95,7 +95,7 @@ async def create_quiz(
 @router.get("/topics")
 def list_quiz_topics(request: Request):
     """List available quiz topics (dashboard compatibility)."""
-    return {"topics": ["Python", "Java", "JavaScript", "C++", "DSA", "Aptitude"]}
+    return {"topics": ["Python", "Java", "JavaScript", "C++", "DSA", "Aptitude", "Node.js", "SQL"]}
 
 
 @router.post("/topics", response_model=SessionResponse)
