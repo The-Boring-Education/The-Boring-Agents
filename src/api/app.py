@@ -17,6 +17,7 @@ from src.api.routes import (
     quiz_router,
     session_router,
 )
+from src.core.config import get_config
 from src.core.env import get_env_manager
 
 
@@ -30,9 +31,11 @@ def create_app() -> FastAPI:
     # Set up logging first
     setup_api_logging()
 
-    # Get environment
+    # Get environment and config
     env_manager = get_env_manager()
     environment = env_manager.get("ENVIRONMENT", "dev")
+    config = get_config()
+    config.validate_security_settings()
 
     # Create FastAPI app
     app = FastAPI(
