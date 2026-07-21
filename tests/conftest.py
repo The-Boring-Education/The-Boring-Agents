@@ -14,9 +14,13 @@ from unittest.mock import Mock, patch, MagicMock
 from fastapi.testclient import TestClient
 
 # Set environment variables before importing the app
-os.environ.setdefault("OPENAI_API_KEY", "test-api-key")
-os.environ.setdefault("ENVIRONMENT", "test")
-os.environ.setdefault("LOG_LEVEL", "WARNING")
+os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY") or "test-api-key"
+os.environ["ENVIRONMENT"] = "test"
+os.environ["LOG_LEVEL"] = "WARNING"
+os.environ["ADMIN_SECRET"] = "test-admin-secret"
+
+# Auth header used by the authenticated TestClient fixture
+TEST_ADMIN_SECRET = os.environ["ADMIN_SECRET"]
 
 
 # =============================================================================
@@ -32,7 +36,15 @@ def app():
 
 @pytest.fixture(scope="session")
 def client(app) -> Generator[TestClient, None, None]:
-    """Create a test client for API testing."""
+    """Create an authenticated test client for API testing."""
+    with TestClient(app) as test_client:
+        test_client.headers.update({"x-admin-secret": TEST_ADMIN_SECRET})
+        yield test_client
+
+
+@pytest.fixture(scope="session")
+def unauthenticated_client(app) -> Generator[TestClient, None, None]:
+    """Create a test client without API credentials."""
     with TestClient(app) as test_client:
         yield test_client
 

@@ -63,6 +63,8 @@ class Config(BaseSettings):
     admin_secret: str = Field(
         default=INSECURE_DEFAULT_ADMIN_SECRET, env="ADMIN_SECRET"
     )
+    # Optional dedicated inbound API key; falls back to admin_secret when empty
+    agents_api_key: Optional[str] = Field(default=None, env="AGENTS_API_KEY")
 
     @property
     def api_base_url(self) -> str:
@@ -83,6 +85,12 @@ class Config(BaseSettings):
     def api_v1_url(self) -> str:
         """Get the API v1 URL with /api/v1 suffix."""
         return f"{self.api_base_url}/api/v1"
+
+    def get_api_auth_secret(self) -> str:
+        """Secret expected on inbound API requests (AGENTS_API_KEY or ADMIN_SECRET)."""
+        if self.agents_api_key and self.agents_api_key.strip():
+            return self.agents_api_key.strip()
+        return self.admin_secret
 
     def validate_security_settings(self) -> None:
         """Refuse insecure ADMIN_SECRET outside local/test environments."""

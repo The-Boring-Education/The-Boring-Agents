@@ -54,6 +54,7 @@ class EnvironmentManager:
         "PROD_API_BASE_URL": "https://www.theboringeducation.com",
         # Empty default — must be set explicitly in non-local environments
         "ADMIN_SECRET": "",
+        "AGENTS_API_KEY": "",
         # Server Configuration
         "AGENTS_API_HOST": "0.0.0.0",
         "AGENTS_API_PORT": 8000,
