@@ -52,7 +52,13 @@ class EnvironmentManager:
         "LOCAL_API_BASE_URL": "http://localhost:3000",
         "DEV_API_BASE_URL": "https://tbe-dev-git-development-tbe.vercel.app",
         "PROD_API_BASE_URL": "https://www.theboringeducation.com",
-        "ADMIN_SECRET": "TBEAdmin",
+        # Empty default — must be set explicitly in non-local environments
+        "ADMIN_SECRET": "",
+        "AGENTS_API_KEY": "",
+        "CORS_ORIGINS": (
+            "http://localhost:3000,http://localhost:3001,"
+            "http://127.0.0.1:3000,http://127.0.0.1:3001"
+        ),
         # Server Configuration
         "AGENTS_API_HOST": "0.0.0.0",
         "AGENTS_API_PORT": 8000,
@@ -91,12 +97,10 @@ class EnvironmentManager:
 
         for env_path in self.ENV_FILE_PATHS:
             if env_path.exists():
+                # override=False so process/env already set (e.g. tests, CI) win
                 load_dotenv(env_path, override=False)
                 loaded_files.append(str(env_path))
                 logger.info(f"Loaded environment file: {env_path}")
-
-        # Also load from system environment (takes precedence)
-        load_dotenv(override=True)
 
         if loaded_files:
             logger.info(

@@ -110,6 +110,8 @@ async def upload_study_guide(payload: AptitudeUploadRequest, request: Request):
         return result
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("Study guide upload failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -127,6 +129,8 @@ async def upload_to_api(payload: AptitudeUploadRequest, request: Request):
         return result
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("Upload failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))

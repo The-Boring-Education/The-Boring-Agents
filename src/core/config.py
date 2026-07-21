@@ -5,14 +5,25 @@ This module provides a Pydantic-based configuration class that uses
 the EnvironmentManager for loading and validating environment variables.
 """
 
+import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.core.env import get_env_manager
 from src.core.env import validate_api_keys as env_validate_api_keys
+
+logger = logging.getLogger(__name__)
+
+# Insecure historical default — must not be used outside local/test.
+INSECURE_DEFAULT_ADMIN_SECRET = "TBEAdmin"
+
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3000,http://localhost:3001,"
+    "http://127.0.0.1:3000,http://127.0.0.1:3001"
+)
 
 
 class Config(BaseSettings):
@@ -54,7 +65,12 @@ class Config(BaseSettings):
     prod_api_base_url: str = Field(
         default="https://www.theboringeducation.com", env="PROD_API_BASE_URL"
     )
-    admin_secret: str = Field(default="TBEAdmin", env="ADMIN_SECRET")
+    admin_secret: str = Field(
+        default=INSECURE_DEFAULT_ADMIN_SECRET, env="ADMIN_SECRET"
+    )
+    # Optional dedicated inbound API key; falls back to admin_secret when empty
+    agents_api_key: Optional[str] = Field(default=None, env="AGENTS_API_KEY")
+    cors_origins: str = Field(default=_DEFAULT_CORS_ORIGINS, env="CORS_ORIGINS")
 
     @property
     def api_base_url(self) -> str:
@@ -75,6 +91,36 @@ class Config(BaseSettings):
     def api_v1_url(self) -> str:
         """Get the API v1 URL with /api/v1 suffix."""
         return f"{self.api_base_url}/api/v1"
+
+    def get_cors_origins(self) -> List[str]:
+        """Parse CORS_ORIGINS into a list of allowed origins."""
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    def get_api_auth_secret(self) -> str:
+        """Secret expected on inbound API requests (AGENTS_API_KEY or ADMIN_SECRET)."""
+        if self.agents_api_key and self.agents_api_key.strip():
+            return self.agents_api_key.strip()
+        return self.admin_secret
+
+    def validate_security_settings(self) -> None:
+        """Refuse insecure ADMIN_SECRET outside local/test environments."""
+        env = (self.environment or "").strip().lower()
+        secret = (self.admin_secret or "").strip()
+        insecure = not secret or secret == INSECURE_DEFAULT_ADMIN_SECRET
+
+        if env in ("local", "test"):
+            if insecure:
+                logger.warning(
+                    "ADMIN_SECRET is empty or the insecure default — allowed only "
+                    "for local/test. Set a strong ADMIN_SECRET before deploying."
+                )
+            return
+
+        if insecure:
+            raise ValueError(
+                "ADMIN_SECRET must be set to a strong non-default value when "
+                f"ENVIRONMENT is '{env}'. Refusing to start."
+            )
 
     def __init__(self, **kwargs):
         """
