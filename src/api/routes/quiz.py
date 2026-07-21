@@ -38,6 +38,7 @@ from src.api.models.quiz_models import (
     ValidateQuizRequest,
 )
 from src.core.config import config
+from src.utils.paths import safe_join_under
 from src.utils.request_logging import log_action
 
 logger = logging.getLogger(__name__)
@@ -158,7 +159,7 @@ def list_pending_quizzes(request: Request):
                             "categoryName": data.get("categoryName"),
                         }
                     )
-            except:
+            except (json.JSONDecodeError, OSError):
                 pending.append({"filename": filename})
 
         return {"pending": pending}
@@ -172,14 +173,16 @@ def get_pending_quiz_content(filename: str, request: Request):
     """Get content of a pending quiz file."""
     try:
         output_dir = os.path.join(config.output_dir, "quizzes")
-        file_path = os.path.join(output_dir, filename)
+        file_path = safe_join_under(output_dir, filename)
 
-        if not os.path.exists(file_path):
+        if not file_path.is_file():
             raise HTTPException(status_code=404, detail="File not found")
 
         with open(file_path, encoding="utf-8") as f:
             return json.load(f)
 
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
@@ -191,14 +194,16 @@ def delete_pending_quiz_file(filename: str, request: Request):
     """Delete a pending quiz file."""
     try:
         output_dir = os.path.join(config.output_dir, "quizzes")
-        file_path = os.path.join(output_dir, filename)
+        file_path = safe_join_under(output_dir, filename)
 
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        if file_path.is_file():
+            file_path.unlink()
             return {"ok": True}
         else:
             return {"ok": False, "error": "File not found"}
 
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

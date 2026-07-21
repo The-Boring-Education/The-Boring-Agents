@@ -2,7 +2,7 @@
 
 import json
 import logging
-import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -11,6 +11,7 @@ from src.agents.aptitude.constants import TOPIC_REGISTRY
 from src.agents.aptitude.validators import validate_batch_payload
 from src.agents.aptitude.workflow import AptitudeWorkflow
 from src.core.config import config
+from src.utils.paths import resolve_under_roots
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,13 @@ logger = logging.getLogger(__name__)
 class AptitudeController:
     def __init__(self):
         self.workflow = AptitudeWorkflow()
+
+    def _resolve_output_file(self, output_file: str) -> Path:
+        """Resolve output_file under configured output/temp directories only."""
+        return resolve_under_roots(
+            output_file,
+            [config.output_dir, config.temp_dir],
+        )
 
     def generate_for_topic(
         self,
@@ -83,10 +91,12 @@ class AptitudeController:
         Reads the JSON file (same format as generate_study_guide output)
         and POSTs { topic, content } to TBE-Web's study guide endpoint.
         """
-        if not os.path.exists(output_file):
+        resolved = self._resolve_output_file(output_file)
+
+        if not resolved.is_file():
             raise FileNotFoundError(f"Output file not found: {output_file}")
 
-        with open(output_file, encoding="utf-8") as f:
+        with open(resolved, encoding="utf-8") as f:
             data = json.load(f)
 
         topic = data.get("topic")
@@ -100,7 +110,6 @@ class AptitudeController:
 
         base_url = self._resolve_upload_v1_url(environment)
         url = f"{base_url}/interview-prep/aptitude/study-guide"
-        print("HERE", config.admin_secret)
 
         try:
             response = requests.post(
@@ -141,10 +150,12 @@ class AptitudeController:
         The output file already contains the exact payload format expected
         by TBE-Web: { topic: "<slug>", questions: [...] }
         """
-        if not os.path.exists(output_file):
+        resolved = self._resolve_output_file(output_file)
+
+        if not resolved.is_file():
             raise FileNotFoundError(f"Output file not found: {output_file}")
 
-        with open(output_file, encoding="utf-8") as f:
+        with open(resolved, encoding="utf-8") as f:
             data = json.load(f)
 
         upload_payload = {
