@@ -8,6 +8,7 @@ All operations are logged comprehensively for monitoring and debugging.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.auth import APIAuthMiddleware
 from src.api.logging_config import setup_api_logging
 from src.api.middleware import RequestLoggingMiddleware
 from src.api.routes import (
@@ -17,6 +18,7 @@ from src.api.routes import (
     quiz_router,
     session_router,
 )
+from src.core.config import get_config
 from src.core.env import get_env_manager
 
 
@@ -30,9 +32,11 @@ def create_app() -> FastAPI:
     # Set up logging first
     setup_api_logging()
 
-    # Get environment
+    # Get environment and config
     env_manager = get_env_manager()
     environment = env_manager.get("ENVIRONMENT", "dev")
+    config = get_config()
+    config.validate_security_settings()
 
     # Create FastAPI app
     app = FastAPI(
@@ -52,6 +56,9 @@ def create_app() -> FastAPI:
 
     # Add request logging middleware
     app.add_middleware(RequestLoggingMiddleware, environment=environment)
+
+    # Require API credential on non-public routes
+    app.add_middleware(APIAuthMiddleware, config=config)
 
     # Include routers
     app.include_router(quiz_router, prefix="/api/v1")
@@ -101,6 +108,14 @@ def create_app() -> FastAPI:
                 },
             },
             "docs": "/docs",
+            "auth": {
+                "required": True,
+                "headers": [
+                    "x-admin-secret",
+                    "x-api-key",
+                    "Authorization: Bearer <secret>",
+                ],
+            },
         }
 
     # Health check endpoint
