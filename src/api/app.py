@@ -45,10 +45,11 @@ def create_app() -> FastAPI:
         description="AI-powered content generation API for The Boring Education platform",
     )
 
-    # Add CORS middleware for admin UI and local testing
+    # CORS — explicit origins only (never "*" with credentials)
+    cors_origins = config.get_cors_origins()
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

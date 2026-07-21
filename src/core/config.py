@@ -7,7 +7,7 @@ the EnvironmentManager for loading and validating environment variables.
 
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 # Insecure historical default — must not be used outside local/test.
 INSECURE_DEFAULT_ADMIN_SECRET = "TBEAdmin"
+
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3000,http://localhost:3001,"
+    "http://127.0.0.1:3000,http://127.0.0.1:3001"
+)
 
 
 class Config(BaseSettings):
@@ -65,6 +70,7 @@ class Config(BaseSettings):
     )
     # Optional dedicated inbound API key; falls back to admin_secret when empty
     agents_api_key: Optional[str] = Field(default=None, env="AGENTS_API_KEY")
+    cors_origins: str = Field(default=_DEFAULT_CORS_ORIGINS, env="CORS_ORIGINS")
 
     @property
     def api_base_url(self) -> str:
@@ -85,6 +91,10 @@ class Config(BaseSettings):
     def api_v1_url(self) -> str:
         """Get the API v1 URL with /api/v1 suffix."""
         return f"{self.api_base_url}/api/v1"
+
+    def get_cors_origins(self) -> List[str]:
+        """Parse CORS_ORIGINS into a list of allowed origins."""
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     def get_api_auth_secret(self) -> str:
         """Secret expected on inbound API requests (AGENTS_API_KEY or ADMIN_SECRET)."""

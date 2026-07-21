@@ -55,6 +55,10 @@ class EnvironmentManager:
         # Empty default — must be set explicitly in non-local environments
         "ADMIN_SECRET": "",
         "AGENTS_API_KEY": "",
+        "CORS_ORIGINS": (
+            "http://localhost:3000,http://localhost:3001,"
+            "http://127.0.0.1:3000,http://127.0.0.1:3001"
+        ),
         # Server Configuration
         "AGENTS_API_HOST": "0.0.0.0",
         "AGENTS_API_PORT": 8000,

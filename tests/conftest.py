@@ -18,6 +18,7 @@ os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY") or "test-api-key
 os.environ["ENVIRONMENT"] = "test"
 os.environ["LOG_LEVEL"] = "WARNING"
 os.environ["ADMIN_SECRET"] = "test-admin-secret"
+os.environ["CORS_ORIGINS"] = "http://localhost:3000,http://127.0.0.1:3000"
 
 # Auth header used by the authenticated TestClient fixture
 TEST_ADMIN_SECRET = os.environ["ADMIN_SECRET"]
