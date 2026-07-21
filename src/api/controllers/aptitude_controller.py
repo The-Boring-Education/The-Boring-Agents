@@ -100,7 +100,6 @@ class AptitudeController:
 
         base_url = self._resolve_upload_v1_url(environment)
         url = f"{base_url}/interview-prep/aptitude/study-guide"
-        print("HERE", config.admin_secret)
 
         try:
             response = requests.post(

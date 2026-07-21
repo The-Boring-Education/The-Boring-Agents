@@ -5,6 +5,7 @@ This module provides a Pydantic-based configuration class that uses
 the EnvironmentManager for loading and validating environment variables.
 """
 
+import logging
 import os
 from typing import Optional
 
@@ -13,6 +14,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.core.env import get_env_manager
 from src.core.env import validate_api_keys as env_validate_api_keys
+
+logger = logging.getLogger(__name__)
+
+# Insecure historical default — must not be used outside local/test.
+INSECURE_DEFAULT_ADMIN_SECRET = "TBEAdmin"
 
 
 class Config(BaseSettings):
@@ -54,7 +60,9 @@ class Config(BaseSettings):
     prod_api_base_url: str = Field(
         default="https://www.theboringeducation.com", env="PROD_API_BASE_URL"
     )
-    admin_secret: str = Field(default="TBEAdmin", env="ADMIN_SECRET")
+    admin_secret: str = Field(
+        default=INSECURE_DEFAULT_ADMIN_SECRET, env="ADMIN_SECRET"
+    )
 
     @property
     def api_base_url(self) -> str:
@@ -75,6 +83,26 @@ class Config(BaseSettings):
     def api_v1_url(self) -> str:
         """Get the API v1 URL with /api/v1 suffix."""
         return f"{self.api_base_url}/api/v1"
+
+    def validate_security_settings(self) -> None:
+        """Refuse insecure ADMIN_SECRET outside local/test environments."""
+        env = (self.environment or "").strip().lower()
+        secret = (self.admin_secret or "").strip()
+        insecure = not secret or secret == INSECURE_DEFAULT_ADMIN_SECRET
+
+        if env in ("local", "test"):
+            if insecure:
+                logger.warning(
+                    "ADMIN_SECRET is empty or the insecure default — allowed only "
+                    "for local/test. Set a strong ADMIN_SECRET before deploying."
+                )
+            return
+
+        if insecure:
+            raise ValueError(
+                "ADMIN_SECRET must be set to a strong non-default value when "
+                f"ENVIRONMENT is '{env}'. Refusing to start."
+            )
 
     def __init__(self, **kwargs):
         """
