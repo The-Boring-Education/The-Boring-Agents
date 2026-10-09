@@ -16,6 +16,7 @@ from src.api.routes import (
     interview_prep_router,
     quiz_router,
     session_router,
+    shiksha_router,
 )
 from src.core.env import get_env_manager
 
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(session_router, prefix="/api/v1")
     app.include_router(aptitude_router, prefix="/api/v1")
     app.include_router(dsa_router, prefix="/api/v1")
+    app.include_router(shiksha_router, prefix="/api/v1")
 
     # Root API endpoint
     @app.get("/api/v1")
@@ -98,6 +100,13 @@ def create_app() -> FastAPI:
                     "sessions": "GET /api/v1/dsa/sessions",
                     "session_output": "GET /api/v1/dsa/sessions/{id}/output",
                     "push_session": "POST /api/v1/dsa/sessions/{id}/push",
+                },
+                "shiksha": {
+                    "generate_topic": "POST /api/v1/shiksha/topics",
+                    "generate_topic_alias": "POST /api/v1/shiksha/generate-topic",
+                    "sessions": "GET /api/v1/shiksha/sessions",
+                    "session_output": "GET /api/v1/shiksha/sessions/{id}/output",
+                    "push_session": "POST /api/v1/shiksha/sessions/{id}/push",
                 },
             },
             "docs": "/docs",

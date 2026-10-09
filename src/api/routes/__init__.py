@@ -9,6 +9,7 @@ from src.api.routes.dsa import router as dsa_router
 from src.api.routes.interview_prep import router as interview_prep_router
 from src.api.routes.quiz import router as quiz_router
 from src.api.routes.session import router as session_router
+from src.api.routes.shiksha import router as shiksha_router
 
 __all__ = [
     "quiz_router",
@@ -16,4 +17,5 @@ __all__ = [
     "session_router",
     "aptitude_router",
     "dsa_router",
+    "shiksha_router",
 ]
