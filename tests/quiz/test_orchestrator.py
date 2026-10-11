@@ -424,3 +424,98 @@ class TestQuizWorkflowResume:
         
         assert result["status"] == "completed"
 
+
+
+class TestQuizWorkflowFailureRecovery:
+    """Exercise real graph routing and persistence with generation mocked."""
+
+    @pytest.fixture
+    def workflow(self, monkeypatch, temp_dir, sample_quiz_data):
+        from src.agents.quiz import workflow as quiz_workflow
+
+        monkeypatch.setattr(quiz_workflow.config, "temp_dir", temp_dir)
+        monkeypatch.setattr(quiz_workflow.config, "output_dir", temp_dir)
+        orchestrator = QuizWorkflowOrchestrator()
+        monkeypatch.setattr(
+            quiz_workflow, "_session_manager", orchestrator.session_manager
+        )
+        questions = Mock(return_value=sample_quiz_data["questions"])
+        metadata = Mock(
+            return_value={
+                key: sample_quiz_data[key]
+                for key in ("categoryName", "categoryDescription", "categoryIcon")
+            }
+        )
+        monkeypatch.setattr(
+            quiz_workflow.QuizQuestionGenerator, "generate_batch_questions", questions
+        )
+        monkeypatch.setattr(
+            quiz_workflow.QuizMetadataGenerator, "generate_category_metadata", metadata
+        )
+        return orchestrator, questions, metadata
+
+    @pytest.mark.parametrize("stage", ["questions", "metadata", "finalize"])
+    def test_failed_node_stops_and_can_be_retried(
+        self, workflow, monkeypatch, stage, sample_quiz_data, temp_dir
+    ):
+        from pathlib import Path
+
+        from src.agents.quiz import workflow as quiz_workflow
+
+        orchestrator, questions, metadata = workflow
+        session_id = orchestrator.start_generation(
+            topic="React", description="Fixture", agent_type="tech", question_count=2
+        )
+        error = f"Simulated {stage} failure"
+        with monkeypatch.context() as failure:
+            if stage == "finalize":
+                failure.setattr(quiz_workflow, "generate_slug", Mock(side_effect=RuntimeError(error)))
+            else:
+                failure.setattr(
+                    questions if stage == "questions" else metadata,
+                    "side_effect",
+                    RuntimeError(error),
+                )
+            result = orchestrator.execute_workflow(session_id)
+
+        stored = orchestrator.session_manager.get_session(session_id)
+        assert result["status"] == "failed"
+        assert stored["status"] == "failed"
+        assert stored["error"] == error
+        assert stored["progress"]["current_step"] == f"Failed: {error}"
+        assert orchestrator.get_session_status(session_id)["error"] == error
+        assert stored["output_file"] is None
+        assert not list((Path(temp_dir) / "quizzes").glob("*.json"))
+        if stage == "questions":
+            metadata.assert_not_called()
+            assert stored["questions"] == []
+        else:
+            assert stored["questions"] == sample_quiz_data["questions"]
+
+        result = orchestrator.resume_session(session_id)
+        stored = orchestrator.session_manager.get_session(session_id)
+        assert result["status"] == "completed"
+        assert stored["status"] == "completed"
+        assert stored["error"] is None
+        assert not stored["progress"]["current_step"].startswith("Failed:")
+        assert Path(stored["output_file"]).is_file()
+        assert stored["questions"] == sample_quiz_data["questions"]
+        assert questions.call_count == (2 if stage == "questions" else 1)
+        assert metadata.call_count == (2 if stage == "metadata" else 1)
+
+    def test_successful_generation_remains_completed(self, workflow, sample_quiz_data):
+        import json
+        from pathlib import Path
+
+        orchestrator, questions, metadata = workflow
+        session_id = orchestrator.start_generation(
+            topic="React", description="Fixture", agent_type="tech", question_count=2
+        )
+        result = orchestrator.execute_workflow(session_id)
+        assert result["status"] == "completed"
+        stored = orchestrator.session_manager.get_session(session_id)
+        output = json.loads(Path(stored["output_file"]).read_text())
+        assert output["questions"] == sample_quiz_data["questions"]
+        orchestrator.execute_workflow(session_id)
+        questions.assert_called_once()
+        metadata.assert_called_once()

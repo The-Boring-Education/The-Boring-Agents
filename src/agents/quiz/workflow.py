@@ -222,19 +222,21 @@ def generate_category_metadata_node(state: QuizWorkflowState) -> Dict[str, Any]:
 def persist_state_node(state: QuizWorkflowState) -> Dict[str, Any]:
     session_id = state["session_id"]
     log_node_execution("persist_state", session_id)
+    progress = {**state["progress"], "current_step": state["current_step"]}
 
     try:
         sm = _get_session_manager()
         session_data = sm.get_session(session_id)
         if session_data:
-            for field in ("status", "questions", "category_metadata", "output_file"):
+            for field in ("status", "questions", "category_metadata", "output_file", "error"):
                 if field in state:
                     session_data[field] = state.get(field, session_data.get(field))
+            session_data.setdefault("progress", {}).update(progress)
             sm.save_session(session_id, session_data)
     except Exception as exc:
         logger.error("Error persisting state: %s", exc)
 
-    return {}
+    return {"progress": progress}
 
 
 @handle_node_errors("finalize", "failed")
@@ -297,14 +299,24 @@ def create_workflow_graph():
     wf.add_node("generate_metadata", generate_category_metadata_node)
     wf.add_node("persist_after_metadata", persist_state_node)
     wf.add_node("finalize", finalize_quiz_node)
+    wf.add_node("persist_after_finalize", persist_state_node)
 
     wf.set_entry_point("generate_questions")
 
     wf.add_edge("generate_questions", "persist_after_questions")
-    wf.add_edge("persist_after_questions", "generate_metadata")
+    wf.add_conditional_edges(
+        "persist_after_questions",
+        lambda state: END if state["status"] == "failed" else "generate_metadata",
+        [END, "generate_metadata"],
+    )
     wf.add_edge("generate_metadata", "persist_after_metadata")
-    wf.add_edge("persist_after_metadata", "finalize")
-    wf.add_edge("finalize", END)
+    wf.add_conditional_edges(
+        "persist_after_metadata",
+        lambda state: END if state["status"] == "failed" else "finalize",
+        [END, "finalize"],
+    )
+    wf.add_edge("finalize", "persist_after_finalize")
+    wf.add_edge("persist_after_finalize", END)
 
     return wf.compile()
 
@@ -313,7 +325,7 @@ def create_workflow_graph():
 # 4. Orchestrator
 # ═══════════════════════════════════════════════════════════════════════════
 
-_SYNC_FIELDS = ["category_metadata", "questions", "status", "progress", "output_file"]
+_SYNC_FIELDS = ["category_metadata", "questions", "status", "progress", "output_file", "error"]
 
 
 class QuizWorkflowOrchestrator(BaseWorkflowOrchestrator):
@@ -361,6 +373,7 @@ class QuizWorkflowOrchestrator(BaseWorkflowOrchestrator):
                     "description": data.get("description"),
                     "difficulty": data.get("difficulty"),
                     "target_audience": data.get("target_audience"),
+                    "error": data.get("error"),
                 }
             )
         return base
