@@ -10,6 +10,7 @@ are backward-compatible re-exports.
 import json
 import logging
 import os
+import time
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
@@ -166,6 +167,34 @@ class BaseSessionManager(ABC):
             except Exception as e:
                 logger.error("Error deleting session %s: %s", session_id, e)
                 raise
+
+    def purge_completed(self, older_than_days: float) -> Dict[str, int]:
+        # ponytail: mtime-gated, completed-only; failed stays resumable
+        if older_than_days <= 0:
+            raise ValueError("older_than_days must be positive")
+        cutoff = time.time() - older_than_days * 86400
+        deleted = kept = 0
+        if not os.path.isdir(self.sessions_dir):
+            return {"deleted": 0, "kept": 0}
+        for fname in os.listdir(self.sessions_dir):
+            if not fname.endswith(".json"):
+                continue
+            path = os.path.join(self.sessions_dir, fname)
+            try:
+                if os.path.getmtime(path) >= cutoff:
+                    kept += 1
+                    continue
+                with open(path, encoding="utf-8") as f:
+                    data = json.load(f)
+                if data.get("status") == SessionStatus.COMPLETED.value:
+                    os.remove(path)
+                    deleted += 1
+                else:
+                    kept += 1
+            except Exception as e:
+                logger.error("Error purging session file %s: %s", path, e)
+                kept += 1
+        return {"deleted": deleted, "kept": kept}
 
     def update_status(
         self,

@@ -127,6 +127,39 @@ def resume_session(session_id: str, request: Request):
         raise
 
 
+@router.delete("")
+def purge_completed_sessions(
+    request: Request,
+    older_than_days: float = Query(default=30, gt=0, le=3650),
+):
+    """Bulk-delete completed sessions older than N days (all agents)."""
+    log_action(
+        request, "purge_completed_sessions", older_than_days=older_than_days
+    )
+
+    try:
+        result = controller.purge_completed_sessions(older_than_days)
+
+        log_action(
+            request,
+            "purge_completed_sessions",
+            status="success",
+            deleted=result.get("deleted", 0),
+            kept=result.get("kept", 0),
+        )
+
+        return result
+    except Exception as e:
+        log_action(
+            request,
+            "purge_completed_sessions",
+            level="ERROR",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise
+
+
 @router.delete("/{session_id}")
 def delete_session(session_id: str, request: Request):
     """Delete a session's progress artifacts and logs (quiz and interview)."""

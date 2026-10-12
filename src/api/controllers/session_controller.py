@@ -184,3 +184,38 @@ class SessionController:
             raise HTTPException(
                 status_code=500, detail=f"Failed to delete session: {str(e)}"
             )
+
+    def purge_completed_sessions(self, older_than_days: float) -> Dict[str, Any]:
+        """Bulk-delete completed sessions older than N days across all agents."""
+        from src.core.session import BaseSessionManager
+
+        # ponytail: tiny concrete purger; BaseSessionManager is ABC over sessions_dir only
+        class _DirPurger(BaseSessionManager):
+            def _create_session_data(
+                self, session_id: str, **kwargs: Any
+            ) -> Dict[str, Any]:
+                return {}
+
+        if older_than_days <= 0:
+            raise HTTPException(
+                status_code=422, detail="older_than_days must be positive"
+            )
+        try:
+            deleted = kept = 0
+            if os.path.isdir(config.temp_dir):
+                for name in sorted(os.listdir(config.temp_dir)):
+                    sessions_dir = os.path.join(config.temp_dir, name)
+                    if not (name.endswith("_sessions") and os.path.isdir(sessions_dir)):
+                        continue
+                    result = _DirPurger(
+                        workflow_type=name, sessions_dir=sessions_dir
+                    ).purge_completed(older_than_days)
+                    deleted += result["deleted"]
+                    kept += result["kept"]
+            return {"ok": True, "deleted": deleted, "kept": kept}
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to purge sessions: {str(e)}"
+            )
