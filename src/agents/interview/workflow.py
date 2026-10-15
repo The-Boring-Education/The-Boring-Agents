@@ -173,9 +173,7 @@ def normalize_question_metadata(question: Dict[str, Any]) -> Dict[str, Any]:
     company_types = [ct for ct in company_types if ct in COMPANY_TYPES]
     if not company_types:
         company_types = ["Startup", "MNC"]
-    title = question.get("title", question.get("question", "")[:100])
-    if len(title) > 100:
-        title = title[:100]
+    title = question.get("title", question.get("question", ""))
     return {
         "title": title,
         "question": question.get("question", ""),
@@ -258,7 +256,7 @@ def generate_questions_node(state: InterviewWorkflowState) -> Dict[str, Any]:
         questions.append(
             normalize_question_metadata(
                 {
-                    "title": text[:100],
+                    "title": text,
                     "question": text,
                     "answer": "",
                     "frequency": meta["frequency"],

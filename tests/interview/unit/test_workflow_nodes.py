@@ -159,11 +159,17 @@ class TestGenerateQuestionsNode:
             "output_file": None,
             "sheet_data": None
         }
-        
+
         mock_q_gen = Mock()
-        mock_q_gen.generate_questions.return_value = ["Question 1", "Question 2"]
+
+        long_question = (
+            "What is the difference between var, let, and const in JavaScript? "
+            "In what scenarios would you use each in large applications?"
+        )
+
+        mock_q_gen.generate_questions.return_value = [long_question, "Question 2"]
         mock_question_gen.return_value = mock_q_gen
-        
+
         mock_m_gen = Mock()
         mock_m_gen.generate_question_metadata.return_value = {
             "frequency": "Asked Sometimes",
@@ -171,16 +177,18 @@ class TestGenerateQuestionsNode:
             "companyTypes": ["Startup"]
         }
         mock_metadata_gen.return_value = mock_m_gen
-        
+
         mock_session = Mock()
         mock_get_sm.return_value = mock_session
-        
+
         result = generate_questions_node(state)
-        
+
         assert "questions" in result
         assert len(result["questions"]) == 2
         assert result["status"] == "answers_generating"
         assert result["progress"]["total"] == 2
+        assert result["questions"][0]["title"] == long_question
+
 
 
 class TestGenerateAnswersNode:

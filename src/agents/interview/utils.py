@@ -92,8 +92,6 @@ def validate_question_structure(question: Dict[str, Any], index: int = 0) -> Lis
     for field in ("title", "question", "answer", "frequency", "priority"):
         if field not in question:
             errors.append(f"Question {index}: Missing required field: {field}")
-    if "title" in question and len(question["title"]) > 100:
-        errors.append(f"Question {index}: Title exceeds 100 characters")
     if "frequency" in question and not validate_frequency(question["frequency"]):
         errors.append(
             f"Question {index}: Invalid frequency value: {question['frequency']}"
